@@ -31,7 +31,9 @@ import { ClipboardWriter } from '../services/clipboardWriter'
 import { RetentionService } from '../services/retention'
 import { pasteIntoFrontApp } from '../services/pasteInjector'
 import { getPermissions, requestAccessibility, biometricUnlock } from '../services/permissions'
-import { createSyncProvider, type SyncController } from '../sync'
+import { createSyncProvider, type SyncController, type SyncDeps } from '../sync'
+import { loadOrCreateSyncKey } from '../sync/keyStore'
+import { resolveSharedSyncDir, loadOrCreateDeviceId } from '../sync/environment'
 import { WindowManager } from '../windows/windowManager'
 import { TrayController } from '../windows/tray'
 
@@ -50,11 +52,13 @@ export class Application {
   private readonly watcher: ClipboardWatcher
   private readonly windows = new WindowManager()
   private readonly tray: TrayController
-  private readonly sync: SyncController
+  private sync!: SyncController
+  private syncDeps!: SyncDeps
+  private readonly paths = resolvePaths()
   private settings: AppSettings
 
   constructor() {
-    const paths = resolvePaths()
+    const paths = this.paths
     this.storage = new Storage({ dbFile: paths.dbFile, blobDir: paths.blobDir })
     this.pipeline = new CapturePipeline(this.storage)
     this.search = new SearchIndex(this.storage)
@@ -62,7 +66,6 @@ export class Application {
     this.retention = new RetentionService(this.storage)
     this.settings = { ...this.storage.settings.get() }
     this.watcher = new ClipboardWatcher((input) => this.onCapture(input))
-    this.sync = createSyncProvider(this.storage, paths.syncDir, () => this.settings)
     this.tray = new TrayController({
       onToggleWindow: () => this.windows.toggle(),
       onToggleCapture: () => void this.setCaptureEnabled(!this.settings.captureEnabled),
@@ -75,12 +78,24 @@ export class Application {
   }
 
   async start(): Promise<void> {
+    await this.storage.init()
     // Re-read settings post-init (defaults written) and apply.
     this.settings = this.storage.settings.get()
-    await this.storage.init()
+
+    // Resolve sync dependencies (key from the OS keychain, device id, dirs).
+    this.syncDeps = {
+      storage: this.storage,
+      getSettings: () => this.settings,
+      sharedDir: resolveSharedSyncDir(this.paths.syncDir),
+      localDir: this.paths.syncDir,
+      key: loadOrCreateSyncKey(this.paths.syncDir),
+      deviceId: loadOrCreateDeviceId(this.paths.base),
+    }
+    this.sync = createSyncProvider(this.settings.syncProvider, this.syncDeps)
 
     this.windows.create(this.settings.windowMode)
     this.tray.create()
+    this.tray.setCapturing(this.settings.captureEnabled)
     this.registerIpc()
     this.registerHotkey()
     this.applyLoginItem()
@@ -148,7 +163,10 @@ export class Application {
       this.windows.setMode(patch.windowMode)
     }
     if (patch.syncProvider && patch.syncProvider !== prev.syncProvider) {
-      await this.sync.setProvider(patch.syncProvider)
+      this.sync.stop()
+      this.sync = createSyncProvider(patch.syncProvider, this.syncDeps)
+      await this.sync.start()
+      this.emit({ kind: 'sync-status', status: this.sync.status() })
     }
 
     this.emit({ kind: 'settings-changed', settings: this.settings })
@@ -277,6 +295,7 @@ export class Application {
     }
     this.search.markStale()
     if (updated) this.emit({ kind: 'item-updated', item: updated })
+    this.sync.notifyLocalChange()
     return updated
   }
 
@@ -293,10 +312,14 @@ export class Application {
 
   private buildHandlers(): Record<ToraMethod, (...args: never[]) => unknown> {
     const s = this.storage
-    const refreshBoards = (): void => this.emit({ kind: 'boards-changed' })
+    const refreshBoards = (): void => {
+      this.emit({ kind: 'boards-changed' })
+      this.sync.notifyLocalChange()
+    }
     const removed = (id: string): void => {
       this.search.markStale()
       this.emit({ kind: 'item-removed', id })
+      this.sync.notifyLocalChange()
     }
 
     return {
@@ -312,6 +335,7 @@ export class Application {
         else s.boards.removeItem(FAVOURITES_BOARD_ID, id)
         const item = s.items.getById(id)
         if (item) this.emit({ kind: 'item-updated', item })
+        this.sync.notifyLocalChange()
         refreshBoards()
       },
       deleteItem: (id: string) => {
