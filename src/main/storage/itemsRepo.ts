@@ -48,6 +48,12 @@ const FILTER_TYPES: Record<Exclude<QuickFilter, 'all'>, ClipItemType[]> = {
   files: ['file'],
 }
 
+/** Whether an item type belongs to a quick filter. */
+export function matchesQuickFilter(type: ClipItemType, filter: QuickFilter): boolean {
+  if (filter === 'all') return true
+  return FILTER_TYPES[filter].includes(type)
+}
+
 function mapRow(row: ItemRow): ClipItem {
   return {
     id: row.id,

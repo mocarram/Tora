@@ -1,56 +1,28 @@
-import { app, BrowserWindow, shell } from 'electron'
-import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { dirname } from 'node:path'
+import { app } from 'electron'
+import { Application } from './app/application'
 
-const __dirname = dirname(fileURLToPath(import.meta.url))
-
-const isDev = !app.isPackaged
-
-let mainWindow: BrowserWindow | null = null
-
-function createWindow(): void {
-  mainWindow = new BrowserWindow({
-    width: 920,
-    height: 640,
-    show: false,
-    frame: false,
-    titleBarStyle: 'hiddenInset',
-    vibrancy: 'sidebar',
-    visualEffectState: 'active',
-    backgroundColor: '#00000000',
-    webPreferences: {
-      preload: join(__dirname, '../preload/index.cjs'),
-      contextIsolation: true,
-      nodeIntegration: false,
-      sandbox: true,
-      webSecurity: true,
-    },
-  })
-
-  mainWindow.on('ready-to-show', () => mainWindow?.show())
-
-  // Block in-app navigation and open external links in the browser.
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    void shell.openExternal(url)
-    return { action: 'deny' }
-  })
-  mainWindow.webContents.on('will-navigate', (event) => event.preventDefault())
-
-  if (isDev && process.env.ELECTRON_RENDERER_URL) {
-    void mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL)
-  } else {
-    void mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
-  }
+// Single-instance: a second launch just focuses the existing one.
+if (!app.requestSingleInstanceLock()) {
+  app.quit()
 }
 
-void app.whenReady().then(() => {
-  createWindow()
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
-  })
+let application: Application | null = null
+
+void app.whenReady().then(async () => {
+  application = new Application()
+  await application.start()
 })
 
+app.on('second-instance', () => {
+  // The running instance handles summon via tray/hotkey; nothing to do here.
+})
+
+// This is a menu-bar app: keep running when all windows are closed.
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit()
+  // Intentionally do not quit on macOS/Windows; the tray keeps it alive.
+  if (process.platform === 'linux') app.quit()
+})
+
+app.on('before-quit', () => {
+  application?.dispose()
 })

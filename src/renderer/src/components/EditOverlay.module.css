@@ -1,0 +1,17 @@
+.sheet {
+  width: min(640px, 100%);
+  height: min(440px, 100%);
+}
+
+.area {
+  flex: 1;
+  min-height: 0;
+  resize: none;
+  border: none;
+  outline: none;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: var(--text-md);
+  line-height: var(--leading-normal);
+  padding: var(--space-6);
+}
