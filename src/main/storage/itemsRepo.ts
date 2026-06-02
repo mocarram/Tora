@@ -163,6 +163,11 @@ export class ItemsRepo {
     return this.getById(id)
   }
 
+  /** Replace an item's metadata JSON (used to attach image thumbnail refs). */
+  setMetadata(id: string, metadata: ClipItemMetadata): void {
+    this.db.prepare('UPDATE items SET metadata = ? WHERE id = ?').run(JSON.stringify(metadata), id)
+  }
+
   softDelete(id: string): void {
     const at = Date.now()
     this.db.prepare('UPDATE items SET deleted_at = ? WHERE id = ?').run(at, id)

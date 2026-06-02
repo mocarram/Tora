@@ -1,10 +1,19 @@
-import { app } from 'electron'
+import { app, protocol } from 'electron'
 import { Application } from './app/application'
 
 // Single-instance: a second launch just focuses the existing one.
 if (!app.requestSingleInstanceLock()) {
   app.quit()
 }
+
+// Custom scheme for serving on-disk blob thumbnails/images to the renderer
+// without inlining base64. Must be registered before app is ready.
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'tora-blob',
+    privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true },
+  },
+])
 
 let application: Application | null = null
 
