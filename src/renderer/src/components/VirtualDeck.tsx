@@ -103,6 +103,11 @@ export function VirtualDeck(props: VirtualDeckProps): React.JSX.Element {
               className={styles.virtualSlot}
               key={item.id}
               style={{ transform: `translateX(${index * STRIDE}px)` }}
+              draggable
+              onDragStart={(e) => {
+                e.dataTransfer.setData('application/x-tora-item', item.id)
+                e.dataTransfer.effectAllowed = 'copy'
+              }}
             >
               <ClipCard
                 item={item}

@@ -32,6 +32,7 @@ export function useToraBridge(): void {
           break
         case 'boards-changed':
           void window.tora.listBoards().then(setBoards)
+          applyEvent()
           break
         case 'settings-changed':
           setSettings(event.settings)

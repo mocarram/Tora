@@ -153,6 +153,8 @@ export function App(): React.JSX.Element {
           if (name) void window.tora.createBoard({ name })
         }}
         onOpenSettings={() => setSettingsOpen(true)}
+        onAddToBoard={(boardId, itemId) => void window.tora.addItemToBoard({ boardId, itemId })}
+        onReorderBoards={(orderedIds) => void window.tora.reorderBoards({ orderedIds })}
       />
 
       <div className={styles.main}>
