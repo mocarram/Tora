@@ -1,4 +1,6 @@
-import { app, globalShortcut, ipcMain } from 'electron'
+import { app, globalShortcut, ipcMain, protocol } from 'electron'
+import { readFile } from 'node:fs/promises'
+import { join, normalize } from 'node:path'
 import type { ClipItem } from '@core/model'
 import { FAVOURITES_BOARD_ID } from '@core/model'
 import {
@@ -93,6 +95,7 @@ export class Application {
     }
     this.sync = createSyncProvider(this.settings.syncProvider, this.syncDeps)
 
+    this.registerBlobProtocol()
     this.windows.create(this.settings.windowMode)
     this.tray.create()
     this.tray.setCapturing(this.settings.captureEnabled)
@@ -127,10 +130,18 @@ export class Application {
     }
     const result = await this.pipeline.ingest(input)
     if (result.kind === 'added' && result.item) {
-      // Persist the image blob for image items (watcher holds the buffers).
-      if (result.item.type === 'image') {
+      // Persist the image blob for image items (watcher holds the buffers) and
+      // record the thumbnail ref so the deck can render it via tora-blob://.
+      if (result.item.type === 'image' && result.item.metadata.kind === 'image') {
         const blobs = ClipboardWatcher.imageBlobs()
-        if (blobs) await this.pipeline.attachImage(result.item.id, blobs)
+        if (blobs) {
+          await this.pipeline.attachImage(result.item.id, blobs)
+          this.storage.items.setMetadata(result.item.id, {
+            ...result.item.metadata,
+            thumbnailRef: `${result.item.id}/thumb.png`,
+          })
+          result.item = this.storage.items.getById(result.item.id) ?? result.item
+        }
       }
       this.search.markStale()
       this.emit({ kind: 'item-added', item: result.item })
@@ -144,6 +155,26 @@ export class Application {
 
   private emit(event: ToraEvent): void {
     this.windows.emit(event)
+  }
+
+  /** Serve blob files (thumbnails/images) to the renderer by path, sandboxed
+   *  to the blob directory so a crafted URL cannot escape it. */
+  private registerBlobProtocol(): void {
+    const root = this.paths.blobDir
+    protocol.handle('tora-blob', async (request) => {
+      const { pathname } = new URL(request.url)
+      const rel = normalize(decodeURIComponent(pathname)).replace(/^([/.]+)/, '')
+      const file = join(root, rel)
+      if (!file.startsWith(root)) return new Response('Forbidden', { status: 403 })
+      try {
+        const data = await readFile(file)
+        return new Response(new Uint8Array(data), {
+          headers: { 'Content-Type': 'image/png', 'Cache-Control': 'max-age=86400' },
+        })
+      } catch {
+        return new Response('Not found', { status: 404 })
+      }
+    })
   }
 
   // ---- Settings ----------------------------------------------------------

@@ -104,7 +104,7 @@ function ImagePreview({
   thumbnailRef?: string | undefined
   dataUrl?: string | undefined
 }): React.JSX.Element {
-  const src = dataUrl ?? (thumbnailRef ? `tora-blob://${thumbnailRef}` : undefined)
+  const src = dataUrl ?? (thumbnailRef ? `tora-blob://media/${thumbnailRef}` : undefined)
   return (
     <div className={styles.image}>
       {src ? (
