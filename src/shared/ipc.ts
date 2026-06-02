@@ -26,6 +26,7 @@ export interface AppSettings {
   /** Bundle ids excluded from capture (password managers etc). */
   excludedBundleIds: string[]
   appLockEnabled: boolean
+  onboardingComplete: boolean
   captureEnabled: boolean
   syncProvider: 'local' | 'icloud' | 'cloudkit'
   reduceMotion: boolean

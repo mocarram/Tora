@@ -8,6 +8,8 @@ import { LargePreview } from './components/LargePreview'
 import { EditOverlay } from './components/EditOverlay'
 import { Settings } from './components/Settings'
 import { QueueBar } from './components/QueueBar'
+import { LockScreen } from './components/LockScreen'
+import { Onboarding } from './components/Onboarding'
 import { Icon } from './components/Icon'
 import { useStore } from './store/useStore'
 import { useToraBridge } from './hooks/useToraBridge'
@@ -274,6 +276,18 @@ export function App(): React.JSX.Element {
         reducedMotion={reducedMotion}
         onClose={() => setSettingsOpen(false)}
       />
+
+      <Onboarding
+        open={
+          store.ready && !!store.settings && !store.settings.onboardingComplete && !store.locked
+        }
+        reducedMotion={reducedMotion}
+        onComplete={() => void window.tora.updateSettings({ onboardingComplete: true })}
+      />
+
+      {store.locked && (
+        <LockScreen reducedMotion={reducedMotion} onUnlock={() => store.setLocked(false)} />
+      )}
     </div>
   )
 }

@@ -12,6 +12,7 @@ export function useToraBridge(): void {
   const applyEvent = useStore((s) => s.applyEvent)
   const setBoards = useStore((s) => s.setBoards)
   const setSettings = useStore((s) => s.setSettings)
+  const setLocked = useStore((s) => s.setLocked)
   const refreshStats = useStore((s) => s.refreshStats)
   const theme = useStore((s) => s.settings?.theme ?? 'system')
 
@@ -36,14 +37,24 @@ export function useToraBridge(): void {
           break
         case 'settings-changed':
           setSettings(event.settings)
+          if (!event.settings.appLockEnabled) setLocked(false)
           break
         case 'sync-status':
           void refreshStats()
+          break
+        case 'panel-hidden':
+          if (useStore.getState().settings?.appLockEnabled) setLocked(true)
+          break
+        case 'locked':
+          setLocked(true)
+          break
+        case 'unlocked':
+          setLocked(false)
           break
         default:
           break
       }
     })
     return off
-  }, [applyEvent, setBoards, setSettings, refreshStats])
+  }, [applyEvent, setBoards, setSettings, setLocked, refreshStats])
 }
