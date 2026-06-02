@@ -22,6 +22,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     'com.lastpass.LastPass',
   ],
   appLockEnabled: false,
+  onboardingComplete: false,
   captureEnabled: true,
   syncProvider: 'local',
   reduceMotion: false,

@@ -1,0 +1,51 @@
+.lock {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-toast);
+  background: var(--color-window);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  -webkit-app-region: drag;
+}
+.lock button {
+  -webkit-app-region: no-drag;
+}
+
+.mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-xl);
+  background: var(--color-accent-quiet);
+  color: var(--color-accent);
+  margin-bottom: var(--space-3);
+}
+.title {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+}
+.hint {
+  font-size: var(--text-md);
+  color: var(--color-text-muted);
+}
+.button {
+  margin-top: var(--space-5);
+  height: 38px;
+  padding: 0 var(--space-8);
+  border-radius: var(--radius-md);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-weight: var(--weight-semibold);
+  font-size: var(--text-md);
+}
+.button:hover {
+  background: var(--color-accent-strong);
+}
+.button:disabled {
+  opacity: 0.6;
+}
