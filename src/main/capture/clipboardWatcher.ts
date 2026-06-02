@@ -1,0 +1,163 @@
+import { clipboard } from 'electron'
+import { fileURLToPath } from 'node:url'
+import { statSync } from 'node:fs'
+import { hashBytes, hashString } from '@core/hash'
+import type { CaptureInput } from '@core/capture'
+
+/**
+ * Low-frequency pasteboard observer. Polls at a relaxed interval (event-driven
+ * change notifications are not exposed cross-platform by Electron) and only does
+ * real work when a cheap signature changes, so idle CPU stays near zero.
+ *
+ * Honours macOS concealed/transient markers and suppresses the app's own writes
+ * to avoid a copy/paste feedback loop. macOS pasteboard specifics are not
+ * runtime-verified on this Linux host; see GAPS.md.
+ */
+const CONCEALED_TYPES = ['org.nspasteboard.ConcealedType', 'org.nspasteboard.TransientType']
+
+export type CaptureHandler = (input: CaptureInput) => void | Promise<void>
+
+export class ClipboardWatcher {
+  private timer: NodeJS.Timeout | null = null
+  private lastSignature = ''
+  private selfWriteSignature: string | null = null
+  private enabled = true
+
+  constructor(
+    private readonly onCapture: CaptureHandler,
+    private readonly intervalMs = 500,
+  ) {}
+
+  start(): void {
+    if (this.timer) return
+    // Seed the signature so we do not capture whatever predates app launch.
+    this.lastSignature = this.signature()
+    this.timer = setInterval(() => void this.tick(), this.intervalMs)
+    if (this.timer.unref) this.timer.unref()
+  }
+
+  stop(): void {
+    if (this.timer) {
+      clearInterval(this.timer)
+      this.timer = null
+    }
+  }
+
+  setEnabled(enabled: boolean): void {
+    this.enabled = enabled
+    // Re-seed so resuming does not capture clipboard changes made while paused.
+    if (enabled) this.lastSignature = this.signature()
+  }
+
+  /** Tell the watcher we just wrote this text, so it skips the echo. */
+  markSelfCopy(text: string): void {
+    this.selfWriteSignature = this.signature(text)
+  }
+
+  private signature(textOverride?: string): string {
+    const text = textOverride ?? clipboard.readText()
+    let imageSig = ''
+    if (!textOverride) {
+      const img = clipboard.readImage()
+      if (!img.isEmpty()) {
+        const { width, height } = img.getSize()
+        imageSig = `img:${width}x${height}`
+      }
+    }
+    const formats = clipboard.availableFormats().join(',')
+    return hashString(`${text}|${imageSig}|${formats}`)
+  }
+
+  private isConcealed(): boolean {
+    return CONCEALED_TYPES.some((t) => {
+      try {
+        return clipboard.has(t)
+      } catch {
+        return false
+      }
+    })
+  }
+
+  private async tick(): Promise<void> {
+    if (!this.enabled) return
+    const sig = this.signature()
+    if (sig === this.lastSignature) return
+    this.lastSignature = sig
+    if (sig === this.selfWriteSignature) {
+      this.selfWriteSignature = null
+      return
+    }
+
+    const input = this.readSnapshot()
+    if (input) await this.onCapture(input)
+  }
+
+  /** Build a CaptureInput from the current pasteboard. */
+  private readSnapshot(): CaptureInput | null {
+    if (this.isConcealed()) return { concealed: true }
+
+    const text = clipboard.readText() || null
+    const html = clipboard.readHTML() || null
+    const rtf = clipboard.readRTF() || null
+    const filePaths = this.readFilePaths()
+
+    let image: CaptureInput['image'] = null
+    if (!text && (!filePaths || filePaths.length === 0)) {
+      const img = clipboard.readImage()
+      if (!img.isEmpty()) {
+        const png = img.toPNG()
+        const { width, height } = img.getSize()
+        image = {
+          format: 'png',
+          width,
+          height,
+          byteLength: png.byteLength,
+          hash: hashBytes(png),
+        }
+      }
+    }
+
+    if (!text && !html && !rtf && !image && (!filePaths || filePaths.length === 0)) {
+      return null
+    }
+
+    return {
+      text,
+      html,
+      rtf,
+      image,
+      filePaths,
+      fileSizes: filePaths ? this.fileSizes(filePaths) : null,
+    }
+  }
+
+  /** macOS file copy: read the file-url pasteboard type. Single file best-effort. */
+  private readFilePaths(): string[] | null {
+    if (process.platform !== 'darwin') return null
+    try {
+      const url = clipboard.read('public.file-url')
+      if (!url) return null
+      return [fileURLToPath(url.trim())]
+    } catch {
+      return null
+    }
+  }
+
+  private fileSizes(paths: string[]): number[] {
+    return paths.map((p) => {
+      try {
+        return statSync(p).size
+      } catch {
+        return 0
+      }
+    })
+  }
+
+  /** Capture a NativeImage's buffers for blob persistence (full + thumbnail). */
+  static imageBlobs(): { ext: string; full: Uint8Array; thumbnail: Uint8Array } | null {
+    const img = clipboard.readImage()
+    if (img.isEmpty()) return null
+    const thumb = img.resize({ width: 480, quality: 'good' })
+    return { ext: 'png', full: img.toPNG(), thumbnail: thumb.toPNG() }
+  }
+}
