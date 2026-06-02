@@ -1,4 +1,12 @@
-* {
+/* Self-hosted variable fonts (bundled by Vite, never fetched at runtime). */
+@import '@fontsource-variable/space-grotesk';
+@import '@fontsource-variable/hanken-grotesk';
+@import '@fontsource-variable/jetbrains-mono';
+@import './tokens.css';
+
+*,
+*::before,
+*::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -11,28 +19,85 @@ body,
 }
 
 body {
-  font-family: system-ui, sans-serif;
+  font-family: var(--font-text);
+  font-size: var(--text-md);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-normal);
+  color: var(--color-text);
+  /* Transparent so the native vibrancy layer shows through the frameless panel. */
   background: transparent;
-  color: #e9e6df;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-synthesis: none;
+  user-select: none;
+  cursor: default;
+  overflow: hidden;
 }
 
-.boot {
-  height: 100%;
+#root {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
 }
 
-.boot__mark {
-  font-size: 28px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
 }
 
-.boot__sub {
-  font-size: 13px;
-  opacity: 0.6;
+button {
+  border: none;
+  background: none;
+  cursor: default;
+}
+
+::selection {
+  background: var(--color-accent-quiet);
+  color: var(--color-text);
+}
+
+/* Anything genuinely textual can be selected/copied by the user. */
+.selectable,
+input,
+textarea,
+[contenteditable='true'] {
+  user-select: text;
+  cursor: text;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
+
+/* Thin, theme-aware scrollbars; the list itself is virtualized. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+*::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: var(--radius-round);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-faint);
+  background-clip: content-box;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-variant-ligatures: none;
+}
+
+.display {
+  font-family: var(--font-display);
+  letter-spacing: var(--tracking-tight);
 }

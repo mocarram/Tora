@@ -28,6 +28,9 @@
     "prepare": "husky || true"
   },
   "dependencies": {
+    "@fontsource-variable/hanken-grotesk": "^5.2.8",
+    "@fontsource-variable/jetbrains-mono": "^5.2.8",
+    "@fontsource-variable/space-grotesk": "^5.2.10",
     "better-sqlite3": "^12.10.0",
     "highlight.js": "^11.11.1",
     "nanoid": "^5.1.11"

@@ -1,0 +1,59 @@
+/*
+ * Tora syntax theme. Built on semantic tokens so it follows light/dark and
+ * stays within the restrained warm palette (no rainbow). One amber accent for
+ * keywords, muted ink for the rest, info-blue for strings.
+ */
+.hljs {
+  color: var(--color-text);
+  background: transparent;
+}
+.hljs-comment,
+.hljs-quote {
+  color: var(--color-text-faint);
+  font-style: italic;
+}
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-built_in,
+.hljs-name,
+.hljs-tag {
+  color: var(--color-accent-strong);
+}
+.hljs-string,
+.hljs-title,
+.hljs-section,
+.hljs-attribute,
+.hljs-literal,
+.hljs-template-tag,
+.hljs-template-variable,
+.hljs-type,
+.hljs-addition {
+  color: var(--color-info);
+}
+.hljs-number,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-link,
+.hljs-meta,
+.hljs-selector-id,
+.hljs-selector-class {
+  color: var(--color-accent);
+}
+.hljs-variable,
+.hljs-params {
+  color: var(--color-text);
+}
+.hljs-function .hljs-title,
+.hljs-title.function_ {
+  color: var(--color-text);
+  font-weight: var(--weight-medium);
+}
+.hljs-emphasis {
+  font-style: italic;
+}
+.hljs-strong {
+  font-weight: var(--weight-bold);
+}
+.hljs-deletion {
+  color: var(--color-danger);
+}
