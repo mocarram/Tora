@@ -21,6 +21,21 @@
   max-height: 320px;
 }
 
+.virtualTrack {
+  position: relative;
+  height: 100%;
+}
+
+.virtualSlot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 268px;
+  height: 100%;
+  max-height: 320px;
+  will-change: transform;
+}
+
 .empty {
   flex: 1;
   display: flex;

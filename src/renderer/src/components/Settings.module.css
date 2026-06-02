@@ -1,0 +1,206 @@
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  background: var(--color-scrim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-9);
+}
+
+.sheet {
+  display: flex;
+  width: min(760px, 100%);
+  height: min(560px, 100%);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-overlay);
+  overflow: hidden;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 180px;
+  flex-shrink: 0;
+  padding: var(--space-6) var(--space-4);
+  background: var(--color-rail);
+  border-right: 1px solid var(--color-border);
+}
+.navTitle {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  padding: var(--space-2) var(--space-3) var(--space-5);
+}
+.navItem {
+  text-align: left;
+  height: 32px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-md);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-muted);
+}
+.navItem:hover {
+  background: var(--color-card);
+  color: var(--color-text);
+}
+.navActive {
+  background: var(--color-accent-quiet);
+  color: var(--color-accent);
+}
+
+.content {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: var(--space-8);
+}
+.close {
+  position: absolute;
+  top: var(--space-5);
+  right: var(--space-5);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+}
+.close:hover {
+  background: var(--color-card-active);
+  color: var(--color-text);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.groupTitle {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+  margin-bottom: var(--space-5);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.rowText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.rowLabel {
+  font-size: var(--text-md);
+  font-weight: var(--weight-medium);
+}
+.rowHint {
+  font-size: var(--text-sm);
+  color: var(--color-text-faint);
+}
+
+.toggle {
+  position: relative;
+  width: 40px;
+  height: 24px;
+  border-radius: var(--radius-round);
+  background: var(--color-border-strong);
+  flex-shrink: 0;
+  transition: background var(--dur-fast) var(--ease-standard);
+}
+.toggleOn {
+  background: var(--color-accent);
+}
+.knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-round);
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.toggleOn .knob {
+  transform: translateX(16px);
+}
+
+.select,
+.input {
+  height: 32px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--color-input);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-size: var(--text-md);
+  min-width: 180px;
+}
+.select:focus,
+.input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.warn {
+  font-size: var(--text-sm);
+  color: var(--color-danger);
+  padding: var(--space-3) 0;
+}
+.hintBlock {
+  font-size: var(--text-sm);
+  color: var(--color-text-faint);
+  line-height: var(--leading-normal);
+  padding-top: var(--space-5);
+}
+
+.smallBtn {
+  height: 30px;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-sm);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-weight: var(--weight-medium);
+  font-size: var(--text-sm);
+}
+.granted {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-positive);
+}
+
+.about {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: flex-start;
+}
+.aboutMark {
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-bold);
+}
+.aboutText {
+  font-size: var(--text-md);
+  color: var(--color-text-muted);
+  max-width: 40ch;
+}
+.aboutStats {
+  font-size: var(--text-sm);
+  color: var(--color-text-faint);
+}

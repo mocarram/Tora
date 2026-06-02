@@ -151,6 +151,13 @@ export class BoardsRepo {
     tx()
   }
 
+  itemIdsInBoard(boardId: string): Set<string> {
+    const rows = this.db
+      .prepare('SELECT item_id FROM board_items WHERE board_id = ?')
+      .all(boardId) as { item_id: string }[]
+    return new Set(rows.map((r) => r.item_id))
+  }
+
   boardsForItem(itemId: string): string[] {
     const rows = this.db
       .prepare('SELECT board_id FROM board_items WHERE item_id = ?')
