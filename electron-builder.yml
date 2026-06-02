@@ -1,0 +1,45 @@
+appId: com.tora.clipboard
+productName: Tora
+copyright: Copyright (c) 2026 Tora
+
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - out/**/*
+  - package.json
+
+asarUnpack:
+  # Native module must stay unpacked so its .node binary can be loaded.
+  - '**/node_modules/better-sqlite3/**'
+
+# Rebuild native deps against the Electron ABI at package time.
+npmRebuild: true
+
+mac:
+  category: public.app-category.productivity
+  target:
+    - target: dmg
+      arch:
+        - arm64
+        - x64
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  # Signing identity + notarization credentials are supplied via environment
+  # variables at release time, never committed. See RELEASE.md / GAPS.md:
+  #   CSC_LINK, CSC_KEY_PASSWORD (Developer ID Application cert)
+  #   APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID (notarization)
+  notarize: false
+
+dmg:
+  title: ${productName}
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications

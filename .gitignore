@@ -1,0 +1,12 @@
+node_modules
+out
+dist
+release
+coverage
+*.log
+.DS_Store
+.vite
+playwright-report
+test-results
+*.local
+tora-dev-data
