@@ -17,6 +17,10 @@ extraResources:
     to: trayTemplate.png
   - from: build/trayTemplate@2x.png
     to: trayTemplate@2x.png
+  # Per-accent Dock icons, swapped at runtime to match the chosen accent vibe.
+  - from: build/icons
+    to: icons
+    filter: ['*.png']
 
 asarUnpack:
   # Native module must stay unpacked so its .node binary can be loaded.

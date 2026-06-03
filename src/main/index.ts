@@ -1,6 +1,4 @@
 import { app, protocol } from 'electron'
-import { join, dirname } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { Application } from './app/application'
 
 // Last-resort handlers so a stray rejection or throw in the main process is
@@ -19,14 +17,8 @@ process.on('uncaughtException', (err) => {
 // "Tora" with the Tora icon.
 app.setName('Tora')
 
-// In development, set the dock icon so it at least looks like Tora.
-if (process.platform === 'darwin' && !app.isPackaged) {
-  const iconPath = join(dirname(fileURLToPath(import.meta.url)), '../../build/icon.png')
-  app
-    .whenReady()
-    .then(() => app.dock?.setIcon(iconPath))
-    .catch(() => {})
-}
+// The Dock icon (default + per-accent variants) is set by Application once
+// settings are loaded, in both dev and packaged builds.
 
 // Single-instance: a second launch just focuses the existing one.
 if (!app.requestSingleInstanceLock()) {

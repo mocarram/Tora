@@ -87,6 +87,39 @@ const smooth = (e0, e1, x) => {
   return t * t * (3 - 2 * t)
 }
 
+// HSL (h deg, s/l 0..1) -> [r,g,b] 0..255. Lets the per-accent icon shades be
+// derived from the same hue/saturation knobs the renderer uses (tokens.css).
+function hsl(h, s, l) {
+  const c = (1 - Math.abs(2 * l - 1)) * s
+  const hp = (((h % 360) + 360) % 360) / 60
+  const x = c * (1 - Math.abs((hp % 2) - 1))
+  let r = 0
+  let g = 0
+  let b = 0
+  if (hp < 1) [r, g, b] = [c, x, 0]
+  else if (hp < 2) [r, g, b] = [x, c, 0]
+  else if (hp < 3) [r, g, b] = [0, c, x]
+  else if (hp < 4) [r, g, b] = [0, x, c]
+  else if (hp < 5) [r, g, b] = [x, 0, c]
+  else [r, g, b] = [c, 0, x]
+  const m = l - c / 2
+  return [Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b + m) * 255)]
+}
+
+// Bar gradient + warm under-glow for an accent hue. Amber (the brand default)
+// keeps its exact tuned RGB so the shipped bundle icon is unchanged.
+function vibe(h, s) {
+  return { bar: [hsl(h, s, 0.67), hsl(h, s * 0.95, 0.5)], glow: hsl(h, Math.min(1, s), 0.6) }
+}
+const VIBES = {
+  amber: { bar: [[247, 172, 96], [212, 110, 46]], glow: [236, 150, 82] },
+  rose: vibe(350, 0.72),
+  violet: vibe(265, 0.58),
+  ocean: vibe(205, 0.7),
+  forest: vibe(150, 0.48),
+  graphite: vibe(220, 0.14),
+}
+
 // Signed distance to a rounded rectangle (negative inside). One primitive gives
 // us crisp fills, soft shadows, and a beveled rim.
 function sdRoundRect(px, py, cx, cy, hw, hh, r) {
@@ -117,18 +150,19 @@ function over(buf, i, r, g, b, a) {
 // with a gentle vertical gradient, a soft top sheen, and a tight contact shadow
 // for separation - depth from light, not heavy bevels. Rendered at SS x and
 // box-downsampled for clean, alive edges.
-function appIcon(canvas) {
+function appIcon(canvas, shade) {
   const SS = 4
   const N = canvas * SS
   const s = N / 1024 // map the 1024 grid spec onto any canvas
   const hi = Buffer.alloc(N * N * 4)
 
-  // Palette: warm charcoal glass with amber bars.
+  // Palette: warm charcoal glass with accent-coloured bars. Only the bars and
+  // their under-glow change per accent; the glass tile stays constant.
   const bgTop = [45, 39, 33]
   const bgBot = [20, 17, 14]
-  const amberTop = [247, 172, 96]
-  const amberBot = [212, 110, 46]
-  const glow = [236, 150, 82]
+  const amberTop = shade.bar[0]
+  const amberBot = shade.bar[1]
+  const glow = shade.glow
 
   const gutter = 100 * s
   const tile = 824 * s
@@ -259,7 +293,17 @@ function trayTemplate(size) {
 }
 
 mkdirSync(join(root, 'build'), { recursive: true })
-writeFileSync(join(root, 'build', 'icon.png'), appIcon(1024))
+mkdirSync(join(root, 'build', 'icons'), { recursive: true })
+
+// Default bundle icon (amber) -> build/icon.png, baked into the .icns at package
+// time. Per-accent variants -> build/icons/<accent>.png, bundled as resources
+// and swapped onto the Dock at runtime when the user changes their accent.
+writeFileSync(join(root, 'build', 'icon.png'), appIcon(1024, VIBES.amber))
+for (const [name, shade] of Object.entries(VIBES)) {
+  writeFileSync(join(root, 'build', 'icons', `${name}.png`), appIcon(1024, shade))
+}
 writeFileSync(join(root, 'build', 'trayTemplate.png'), trayTemplate(22))
 writeFileSync(join(root, 'build', 'trayTemplate@2x.png'), trayTemplate(44))
-console.log('Wrote build/icon.png, build/trayTemplate.png, build/trayTemplate@2x.png')
+console.log(
+  `Wrote build/icon.png, build/icons/{${Object.keys(VIBES).join(',')}}.png, build/trayTemplate*.png`,
+)

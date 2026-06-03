@@ -1,11 +1,13 @@
 import { app, globalShortcut, ipcMain, nativeImage, nativeTheme, protocol, session } from 'electron'
 import { readFile } from 'node:fs/promises'
-import { join, normalize, sep } from 'node:path'
+import { dirname, join, normalize, sep } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import type { ClipItem, FileMetadata } from '@core/model'
 import { FAVOURITES_BOARD_ID } from '@core/model'
 import { isPreviewableImage } from '@core/fileType'
 import {
   IPC,
+  type AccentTheme,
   type AddToBoardRequest,
   type AppSettings,
   type ClearDataRequest,
@@ -109,6 +111,9 @@ export class Application {
     // Drive the OS appearance from the saved preference so the native window
     // vibrancy (and traffic lights) match the chosen theme, not just the OS one.
     nativeTheme.themeSource = this.settings.theme
+
+    // Match the Dock icon to the chosen accent vibe.
+    this.applyDockIcon(this.settings.accent)
 
     this.hardenSession()
     this.registerBlobProtocol()
@@ -367,6 +372,9 @@ export class Application {
       // Keep the native vibrancy material in step with the renderer theme.
       nativeTheme.themeSource = patch.theme
     }
+    if (patch.accent && patch.accent !== prev.accent) {
+      this.applyDockIcon(patch.accent)
+    }
     if (patch.fetchLinkPreviews && !prev.fetchLinkPreviews) {
       void this.backfillLinkPreviews()
     }
@@ -379,6 +387,21 @@ export class Application {
 
     this.emit({ kind: 'settings-changed', settings: this.settings })
     return this.settings
+  }
+
+  /**
+   * Recolour the macOS Dock icon to match the chosen accent vibe. The bundle
+   * icon (.icns) is fixed at build time; this swaps the live Dock icon at
+   * runtime (the variants ship as resources). No-op off macOS or if the asset
+   * is missing. Not runtime-verified on the Linux build host; see GAPS.md.
+   */
+  private applyDockIcon(accent: AccentTheme): void {
+    if (process.platform !== 'darwin' || !app.dock) return
+    const file = app.isPackaged
+      ? join(process.resourcesPath, 'icons', `${accent}.png`)
+      : join(dirname(fileURLToPath(import.meta.url)), '../../build/icons', `${accent}.png`)
+    const image = nativeImage.createFromPath(file)
+    if (!image.isEmpty()) app.dock.setIcon(image)
   }
 
   private async setCaptureEnabled(enabled: boolean): Promise<void> {
