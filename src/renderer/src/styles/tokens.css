@@ -115,21 +115,28 @@
 :root[data-theme='dark'] {
   color-scheme: dark;
 
-  --color-window: rgba(18, 15, 11, 0.4);
+  --color-window: rgba(18, 15, 11, 0.14);
   /* Translucent surfaces so the native window vibrancy reads through as frosted
      glass (Apple-like). Tints layer over the blurred desktop. */
   --color-bg: rgba(12, 10, 7, 0.5);
-  --color-bg-elevated: rgba(30, 25, 19, 0.86);
-  --color-rail: rgba(24, 20, 15, 0.3);
+  --color-bg-elevated: rgba(30, 25, 19, 0.82);
+  --color-rail: rgba(24, 20, 15, 0.18);
 
-  --color-card: rgba(46, 39, 30, 0.46);
-  --color-card-raised: rgba(60, 51, 39, 0.74);
-  --color-card-edge: rgba(255, 250, 242, 0.1);
-  --color-card-hover: rgba(60, 51, 39, 0.58);
-  --color-card-active: rgba(74, 63, 49, 0.8);
+  --color-card: rgba(46, 39, 30, 0.42);
+  --color-card-raised: rgba(60, 51, 39, 0.7);
+  --color-card-edge: rgba(255, 250, 242, 0.12);
+  --color-card-hover: rgba(60, 51, 39, 0.55);
+  --color-card-active: rgba(74, 63, 49, 0.78);
   /* Backdrop blur radius applied to glass surfaces. */
-  --glass-blur: 24px;
-  --glass-blur-soft: 14px;
+  --glass-blur: 30px;
+  --glass-blur-soft: 18px;
+  /* A faint top-down sheen so surfaces read as glass even over dark content. */
+  --glass-sheen: linear-gradient(
+    180deg,
+    rgba(255, 250, 242, 0.08) 0%,
+    rgba(255, 250, 242, 0.02) 38%,
+    rgba(255, 250, 242, 0) 100%
+  );
 
   --color-text: #f3eee5;
   --color-text-muted: var(--ink-9);
@@ -163,18 +170,24 @@
 :root[data-theme='light'] {
   color-scheme: light;
 
-  --color-window: rgba(244, 240, 233, 0.5);
-  --color-bg: rgba(247, 243, 236, 0.6);
-  --color-bg-elevated: rgba(252, 250, 245, 0.9);
-  --color-rail: rgba(249, 245, 238, 0.36);
+  --color-window: rgba(244, 240, 233, 0.22);
+  --color-bg: rgba(247, 243, 236, 0.55);
+  --color-bg-elevated: rgba(252, 250, 245, 0.86);
+  --color-rail: rgba(249, 245, 238, 0.24);
 
-  --color-card: rgba(255, 253, 249, 0.6);
-  --color-card-raised: rgba(255, 255, 255, 0.86);
-  --color-card-edge: rgba(20, 17, 13, 0.06);
-  --color-card-hover: rgba(255, 255, 255, 0.74);
-  --color-card-active: rgba(236, 229, 217, 0.86);
-  --glass-blur: 24px;
-  --glass-blur-soft: 14px;
+  --color-card: rgba(255, 253, 249, 0.55);
+  --color-card-raised: rgba(255, 255, 255, 0.82);
+  --color-card-edge: rgba(20, 17, 13, 0.07);
+  --color-card-hover: rgba(255, 255, 255, 0.7);
+  --color-card-active: rgba(236, 229, 217, 0.84);
+  --glass-blur: 30px;
+  --glass-blur-soft: 18px;
+  --glass-sheen: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.55) 0%,
+    rgba(255, 255, 255, 0.12) 38%,
+    rgba(255, 255, 255, 0) 100%
+  );
 
   --color-text: #1a1713;
   --color-text-muted: #6f6450;
