@@ -1,0 +1,34 @@
+name: Bundle size
+
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+
+concurrency:
+  group: bundle-size-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # App-size / performance budget. Builds the renderer + main + preload and
+  # checks the emitted bytes (what ships inside the asar) against
+  # bundle-budget.json. Catches accidental bloat without needing a macOS runner
+  # or code signing.
+  size:
+    runs-on: ubuntu-latest
+    env:
+      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Check bundle size budget
+        run: npm run size
