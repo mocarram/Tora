@@ -1,6 +1,6 @@
 // Generates Tora's raster assets from code so no opaque binaries are committed
-// by hand: the app icon (dark tile + amber stripes) and a monochrome
-// macOS menu-bar template icon. Run: node scripts/gen-assets.mjs
+// by hand: the app icon (a macOS-style glass tile + amber bars) and a
+// monochrome macOS menu-bar template icon. Run: node scripts/gen-assets.mjs
 import { deflateSync } from 'node:zlib'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -46,8 +46,9 @@ function encodePng(w, h, rgba) {
   const raw = Buffer.alloc((stride + 1) * h)
   for (let y = 0; y < h; y++) {
     raw[y * (stride + 1)] = 0 // filter none
-    rgba.copy ? rgba.copy(raw, y * (stride + 1) + 1, y * stride, y * stride + stride)
-             : Buffer.from(rgba.buffer, y * stride, stride).copy(raw, y * (stride + 1) + 1)
+    rgba.copy
+      ? rgba.copy(raw, y * (stride + 1) + 1, y * stride, y * stride + stride)
+      : Buffer.from(rgba.buffer, y * stride, stride).copy(raw, y * (stride + 1) + 1)
   }
   return Buffer.concat([
     sig,
@@ -57,15 +58,7 @@ function encodePng(w, h, rgba) {
   ])
 }
 
-function px(buf, w, x, y, [r, g, b, a]) {
-  const i = (y * w + x) * 4
-  buf[i] = r
-  buf[i + 1] = g
-  buf[i + 2] = b
-  buf[i + 3] = a
-}
-
-// Rounded-rect fill helper.
+// Rounded-rect fill helper (used by the flat menu-bar template).
 function fillRoundRect(buf, w, x0, y0, rw, rh, radius, colour) {
   for (let y = y0; y < y0 + rh; y++) {
     for (let x = x0; x < x0 + rw; x++) {
@@ -76,42 +69,180 @@ function fillRoundRect(buf, w, x0, y0, rw, rh, radius, colour) {
         const cy = y0 + (y - y0 < radius ? radius : rh - radius - 1)
         if (Math.hypot(x - cx, y - cy) > radius) continue
       }
-      px(buf, w, x, y, colour)
+      const i = (y * w + x) * 4
+      buf[i] = colour[0]
+      buf[i + 1] = colour[1]
+      buf[i + 2] = colour[2]
+      buf[i + 3] = colour[3]
     }
   }
 }
 
-// App icon: a macOS-style rounded tile with transparent padding (the art fills
-// ~80% of the canvas, matching Apple's icon grid so it sizes like other Dock
-// icons), bearing the three amber Tora stripes.
-function appIcon(canvas) {
-  const buf = Buffer.alloc(canvas * canvas * 4)
-  const ink = [21, 18, 14, 255]
-  const amber = [232, 132, 60, 255]
-
-  // ~10% transparent margin each side -> tile is ~80% of the canvas.
-  const margin = Math.round(canvas * 0.1)
-  const tile = canvas - margin * 2
-  const x0 = margin
-  const y0 = margin
-  const radius = Math.round(tile * 0.2237) // Apple squircle corner ratio
-  fillRoundRect(buf, canvas, x0, y0, tile, tile, radius, ink)
-
-  // Three stripes, centred within the tile.
-  const stripeH = Math.round(tile * 0.1)
-  const gap = Math.round(tile * 0.075)
-  const left = x0 + Math.round(tile * 0.2)
-  const widths = [0.52, 0.34, 0.46]
-  const blockH = stripeH * 3 + gap * 2
-  let y = y0 + Math.round((tile - blockH) / 2)
-  for (const wf of widths) {
-    fillRoundRect(buf, canvas, left, y, Math.round(tile * wf), stripeH, Math.round(stripeH / 2), amber)
-    y += stripeH + gap
-  }
-  return encodePng(canvas, canvas, buf)
+// --- small helpers for the glass renderer ---
+const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v)
+const lerp = (a, b, t) => a + (b - a) * t
+const mix = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)]
+const smooth = (e0, e1, x) => {
+  const t = clamp01((x - e0) / (e1 - e0))
+  return t * t * (3 - 2 * t)
 }
 
-// Menu-bar template: transparent with black stripes (macOS recolours it).
+// Signed distance to a rounded rectangle (negative inside). One primitive gives
+// us crisp fills, soft shadows, and a beveled rim.
+function sdRoundRect(px, py, cx, cy, hw, hh, r) {
+  const qx = Math.abs(px - cx) - hw + r
+  const qy = Math.abs(py - cy) - hh + r
+  const ax = Math.max(qx, 0)
+  const ay = Math.max(qy, 0)
+  return Math.hypot(ax, ay) + Math.min(Math.max(qx, qy), 0) - r
+}
+
+// Alpha-composite a colour (straight alpha) over the working RGBA buffer.
+function over(buf, i, r, g, b, a) {
+  if (a <= 0) return
+  const da = buf[i + 3] / 255
+  const outA = a + da * (1 - a)
+  if (outA <= 0) return
+  const k = da * (1 - a)
+  buf[i] = Math.round(((r / 255) * a + (buf[i] / 255) * k) * (255 / outA))
+  buf[i + 1] = Math.round(((g / 255) * a + (buf[i + 1] / 255) * k) * (255 / outA))
+  buf[i + 2] = Math.round(((b / 255) * a + (buf[i + 2] / 255) * k) * (255 / outA))
+  buf[i + 3] = Math.round(outA * 255)
+}
+
+// App icon, built to the macOS icon grid: an 824x824 squircle inside the 1024
+// canvas (100px gutter) with a baked soft drop shadow so it sits on the Dock
+// like a native icon. The tile is a top-lit charcoal "glass" with a broad
+// specular sheen and a crisp bright top rim; the three Tora bars are bold amber
+// with a gentle vertical gradient, a soft top sheen, and a tight contact shadow
+// for separation - depth from light, not heavy bevels. Rendered at SS x and
+// box-downsampled for clean, alive edges.
+function appIcon(canvas) {
+  const SS = 4
+  const N = canvas * SS
+  const s = N / 1024 // map the 1024 grid spec onto any canvas
+  const hi = Buffer.alloc(N * N * 4)
+
+  // Palette: warm charcoal glass with amber bars.
+  const bgTop = [45, 39, 33]
+  const bgBot = [20, 17, 14]
+  const amberTop = [247, 172, 96]
+  const amberBot = [212, 110, 46]
+  const glow = [236, 150, 82]
+
+  const gutter = 100 * s
+  const tile = 824 * s
+  const x0 = gutter
+  const y0 = gutter
+  const cx = x0 + tile / 2
+  const cy = y0 + tile / 2
+  const half = tile / 2
+  const radius = 185.4 * s // Apple squircle corner radius for the 824 tile
+
+  // Centred block of three rounded amber bars.
+  const stripeH = tile * 0.108
+  const gap = tile * 0.072
+  const left = x0 + tile * 0.205
+  const widths = [0.52, 0.34, 0.46]
+  const blockH = stripeH * 3 + gap * 2
+  const blockTop = y0 + (tile - blockH) / 2
+  const bars = widths.map((wf, k) => {
+    const w = tile * wf
+    const sy = blockTop + k * (stripeH + gap)
+    return { bcx: left + w / 2, bcy: sy + stripeH / 2, hw: w / 2, hh: stripeH / 2, sy }
+  })
+  const blockCy = blockTop + blockH / 2
+
+  // Drop shadow (HIG: ~28px blur, ~12px down, black ~50%).
+  const shadowBlur = 30 * s
+  const shadowOff = 14 * s
+
+  for (let y = 0; y < N; y++) {
+    for (let x = 0; x < N; x++) {
+      const i = (y * N + x) * 4
+      const fx = x + 0.5
+      const fy = y + 0.5
+
+      // Baked drop shadow in the gutter (covered where the tile is opaque).
+      const dShadow = sdRoundRect(fx, fy, cx, cy + shadowOff, half, half, radius)
+      const shA = 0.5 * (1 - smooth(0, shadowBlur, dShadow))
+      if (shA > 0) over(hi, i, 0, 0, 0, shA)
+
+      const dTile = sdRoundRect(fx, fy, cx, cy, half, half, radius)
+      if (dTile > 0) continue // outside the tile only the shadow shows
+
+      // 1. Background: clean top-lit vertical gradient.
+      let col = mix(bgTop, bgBot, smooth(0, 1, clamp01((y - y0) / tile)))
+      over(hi, i, col[0], col[1], col[2], 1)
+
+      // 2. Warm under-glow centred on the bars so the amber feels lit.
+      const gd = Math.hypot(x - cx, y - blockCy) / (tile * 0.5)
+      over(hi, i, glow[0], glow[1], glow[2], Math.max(0, 1 - gd * gd) * 0.08)
+
+      // 3. Broad specular sheen across the top (glass reflection).
+      const ex = (x - cx) / (tile * 0.62)
+      const ey = (y - (y0 + tile * 0.04)) / (tile * 0.5)
+      over(hi, i, 255, 255, 255, Math.max(0, 1 - (ex * ex + ey * ey)) * 0.08)
+
+      // 4. Glass rim: a crisp bright top edge, a soft dark bottom edge.
+      const rim = tile * 0.02
+      const edge = clamp01(1 - -dTile / rim) // 1 at the boundary, 0 inward
+      if (edge > 0) {
+        const vy = (y - cy) / half
+        if (vy < 0) over(hi, i, 255, 252, 245, edge * edge * -vy * 0.5)
+        else over(hi, i, 0, 0, 0, edge * vy * 0.22)
+      }
+
+      // 5. Bars: a tight contact shadow for separation, then the amber fill.
+      for (const b of bars) {
+        const dsh = sdRoundRect(fx, fy, b.bcx, b.bcy + stripeH * 0.07, b.hw, b.hh, b.hh)
+        const ca = (1 - smooth(0, stripeH * 0.3, dsh)) * 0.14
+        if (ca > 0) over(hi, i, 0, 0, 0, ca)
+      }
+      for (const b of bars) {
+        const dBar = sdRoundRect(fx, fy, b.bcx, b.bcy, b.hw, b.hh, b.hh)
+        if (dBar < 0) {
+          const hy = clamp01((y - b.sy) / stripeH)
+          col = mix(amberTop, amberBot, smooth(0, 1, hy))
+          over(hi, i, col[0], col[1], col[2], 1)
+          over(hi, i, 255, 244, 228, Math.max(0, 1 - hy / 0.45) * 0.18) // top sheen
+        }
+      }
+    }
+  }
+
+  // Box-downsample SS x SS with premultiplied alpha (clean edges, no fringe).
+  const out = Buffer.alloc(canvas * canvas * 4)
+  const n2 = SS * SS
+  for (let y = 0; y < canvas; y++) {
+    for (let x = 0; x < canvas; x++) {
+      let r = 0
+      let g = 0
+      let bl = 0
+      let a = 0
+      for (let sy = 0; sy < SS; sy++) {
+        for (let sx = 0; sx < SS; sx++) {
+          const j = ((y * SS + sy) * N + (x * SS + sx)) * 4
+          const sa = hi[j + 3] / 255
+          r += (hi[j] / 255) * sa
+          g += (hi[j + 1] / 255) * sa
+          bl += (hi[j + 2] / 255) * sa
+          a += sa
+        }
+      }
+      const o = (y * canvas + x) * 4
+      if (a > 0) {
+        out[o] = Math.round((r / a) * 255)
+        out[o + 1] = Math.round((g / a) * 255)
+        out[o + 2] = Math.round((bl / a) * 255)
+      }
+      out[o + 3] = Math.round((a / n2) * 255)
+    }
+  }
+  return encodePng(canvas, canvas, out)
+}
+
+// Menu-bar template: transparent with black bars (macOS recolours it).
 function trayTemplate(size) {
   const buf = Buffer.alloc(size * size * 4)
   const black = [0, 0, 0, 255]
