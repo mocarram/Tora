@@ -52,6 +52,23 @@ the same reviewed PR rather than letting the check creep.
 > A full packaged `.dmg` size report would need a macOS runner and signing; that
 > belongs in a release workflow off `main` tags, not on every push.
 
+## Dependency hygiene
+
+We do not adopt a freshly published version of any package. The repo `.npmrc`
+sets `min-release-age=3`, so npm only considers a release once it is at least
+three days old. This is the npm-native supply-chain cooldown: it blunts the
+attacks where a compromised version is published and then caught and yanked
+within hours, because that version is never eligible for install in that window.
+
+- It is enforced by **npm >= 11.10.0** (the `engines` floor in `package.json`).
+  Older npm reads the setting harmlessly but does not act on it, so keep your
+  npm current when bumping dependencies.
+- It gates resolving _new_ versions (`npm install <pkg>`, `npm update`). It does
+  **not** affect `npm ci`, which installs the exact versions already pinned in
+  `package-lock.json`, so CI and reproducible installs are untouched.
+- Security advisories still take priority: when `npm audit` flags a high or
+  critical issue, fix it even if the patched version is newer than three days.
+
 ## Running the gates locally
 
 ```bash
