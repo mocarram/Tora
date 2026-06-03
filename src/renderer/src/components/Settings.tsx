@@ -30,9 +30,14 @@ export function Settings({ open, reducedMotion, onClose }: SettingsProps): React
   const stats = useStore((s) => s.stats)
   const [section, setSection] = useState<Section>('general')
   const [perms, setPerms] = useState<PermissionStatus | null>(null)
+  const [version, setVersion] = useState<string | null>(null)
 
   useEffect(() => {
     if (open) void window.tora.getPermissions().then(setPerms)
+  }, [open])
+
+  useEffect(() => {
+    if (open) void window.tora.getAppVersion().then(setVersion)
   }, [open])
 
   useEffect(() => {
@@ -265,6 +270,7 @@ export function Settings({ open, reducedMotion, onClose }: SettingsProps): React
                 <Group title="About">
                   <div className={styles.about}>
                     <span className={`${styles.aboutMark} display`}>Tora</span>
+                    {version && <p className={`${styles.aboutVersion} mono`}>Version {version}</p>}
                     <p className={styles.aboutText}>
                       A privacy-first clipboard manager. Local by default, no telemetry.
                     </p>

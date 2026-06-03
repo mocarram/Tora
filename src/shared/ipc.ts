@@ -199,6 +199,9 @@ export interface ToraApi {
   checkForUpdates(): Promise<void>
   installUpdate(): Promise<void>
 
+  /** The running app version (from package.json), for the About section. */
+  getAppVersion(): Promise<string>
+
   // Events
   onEvent(listener: (event: ToraEvent) => void): () => void
 }
