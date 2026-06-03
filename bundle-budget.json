@@ -1,0 +1,15 @@
+{
+  "comment": "Size budgets for the built app artifacts in out/. These are the bytes that ship inside the packaged asar, so they are the meaningful app-size signal. Budgets sit a little above current sizes to catch regressions, not to pass today by a hair. Raise deliberately (in a reviewed commit) when a feature genuinely needs the room.",
+  "checks": [
+    { "label": "main process", "path": "out/main", "ext": [".js", ".cjs"], "maxKB": 256 },
+    { "label": "preload", "path": "out/preload", "ext": [".js", ".cjs"], "maxKB": 64 },
+    { "label": "renderer JS", "path": "out/renderer/assets", "ext": [".js"], "maxKB": 1600 },
+    { "label": "renderer CSS", "path": "out/renderer/assets", "ext": [".css"], "maxKB": 128 },
+    {
+      "label": "renderer total (JS+CSS+fonts+html)",
+      "path": "out/renderer",
+      "ext": null,
+      "maxKB": 2200
+    }
+  ]
+}

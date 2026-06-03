@@ -21,6 +21,7 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css,json,md}\"",
     "test": "vitest run",
     "test:watch": "vitest",
+    "size": "node scripts/check-bundle-size.mjs",
     "test:e2e": "playwright test",
     "dist": "npm run build && electron-builder",
     "dist:mac": "npm run build && electron-builder --mac",
