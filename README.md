@@ -71,8 +71,11 @@ npm test             # unit + integration tests (node)
 npm run typecheck    # strict TS, node + web projects
 npm run lint         # ESLint (strict, no-any, no em dash, core import guard)
 npm run build        # typecheck + build main/preload/renderer
+npm run size         # check built bundle sizes against bundle-budget.json
 npm run dist:mac     # package a .dmg (see RELEASE.md for signing)
 ```
+
+Branch model and CI gates are in `CONTRIBUTING.md`.
 
 > Headless CI skips the Electron binary by exporting
 > `ELECTRON_SKIP_BINARY_DOWNLOAD=1` as a workflow env var (see
