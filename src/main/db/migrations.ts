@@ -77,6 +77,22 @@ export const MIGRATIONS: Migration[] = [
       `)
     },
   },
+  {
+    version: 2,
+    name: 'feed index ordering for flat pagination',
+    up: (db) => {
+      // The history feed sorts `is_pinned DESC, updated_at DESC`, but the
+      // original index stored is_pinned ascending, so SQLite could not walk it
+      // for the ORDER BY and fell back to "USE TEMP B-TREE" - a full sort of
+      // every live row on every page load (O(n), ~100ms at 200k items). A
+      // matching composite makes the first page an index walk (O(limit)) and
+      // keeps pagination flat regardless of history size.
+      db.exec(`
+        DROP INDEX IF EXISTS idx_items_updated;
+        CREATE INDEX idx_items_feed ON items (deleted_at, is_pinned DESC, updated_at DESC);
+      `)
+    },
+  },
 ]
 
 export function runMigrations(db: Database): number {

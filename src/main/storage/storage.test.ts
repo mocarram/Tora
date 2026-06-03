@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { Storage } from './index'
+import { MIGRATIONS } from '../db/migrations'
 
 let dir: string
 let storage: Storage
@@ -36,8 +37,9 @@ function addText(text: string, hash: string): string {
 }
 
 describe('migrations', () => {
-  it('sets the schema version', () => {
-    expect(storage.db.pragma('user_version', { simple: true })).toBe(1)
+  it('sets the schema version to the latest migration', () => {
+    const latest = MIGRATIONS[MIGRATIONS.length - 1]?.version
+    expect(storage.db.pragma('user_version', { simple: true })).toBe(latest)
   })
   it('creates the default Favourites board', () => {
     const boards = storage.boards.list()
