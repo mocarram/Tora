@@ -199,6 +199,11 @@
   font-size: var(--text-3xl);
   font-weight: var(--weight-bold);
 }
+.aboutVersion {
+  font-size: var(--text-sm);
+  color: var(--color-text-faint);
+  margin-top: calc(-1 * var(--space-2));
+}
 .aboutText {
   font-size: var(--text-md);
   color: var(--color-text-muted);

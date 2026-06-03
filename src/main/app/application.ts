@@ -611,6 +611,7 @@ export class Application {
       getUpdateStatus: () => this.updater.getStatus(),
       checkForUpdates: () => this.updater.check(),
       installUpdate: () => this.updater.install(),
+      getAppVersion: () => app.getVersion(),
     }
   }
 }
