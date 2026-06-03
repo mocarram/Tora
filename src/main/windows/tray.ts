@@ -27,8 +27,12 @@ export class TrayController {
       ? join(process.resourcesPath, 'trayTemplate.png')
       : join(dir, '../../build/trayTemplate.png')
     const image = nativeImage.createFromPath(iconPath)
-    image.setTemplateImage(true)
-    this.tray = new Tray(image.isEmpty() ? nativeImage.createEmpty() : image)
+    const hasIcon = !image.isEmpty()
+    if (hasIcon) image.setTemplateImage(true)
+    this.tray = new Tray(hasIcon ? image : nativeImage.createEmpty())
+    // If the icon failed to load, show a text title so the menu bar entry is
+    // still visible and clickable rather than an invisible gap.
+    if (!hasIcon) this.tray.setTitle('Tora')
     this.tray.setToolTip('Tora')
     // Left-click summons the app; right-click opens the menu. We deliberately do
     // NOT call setContextMenu, since on macOS that makes a left-click open the

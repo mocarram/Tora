@@ -45,7 +45,8 @@ void app
   })
 
 app.on('second-instance', () => {
-  // The running instance handles summon via tray/hotkey; nothing to do here.
+  // A second launch reveals the existing window instead of starting anew.
+  application?.reveal()
 })
 
 // This is a menu-bar app: keep running when all windows are closed.

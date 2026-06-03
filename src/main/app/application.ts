@@ -114,6 +114,19 @@ export class Application {
     if (this.settings.captureEnabled) this.watcher.start()
     this.retention.start()
     await this.sync.start()
+
+    // Show the window on a manual launch (but not when auto-launched at login,
+    // where it should start quietly in the menu bar), and whenever the user
+    // re-activates the app (clicking the Dock icon).
+    app.on('activate', () => this.windows.show())
+    const openedAtLogin =
+      process.platform === 'darwin' && app.getLoginItemSettings().wasOpenedAtLogin
+    if (!openedAtLogin) this.windows.show()
+  }
+
+  /** Bring the window to the front (used by the dock icon / second instance). */
+  reveal(): void {
+    this.windows.show()
   }
 
   dispose(): void {
