@@ -101,7 +101,9 @@ export class Application {
     this.tray.setCapturing(this.settings.captureEnabled)
     this.registerIpc()
     this.registerHotkey()
-    this.applyLoginItem()
+    // Login item is applied only when the user toggles it (below), not on every
+    // launch: an unsigned dev build cannot write it and macOS logs a benign
+    // "Operation not permitted". Signed builds register it via the toggle.
 
     if (this.settings.captureEnabled) this.watcher.start()
     this.retention.start()
@@ -219,7 +221,11 @@ export class Application {
 
   private applyLoginItem(): void {
     if (process.platform === 'linux') return
-    app.setLoginItemSettings({ openAtLogin: this.settings.launchAtLogin })
+    try {
+      app.setLoginItemSettings({ openAtLogin: this.settings.launchAtLogin })
+    } catch {
+      // Unsigned dev builds cannot register a login item; ignore.
+    }
   }
 
   // ---- IPC ---------------------------------------------------------------
