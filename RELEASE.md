@@ -16,8 +16,6 @@ build host (see GAPS.md).
 ## Build prerequisites (macOS)
 
 ```bash
-# The repo installs with the Electron binary skipped for CI. For a real build:
-unset ELECTRON_SKIP_BINARY_DOWNLOAD   # or remove the line from .npmrc
 npm install
 npm run rebuild        # rebuild better-sqlite3 against the Electron ABI
 npm run build

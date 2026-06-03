@@ -84,12 +84,13 @@ the `tora-blob://` protocol.
 Requires Node 22+. On **macOS** (to actually use the app):
 
 ```bash
-# allow the real Electron binary (the repo skips it for headless CI)
-sed -i '' '/ELECTRON_SKIP_BINARY_DOWNLOAD/d' .npmrc   # or just delete the line
-npm install
+npm install          # downloads the Electron binary
 npm run rebuild      # better-sqlite3 against the Electron ABI
 npm run dev          # launch with HMR
 ```
+
+> If you installed earlier when the binary was skipped, fetch it without a full
+> reinstall: `node node_modules/electron/install.js`, then `npm run rebuild`.
 
 Verify any time, anywhere:
 

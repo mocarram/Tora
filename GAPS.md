@@ -7,11 +7,12 @@ by types, lint, build, and unit/integration tests only - not by running the app.
 
 ## Cannot be verified on this host (needs macOS + a display)
 
-- **GUI never launched.** `.npmrc` sets `ELECTRON_SKIP_BINARY_DOWNLOAD=1` so the
-  Electron binary is not downloaded. The renderer builds and the bundle is
+- **GUI never launched on the build host.** That host was headless Linux and
+  skipped the Electron binary via the CI env var
+  `ELECTRON_SKIP_BINARY_DOWNLOAD=1`. The renderer builds and the bundle is
   produced, but the window, vibrancy, frameless bottom-panel positioning, and
-  spring motion were not seen running. To run: unset that env var, `npm install`,
-  `npm run rebuild`, `npm run dev` on macOS.
+  spring motion were not seen running there. On macOS a normal `npm install`
+  downloads the binary; then `npm run rebuild` and `npm run dev`.
 - **Native module ABI.** `better-sqlite3` installs a Node prebuild here and is
   exercised by the test suite under Node. For the packaged app it must be rebuilt
   against Electron's ABI: `npm run rebuild` (electron-builder also does this at
