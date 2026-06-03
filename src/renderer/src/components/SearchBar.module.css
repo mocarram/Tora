@@ -7,10 +7,19 @@
   background: var(--color-input);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  transition: border-color var(--dur-fast) var(--ease-standard);
+  transition:
+    border-color var(--dur-fast) var(--ease-standard),
+    box-shadow var(--dur-fast) var(--ease-standard);
 }
+/* Native macOS text-field focus: accent border with a soft glow ring. */
 .wrap:focus-within {
-  border-color: var(--color-accent);
+  border-color: var(--color-focus-native);
+  box-shadow: 0 0 0 3px var(--color-focus-glow);
+}
+/* The wrap already draws the focus ring; suppress the global focus outline on
+   the inner input so the two do not stack into a doubled, off outline. */
+.input:focus-visible {
+  outline: none;
 }
 
 .icon {

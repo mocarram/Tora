@@ -151,6 +151,10 @@
   --color-border: rgba(255, 250, 242, 0.1);
   --color-border-strong: rgba(255, 250, 242, 0.2);
   --color-focus-ring: var(--amber-3);
+  /* Native macOS focus: the system accent (blue by default, follows the user's
+     System Settings accent) plus a soft glow ring. Used for text fields. */
+  --color-focus-native: AccentColor;
+  --color-focus-glow: color-mix(in srgb, AccentColor 38%, transparent);
 
   --color-positive: var(--signal-positive);
   --color-danger: var(--signal-danger);
@@ -202,6 +206,8 @@
   --color-border: rgba(20, 17, 13, 0.1);
   --color-border-strong: rgba(20, 17, 13, 0.2);
   --color-focus-ring: var(--amber-5);
+  --color-focus-native: AccentColor;
+  --color-focus-glow: color-mix(in srgb, AccentColor 30%, transparent);
 
   --color-positive: #3f7d4f;
   --color-danger: #b0432d;
