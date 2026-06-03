@@ -111,6 +111,7 @@ export class Application {
   }
 
   dispose(): void {
+    this.windows.markQuitting()
     globalShortcut.unregisterAll()
     this.watcher.stop()
     this.retention.stop()
