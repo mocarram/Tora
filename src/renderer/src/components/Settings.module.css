@@ -204,6 +204,14 @@
   color: var(--color-on-accent);
   font-weight: var(--weight-medium);
   font-size: var(--text-sm);
+  flex-shrink: 0;
+}
+.dangerBtn {
+  background: var(--color-danger);
+  color: #fff;
+}
+.dangerBtn:hover {
+  filter: brightness(1.08);
 }
 .granted {
   display: inline-flex;

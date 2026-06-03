@@ -8,6 +8,7 @@ import {
   IPC,
   type AddToBoardRequest,
   type AppSettings,
+  type ClearDataRequest,
   type CreateBoardRequest,
   type EditItemRequest,
   type FullContent,
@@ -25,6 +26,7 @@ import { hashString } from '@core/hash'
 import { classifyCapture, type CaptureInput } from '@core/capture'
 import { resolvePaths } from '../paths'
 import { Storage } from '../storage'
+import { DEFAULT_SETTINGS } from '../storage/settingsRepo'
 import { matchesQuickFilter } from '../storage/itemsRepo'
 import { CapturePipeline } from '../capture/capturePipeline'
 import { ClipboardWatcher } from '../capture/clipboardWatcher'
@@ -607,20 +609,18 @@ export class Application {
         removed(id)
       },
       editItem: (req: EditItemRequest) => this.editItem(req),
-      clearAll: () => {
-        const live = s.items.query({
-          filter: 'all',
-          boardId: null,
-          pinnedOnly: false,
-          limit: 1e9,
-          offset: 0,
-        })
-        for (const it of live.items) {
-          if (it.contentRef) void s.blobs.remove(it.contentRef)
-          s.items.hardDelete(it.id)
-        }
+      clearData: async (req: ClearDataRequest) => {
+        await s.wipeData()
         this.search.markStale()
         this.emit({ kind: 'items-cleared' })
+        this.emit({ kind: 'boards-changed' })
+        this.sync.notifyLocalChange()
+        if (req.resetSettings) {
+          // Reset every setting to its default but keep onboarding done, so a
+          // factory reset does not relaunch the first-run flow. applySettings
+          // re-applies the side effects (hotkey, login item, theme, mode).
+          await this.applySettings({ ...DEFAULT_SETTINGS, onboardingComplete: true })
+        }
       },
       listBoards: () => s.boards.list(),
       createBoard: (req: CreateBoardRequest) => {

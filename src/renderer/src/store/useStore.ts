@@ -155,7 +155,17 @@ export const useStore = create<StoreState>((set, get) => ({
     void get().refreshStats()
   },
 
-  setBoards: (boards) => set({ boards }),
+  setBoards: (boards) => {
+    // If the currently-viewed board was deleted (or wiped), fall back to the
+    // full library so the deck does not show an empty, dangling board view.
+    const { boardId } = get()
+    if (boardId && !boards.some((b) => b.id === boardId)) {
+      set({ boards, boardId: null })
+      void get().reload()
+    } else {
+      set({ boards })
+    }
+  },
   setSettings: (settings) => set({ settings }),
 
   refreshStats: async () => {

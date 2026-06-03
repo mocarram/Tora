@@ -85,6 +85,7 @@ export class BoardsRepo {
   }
 
   rename(id: string, name: string): void {
+    if (id === FAVOURITES_BOARD_ID) return // the default board name is permanent
     const at = Date.now()
     this.db
       .prepare('UPDATE boards SET name = ?, updated_at = ? WHERE id = ?')

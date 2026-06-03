@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { PasteFormat } from '@shared/ipc'
+import type { Board } from '@core/model'
 import { formatBytes } from '@core/format'
 import { Sidebar } from './components/Sidebar'
+import { ConfirmDialog } from './components/ConfirmDialog'
 import { SearchBar } from './components/SearchBar'
 import { VirtualDeck } from './components/VirtualDeck'
 import { LargePreview } from './components/LargePreview'
@@ -27,6 +29,7 @@ export function App(): React.JSX.Element {
   const settingsOpen = store.settingsOpen
   const setSettingsOpen = store.setSettingsOpen
   const [newBoardOpen, setNewBoardOpen] = useState(false)
+  const [deleteBoardTarget, setDeleteBoardTarget] = useState<Board | null>(null)
   const [queueFormat, setQueueFormat] = useState<PasteFormat>('keep')
 
   const reducedMotion = prefersReducedMotion() || (store.settings?.reduceMotion ?? false)
@@ -41,6 +44,7 @@ export function App(): React.JSX.Element {
     !!store.expandedId ||
     !!store.editingId ||
     newBoardOpen ||
+    !!deleteBoardTarget ||
     store.locked ||
     onboardingOpen ||
     !!store.openMenuId
@@ -182,6 +186,8 @@ export function App(): React.JSX.Element {
         onOpenSettings={() => setSettingsOpen(true)}
         onAddToBoard={(boardId, itemId) => void window.tora.addItemToBoard({ boardId, itemId })}
         onReorderBoards={(orderedIds) => void window.tora.reorderBoards({ orderedIds })}
+        onRenameBoard={(boardId, name) => void window.tora.renameBoard(boardId, name)}
+        onDeleteBoard={(board) => setDeleteBoardTarget(board)}
       />
 
       <div className={styles.main}>
@@ -326,6 +332,20 @@ export function App(): React.JSX.Element {
         onConfirm={(name) => {
           void window.tora.createBoard({ name })
           setNewBoardOpen(false)
+        }}
+      />
+
+      <ConfirmDialog
+        open={!!deleteBoardTarget}
+        title={deleteBoardTarget ? `Delete "${deleteBoardTarget.name}"?` : 'Delete board?'}
+        message="The board is removed. The clips inside it stay in your library."
+        confirmLabel="Delete board"
+        danger
+        reducedMotion={reducedMotion}
+        onCancel={() => setDeleteBoardTarget(null)}
+        onConfirm={() => {
+          if (deleteBoardTarget) void window.tora.deleteBoard(deleteBoardTarget.id)
+          setDeleteBoardTarget(null)
         }}
       />
 

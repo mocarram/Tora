@@ -93,6 +93,11 @@ export interface CreateBoardRequest {
   name: string
 }
 
+export interface ClearDataRequest {
+  /** Also reset every setting to its default (factory reset). */
+  resetSettings: boolean
+}
+
 export interface ReorderRequest {
   /** Ordered list of ids defining the new sort order. */
   orderedIds: string[]
@@ -163,7 +168,8 @@ export interface ToraApi {
   pinItem(itemId: string, pinned: boolean): Promise<void>
   deleteItem(itemId: string): Promise<void>
   editItem(req: EditItemRequest): Promise<ClipItem | null>
-  clearAll(): Promise<void>
+  /** Erase stored clips, blobs, and custom boards; optionally reset settings. */
+  clearData(req: ClearDataRequest): Promise<void>
 
   // Boards
   listBoards(): Promise<Board[]>

@@ -3,11 +3,20 @@ import { AnimatePresence, motion } from 'framer-motion'
 import type { AccentTheme, AppSettings, PermissionStatus } from '@shared/ipc'
 import { formatBytes } from '@core/format'
 import { Icon } from './Icon'
+import { ConfirmDialog } from './ConfirmDialog'
 import { panelSpring } from '../lib/motion'
 import { useStore } from '../store/useStore'
 import styles from './Settings.module.css'
 
-type Section = 'general' | 'appearance' | 'capture' | 'shortcuts' | 'sync' | 'privacy' | 'about'
+type Section =
+  | 'general'
+  | 'appearance'
+  | 'capture'
+  | 'shortcuts'
+  | 'sync'
+  | 'privacy'
+  | 'data'
+  | 'about'
 
 const SECTIONS: { id: Section; label: string }[] = [
   { id: 'general', label: 'General' },
@@ -16,6 +25,7 @@ const SECTIONS: { id: Section; label: string }[] = [
   { id: 'shortcuts', label: 'Shortcuts' },
   { id: 'sync', label: 'Sync' },
   { id: 'privacy', label: 'Privacy' },
+  { id: 'data', label: 'Data' },
   { id: 'about', label: 'About' },
 ]
 
@@ -42,6 +52,7 @@ export function Settings({ open, reducedMotion, onClose }: SettingsProps): React
   const [section, setSection] = useState<Section>('general')
   const [perms, setPerms] = useState<PermissionStatus | null>(null)
   const [version, setVersion] = useState<string | null>(null)
+  const [confirm, setConfirm] = useState<'history' | 'reset' | null>(null)
 
   useEffect(() => {
     if (open) void window.tora.getPermissions().then(setPerms)
@@ -299,6 +310,47 @@ export function Settings({ open, reducedMotion, onClose }: SettingsProps): React
                 </Group>
               )}
 
+              {section === 'data' && (
+                <Group title="Data">
+                  <div className={styles.row}>
+                    <div className={styles.rowText}>
+                      <span className={styles.rowLabel}>Clear history and boards</span>
+                      <span className={styles.rowHint}>
+                        Permanently delete every clip, image, file, and board. Your settings are
+                        kept.
+                      </span>
+                    </div>
+                    <button
+                      className={`${styles.smallBtn} ${styles.dangerBtn}`}
+                      onClick={() => setConfirm('history')}
+                    >
+                      Clear
+                    </button>
+                  </div>
+                  <div className={styles.row}>
+                    <div className={styles.rowText}>
+                      <span className={styles.rowLabel}>Factory reset</span>
+                      <span className={styles.rowHint}>
+                        Erase all data and reset every setting to its default.
+                      </span>
+                    </div>
+                    <button
+                      className={`${styles.smallBtn} ${styles.dangerBtn}`}
+                      onClick={() => setConfirm('reset')}
+                    >
+                      Reset
+                    </button>
+                  </div>
+                  {stats && (
+                    <p className={styles.hintBlock}>
+                      Tora is currently storing {stats.itemCount} item
+                      {stats.itemCount === 1 ? '' : 's'} ({formatBytes(stats.totalBytes)}). Clearing
+                      cannot be undone.
+                    </p>
+                  )}
+                </Group>
+              )}
+
               {section === 'about' && (
                 <Group title="About">
                   <div className={styles.about}>
@@ -315,6 +367,34 @@ export function Settings({ open, reducedMotion, onClose }: SettingsProps): React
                   </div>
                 </Group>
               )}
+
+              <ConfirmDialog
+                open={confirm === 'history'}
+                title="Clear history and boards?"
+                message="This permanently deletes every clip, image, file, and board stored on this device. Your settings are kept. This cannot be undone."
+                confirmLabel="Clear everything"
+                danger
+                reducedMotion={reducedMotion}
+                onCancel={() => setConfirm(null)}
+                onConfirm={() => {
+                  void window.tora.clearData({ resetSettings: false })
+                  setConfirm(null)
+                }}
+              />
+              <ConfirmDialog
+                open={confirm === 'reset'}
+                title="Factory reset?"
+                message="This erases all clips and boards AND resets every setting to its default. Tora returns to a clean state. This cannot be undone."
+                confirmLabel="Reset everything"
+                danger
+                confirmPhrase="RESET"
+                reducedMotion={reducedMotion}
+                onCancel={() => setConfirm(null)}
+                onConfirm={() => {
+                  void window.tora.clearData({ resetSettings: true })
+                  setConfirm(null)
+                }}
+              />
             </div>
           </motion.div>
         </motion.div>

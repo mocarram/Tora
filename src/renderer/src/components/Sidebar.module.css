@@ -117,12 +117,85 @@
   white-space: nowrap;
 }
 
+/* Wraps the board's select button plus its hover-revealed rename/delete actions
+   so the actions can overlay the row's right edge without nesting buttons. */
+.boardRow {
+  position: relative;
+}
+.boardRow .row {
+  width: 100%;
+}
+.boardRow:hover .row {
+  background: var(--color-card);
+  color: var(--color-text);
+}
+
+.boardActions {
+  position: absolute;
+  right: var(--space-2);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-left: var(--space-6);
+  background: linear-gradient(to right, transparent, var(--color-card) var(--space-6));
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-fast) var(--ease-standard);
+}
+.boardRow:hover .boardActions {
+  opacity: 1;
+  pointer-events: auto;
+}
+.boardActionBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-faint);
+}
+.boardActionBtn:hover {
+  background: var(--color-card-active);
+  color: var(--color-text);
+}
+
+.renameRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  height: 32px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+}
+.renameInput {
+  flex: 1;
+  min-width: 0;
+  height: 24px;
+  padding: 0 var(--space-2);
+  background: var(--color-input);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-size: var(--text-md);
+  font-weight: var(--weight-medium);
+}
+.renameInput:focus {
+  outline: none;
+}
+
 .dropTarget {
   background: var(--color-accent-quiet);
   box-shadow: inset 0 0 0 1px var(--color-accent);
 }
 .reorderHint {
-  margin-left: auto;
+  position: absolute;
+  right: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
   width: 6px;
   height: 6px;
   border-radius: var(--radius-round);

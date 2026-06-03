@@ -199,6 +199,11 @@ describe('BoardsRepo', () => {
     expect(storage.boards.getById('board-favourites')?.deletedAt).toBeNull()
   })
 
+  it('cannot rename the favourites board', () => {
+    storage.boards.rename('board-favourites', 'Renamed')
+    expect(storage.boards.getById('board-favourites')?.name).toBe('Favourites')
+  })
+
   it('adds, queries, and reorders board items', () => {
     const board = storage.boards.create('B')
     const i1 = addText('one', '1')
@@ -224,6 +229,32 @@ describe('BoardsRepo', () => {
     })
     expect(reordered.items[0]?.id).toBe(i2)
     expect(storage.boards.boardsForItem(i1)).toContain(board.id)
+  })
+})
+
+describe('wipeData', () => {
+  it('erases items and custom boards, keeps Favourites, and clears blobs', async () => {
+    const a = addText('keep nothing', 'a')
+    addText('also gone', 'b')
+    const board = storage.boards.create('Work')
+    storage.boards.addItem(board.id, a)
+    await storage.blobs.writeText(a, 'text.txt', 'payload')
+    expect(storage.blobs.has(a, 'text.txt')).toBe(true)
+
+    await storage.wipeData()
+
+    expect(storage.items.stats().itemCount).toBe(0)
+    expect(storage.boards.getById(board.id)).toBeNull()
+    const boards = storage.boards.list()
+    expect(boards).toHaveLength(1)
+    expect(boards[0]?.id).toBe('board-favourites')
+    expect(storage.blobs.has(a, 'text.txt')).toBe(false)
+  })
+
+  it('leaves settings untouched (the caller resets those)', async () => {
+    storage.settings.update({ theme: 'dark' })
+    await storage.wipeData()
+    expect(storage.settings.get().theme).toBe('dark')
   })
 })
 

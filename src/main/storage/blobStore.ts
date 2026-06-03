@@ -58,6 +58,12 @@ export class BlobStore {
     await rm(this.dirFor(ref), { recursive: true, force: true })
   }
 
+  /** Remove every blob. Used by the full data wipe; the dir is recreated empty. */
+  async clear(): Promise<void> {
+    await rm(this.baseDir, { recursive: true, force: true })
+    await mkdir(this.baseDir, { recursive: true })
+  }
+
   /** Total bytes used by all blobs (walks one level of item dirs). */
   async totalBytes(): Promise<number> {
     let total = 0
