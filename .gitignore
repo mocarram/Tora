@@ -11,4 +11,12 @@ test-results
 *.local
 tora-dev-data
 
+# Secrets and macOS signing material - never commit.
+.env
+.env.*
+*.p12
+*.pem
+*.cer
+*.mobileprovision
+
 *.tsbuildinfo

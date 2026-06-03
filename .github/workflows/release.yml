@@ -1,0 +1,54 @@
+name: Release
+
+# Build, sign, notarize, and publish the macOS app to a GitHub Release when a
+# version tag is pushed (e.g. `git tag v0.1.0 && git push origin v0.1.0`).
+# electron-updater reads the published `latest-mac.yml` + `.zip` to deliver
+# in-app updates; the `.dmg` is the first-time manual download.
+#
+# Required repository secrets (Settings -> Secrets and variables -> Actions):
+#   MAC_CSC_LINK              base64 of the Developer ID Application .p12
+#   MAC_CSC_KEY_PASSWORD      password for that .p12
+#   APPLE_ID                  Apple ID email (notarization)
+#   APPLE_APP_SPECIFIC_PASSWORD  app-specific password for that Apple ID
+#   APPLE_TEAM_ID             10-character Apple Developer Team ID
+# GITHUB_TOKEN is provided automatically and is used to create the release.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch: # manual run for dry-runs (still needs the signing secrets)
+
+permissions:
+  contents: write # create the GitHub Release and upload assets
+
+jobs:
+  release-mac:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # npm >= 11.10 honours the .npmrc supply-chain cooldown and the engines floor.
+      - run: npm install -g npm@latest
+      - run: npm ci
+
+      - name: Build, sign, notarize, and publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          npm run build
+          # notarize is off in electron-builder.yml for unsigned local builds; turn
+          # it on here. electron-builder creates a DRAFT release by default, so the
+          # binaries upload but nothing is public until you publish the draft.
+          npx electron-builder --mac --publish always -c.mac.notarize=true
+
+      # If cross-building the x64 slice on the arm64 runner ever fails, split this
+      # into a matrix (macos-13 for x64, macos-14 for arm64) - the GitHub publisher
+      # merges both into the same release.

@@ -5,6 +5,19 @@ of cards you can search, pin, organise into boards, and paste straight back into
 the app you were using. Local by default, no telemetry. Built with Electron now,
 with a pure core designed to power a React Native iOS app later.
 
+## Install
+
+macOS 11 or later (Apple Silicon or Intel).
+
+1. Download the latest `Tora-<version>.dmg` from the
+   [Releases](https://github.com/mocarram/Tora/releases) page.
+2. Open the dmg and drag **Tora** into Applications.
+3. On first launch, grant **Accessibility** when prompted - it lets Tora paste
+   straight back into the app you were using.
+
+Tora keeps itself up to date: it checks for new releases on launch and in the
+background, downloads them quietly, and shows a Restart pill when one is ready.
+
 ## Features
 
 - Captures text, rich text, images, files, URLs, colours, and code, with source
@@ -86,6 +99,11 @@ paths (vibrancy, Accessibility paste, Touch ID, real iCloud, packaging) were
 built against local defaults and could not be runtime-verified on the Linux build
 host. Every such gap is listed honestly in `GAPS.md`.
 
+## Contributing
+
+Issues and pull requests are welcome. The branch model, commit conventions, and
+CI gates are documented in [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
 ## License
 
-MIT.
+[MIT](LICENSE) (c) 2026 Mocarram Hossain.

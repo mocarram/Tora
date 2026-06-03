@@ -92,6 +92,32 @@ Notes:
 - Pre-releases: tag/mark the GitHub release as a pre-release and set a `channel`
   if you later want a separate beta track.
 
+## Automated releases (CI)
+
+`.github/workflows/release.yml` does the manual flow above on a macOS runner when
+you push a version tag, so a release is just:
+
+```bash
+# bump "version" in package.json first, commit, then:
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+It builds, signs, notarizes, and uploads the dmg + zip + `latest-mac.yml` to a
+**draft** GitHub Release (review it, then hit Publish). Add these once under
+**Settings -> Secrets and variables -> Actions**:
+
+| Secret | What |
+| --- | --- |
+| `MAC_CSC_LINK` | base64 of the Developer ID Application `.p12` (`base64 -i cert.p12 \| pbcopy`) |
+| `MAC_CSC_KEY_PASSWORD` | password for that `.p12` |
+| `APPLE_ID` | Apple ID email used for notarization |
+| `APPLE_APP_SPECIFIC_PASSWORD` | app-specific password for that Apple ID |
+| `APPLE_TEAM_ID` | 10-character Apple Developer Team ID |
+
+`GITHUB_TOKEN` is provided automatically and needs no setup. macOS runner minutes
+are free on a public repo.
+
 ## Config slots left to you
 
 - `appId` is `com.tora.clipboard`; change it to your own bundle id.

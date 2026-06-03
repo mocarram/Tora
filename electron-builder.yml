@@ -35,7 +35,7 @@ npmRebuild: true
 publish:
   provider: github
   owner: mocarram
-  repo: tora
+  repo: Tora
 
 mac:
   category: public.app-category.productivity
