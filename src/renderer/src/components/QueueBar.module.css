@@ -3,7 +3,9 @@
   align-items: center;
   gap: var(--space-5);
   padding: var(--space-3) var(--space-7);
-  background: var(--color-bg-elevated);
+  background: var(--color-rail);
+  backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%);
   border-top: 1px solid var(--color-border);
   box-shadow: var(--shadow-inset-top);
 }
