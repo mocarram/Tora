@@ -122,6 +122,9 @@ export class Application {
     const openedAtLogin =
       process.platform === 'darwin' && app.getLoginItemSettings().wasOpenedAtLogin
     if (!openedAtLogin) this.windows.show()
+
+    // Retroactively thumbnail image files captured before the feature existed.
+    void this.backfillFileThumbnails()
   }
 
   /** Bring the window to the front (used by the dock icon / second instance). */
@@ -186,15 +189,54 @@ export class Application {
    * Returns the updated item, or null when no thumbnail was produced.
    */
   private async attachFileThumbnail(id: string, meta: FileMetadata): Promise<ClipItem | null> {
-    const path = meta.paths.find((p) => isPreviewableImage(p))
-    if (!path) return null
-    let image = nativeImage.createFromPath(path)
+    const index = meta.paths.findIndex((p) => isPreviewableImage(p))
+    if (index < 0) return null
+
+    // Prefer the cached bytes (already read at capture) over re-reading the
+    // original, which is more reliable and survives the source being moved.
+    let image = nativeImage.createEmpty()
+    if (this.storage.blobs.has(id, `f${index}`)) {
+      const buf = await this.storage.blobs.readBuffer(id, `f${index}`)
+      if (buf) image = nativeImage.createFromBuffer(buf)
+    }
+    if (image.isEmpty()) {
+      const p = meta.paths[index]
+      if (p) image = nativeImage.createFromPath(p)
+    }
     if (image.isEmpty()) return null
+
     if (image.getSize().width > 1024) image = image.resize({ width: 1024, quality: 'best' })
     await this.storage.blobs.writeBuffer(id, 'thumb.png', image.toPNG())
     this.storage.items.setContentRef(id, id) // ensure blob cleanup on delete
     this.storage.items.setMetadata(id, { ...meta, thumbnailRef: `${id}/thumb.png` })
     return this.storage.items.getById(id)
+  }
+
+  /**
+   * Generate thumbnails for existing image-file items that predate the feature
+   * (or were captured before a thumbnail could be made), so they light up too.
+   * Runs once on startup; updates flow to the renderer as item-updated events.
+   */
+  private async backfillFileThumbnails(): Promise<void> {
+    const files = this.storage.items.query({
+      filter: 'files',
+      boardId: null,
+      pinnedOnly: false,
+      limit: 100_000,
+      offset: 0,
+    }).items
+    let changed = false
+    for (const item of files) {
+      if (item.metadata.kind !== 'file') continue
+      if (item.metadata.thumbnailRef) continue
+      if (!item.metadata.paths.some((p) => isPreviewableImage(p))) continue
+      const updated = await this.attachFileThumbnail(item.id, item.metadata)
+      if (updated) {
+        changed = true
+        this.emit({ kind: 'item-updated', item: updated })
+      }
+    }
+    if (changed) this.search.markStale()
   }
 
   // ---- Events ------------------------------------------------------------
