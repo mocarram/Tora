@@ -1,0 +1,74 @@
+name: Security
+
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+
+# Cancel superseded runs on the same ref to save minutes.
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # Hard gate: fail the build on a known high/critical advisory in our deps.
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: npm audit (fail on high or critical)
+        run: npm audit --audit-level=high
+
+  # PR-only gate: block a pull request that introduces a vulnerable or
+  # disallowed-license dependency. Needs the base ref, so it only runs on PRs.
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dependency review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+
+  # Advisory: Electron-specific static analysis (insecure webPreferences, CSP,
+  # missing permission handlers, etc.). Reported as an artifact + job summary
+  # rather than a hard gate, because it is prone to false positives on an
+  # already-hardened app. Review new findings when the report changes.
+  electronegativity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run Electronegativity
+        run: npx --yes @doyensec/electronegativity@latest -i src -o electronegativity.csv
+      - name: Summarise findings
+        if: always()
+        run: |
+          {
+            echo '### Electronegativity (advisory)'
+            echo ''
+            if [ -f electronegativity.csv ]; then
+              echo '```'
+              cat electronegativity.csv
+              echo '```'
+            else
+              echo 'No report produced.'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: electronegativity-report
+          path: electronegativity.csv
+          if-no-files-found: ignore
