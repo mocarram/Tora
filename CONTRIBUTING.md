@@ -13,6 +13,12 @@ for a release. Keep history clean: small, focused commits with conventional-styl
 messages (`fix:`, `feat:`, `ci:`, `docs:`, `design:`). No em dashes anywhere,
 including commit messages and UI copy (the lint rule enforces it in source).
 
+**Linear history only - no merge commits.** Integrate by fast-forward: rebase a
+feature branch onto the latest `staging` before landing it (`git rebase staging`),
+then fast-forward (`git merge --ff-only`). Never create merge commits on `staging`
+or `main`. When several branches land together, rebase them in series so each
+fast-forwards onto the previous.
+
 ## Quality gates (CI)
 
 Three workflows run on pull requests and on pushes to `main` / `staging`:
