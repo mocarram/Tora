@@ -1,3 +1,4 @@
+import { stat, readFile } from 'node:fs/promises'
 import type { ClipItem } from '@core/model'
 import { classifyCapture, isDuplicate, type CaptureInput } from '@core/capture'
 import type { Storage } from '../storage'
@@ -6,6 +7,9 @@ export interface CaptureResult {
   kind: 'added' | 'deduped' | 'ignored'
   item?: ClipItem
 }
+
+/** Files larger than this are not cached for offline paste (path-only). */
+const MAX_FILE_CACHE_BYTES = 100 * 1024 * 1024
 
 /**
  * Turns a raw pasteboard snapshot into a stored clip. Enforces privacy rules
@@ -46,6 +50,15 @@ export class CapturePipeline {
       if (blob.rtf !== undefined) await this.storage.blobs.writeText(id, 'content.rtf', blob.rtf)
     }
 
+    // Images keep their bytes under the item id (attached by the watcher).
+    if (classified.type === 'image') contentRef = id
+
+    // Cache file bytes so a paste works even after the source is deleted.
+    if (classified.type === 'file' && input.filePaths && input.filePaths.length > 0) {
+      const cached = await this.cacheFiles(id, input.filePaths)
+      if (cached) contentRef = id
+    }
+
     const item = this.storage.items.insert({
       id,
       type: classified.type,
@@ -60,6 +73,28 @@ export class CapturePipeline {
     })
 
     return { kind: 'added', item }
+  }
+
+  /**
+   * Copy file bytes into the blob store (one blob per file, `f<index>`), capped
+   * by size. Returns true if at least one file was cached.
+   */
+  private async cacheFiles(id: string, paths: string[]): Promise<boolean> {
+    let cachedAny = false
+    for (let i = 0; i < paths.length; i++) {
+      const p = paths[i]
+      if (!p) continue
+      try {
+        const info = await stat(p)
+        if (!info.isFile() || info.size > MAX_FILE_CACHE_BYTES) continue
+        const buf = await readFile(p)
+        await this.storage.blobs.writeBuffer(id, `f${i}`, buf)
+        cachedAny = true
+      } catch {
+        // Unreadable/gone file: skip caching it (path-only paste remains).
+      }
+    }
+    return cachedAny
   }
 
   /**
