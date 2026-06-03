@@ -44,6 +44,15 @@ npm run dist:mac
 
 The signed, notarized `.dmg` lands in `release/`.
 
+> After packaging, `better-sqlite3` in your local `node_modules` is left built
+> for whichever arch electron-builder compiled last (x64 when targeting both
+> arm64 + x64). Before running `npm run dev` again on Apple Silicon, restore the
+> local arm64 build:
+>
+> ```bash
+> npm run rebuild
+> ```
+
 `build/entitlements.mac.plist` already declares the hardened-runtime
 entitlements an Electron app needs (JIT, unsigned executable memory, library
 validation disabled). Accessibility for paste injection is requested at runtime
