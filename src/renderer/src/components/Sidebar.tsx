@@ -62,73 +62,75 @@ export function Sidebar({
         <span className={`${styles.wordmark} display`}>Tora</span>
       </div>
 
-      <div className={styles.group}>
-        <span className={styles.groupLabel}>Library</span>
-        {FILTERS.map((f) => (
-          <button
-            key={f.id}
-            className={`${styles.row} ${
-              activeBoardId === null && activeFilter === f.id ? styles.active : ''
-            }`}
-            onClick={() => {
-              onBoard(null)
-              onFilter(f.id)
-            }}
-          >
-            <Icon name={f.icon} size={15} />
-            <span>{f.label}</span>
-          </button>
-        ))}
-      </div>
-
-      <div className={styles.group}>
-        <div className={styles.groupHead}>
-          <span className={styles.groupLabel}>Boards</span>
-          <button className={styles.iconBtn} aria-label="New board" onClick={onNewBoard}>
-            <Icon name="plus" size={14} />
-          </button>
+      <div className={styles.scroll}>
+        <div className={styles.group}>
+          <span className={styles.groupLabel}>Library</span>
+          {FILTERS.map((f) => (
+            <button
+              key={f.id}
+              className={`${styles.row} ${
+                activeBoardId === null && activeFilter === f.id ? styles.active : ''
+              }`}
+              onClick={() => {
+                onBoard(null)
+                onFilter(f.id)
+              }}
+            >
+              <Icon name={f.icon} size={15} />
+              <span>{f.label}</span>
+            </button>
+          ))}
         </div>
-        {boards.map((b) => (
-          <button
-            key={b.id}
-            className={`${styles.row} ${activeBoardId === b.id ? styles.active : ''} ${
-              dropBoard === b.id ? styles.dropTarget : ''
-            }`}
-            draggable={b.id !== FAVOURITES_BOARD_ID}
-            onClick={() => onBoard(b.id)}
-            onDragStart={(e) => {
-              e.dataTransfer.setData(BOARD_MIME, b.id)
-              e.dataTransfer.effectAllowed = 'move'
-              setDragBoard(b.id)
-            }}
-            onDragEnd={() => setDragBoard(null)}
-            onDragOver={(e) => {
-              if (
-                e.dataTransfer.types.includes(ITEM_MIME) ||
-                e.dataTransfer.types.includes(BOARD_MIME)
-              ) {
+
+        <div className={styles.group}>
+          <div className={styles.groupHead}>
+            <span className={styles.groupLabel}>Boards</span>
+            <button className={styles.iconBtn} aria-label="New board" onClick={onNewBoard}>
+              <Icon name="plus" size={14} />
+            </button>
+          </div>
+          {boards.map((b) => (
+            <button
+              key={b.id}
+              className={`${styles.row} ${activeBoardId === b.id ? styles.active : ''} ${
+                dropBoard === b.id ? styles.dropTarget : ''
+              }`}
+              draggable={b.id !== FAVOURITES_BOARD_ID}
+              onClick={() => onBoard(b.id)}
+              onDragStart={(e) => {
+                e.dataTransfer.setData(BOARD_MIME, b.id)
+                e.dataTransfer.effectAllowed = 'move'
+                setDragBoard(b.id)
+              }}
+              onDragEnd={() => setDragBoard(null)}
+              onDragOver={(e) => {
+                if (
+                  e.dataTransfer.types.includes(ITEM_MIME) ||
+                  e.dataTransfer.types.includes(BOARD_MIME)
+                ) {
+                  e.preventDefault()
+                  setDropBoard(b.id)
+                }
+              }}
+              onDragLeave={() => setDropBoard((cur) => (cur === b.id ? null : cur))}
+              onDrop={(e) => {
                 e.preventDefault()
-                setDropBoard(b.id)
-              }
-            }}
-            onDragLeave={() => setDropBoard((cur) => (cur === b.id ? null : cur))}
-            onDrop={(e) => {
-              e.preventDefault()
-              setDropBoard(null)
-              const itemId = e.dataTransfer.getData(ITEM_MIME)
-              if (itemId) {
-                onAddToBoard(b.id, itemId)
-                return
-              }
-              const boardId = e.dataTransfer.getData(BOARD_MIME)
-              if (boardId) reorder(boardId, b.id)
-            }}
-          >
-            <Icon name={b.id === FAVOURITES_BOARD_ID ? 'star' : 'layers'} size={15} />
-            <span className={styles.boardName}>{b.name}</span>
-            {dragBoard && dragBoard !== b.id ? <span className={styles.reorderHint} /> : null}
-          </button>
-        ))}
+                setDropBoard(null)
+                const itemId = e.dataTransfer.getData(ITEM_MIME)
+                if (itemId) {
+                  onAddToBoard(b.id, itemId)
+                  return
+                }
+                const boardId = e.dataTransfer.getData(BOARD_MIME)
+                if (boardId) reorder(boardId, b.id)
+              }}
+            >
+              <Icon name={b.id === FAVOURITES_BOARD_ID ? 'star' : 'layers'} size={15} />
+              <span className={styles.boardName}>{b.name}</span>
+              {dragBoard && dragBoard !== b.id ? <span className={styles.reorderHint} /> : null}
+            </button>
+          ))}
+        </div>
       </div>
 
       <button className={`${styles.row} ${styles.settings}`} onClick={onOpenSettings}>
