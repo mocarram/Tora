@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useStore } from '../store/useStore'
-import { watchTheme } from '../lib/theme'
+import { watchTheme, applyAccent } from '../lib/theme'
 
 /**
  * Boots the renderer against the main process: loads initial data and wires the
@@ -17,12 +17,14 @@ export function useToraBridge(): void {
   const refreshStats = useStore((s) => s.refreshStats)
   const setUpdateStatus = useStore((s) => s.setUpdateStatus)
   const theme = useStore((s) => s.settings?.theme ?? 'system')
+  const accent = useStore((s) => s.settings?.accent ?? 'amber')
 
   useEffect(() => {
     void init()
   }, [init])
 
   useEffect(() => watchTheme(theme), [theme])
+  useEffect(() => applyAccent(accent), [accent])
 
   useEffect(() => {
     const off = window.tora.onEvent((event) => {

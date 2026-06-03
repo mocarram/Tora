@@ -61,6 +61,11 @@ fighting the system, while everything else stays warm amber.
 
 - **Dark** (default) and **Light**. The app follows the macOS appearance via
   `prefers-color-scheme` and is overridable in Settings (`system | light | dark`).
+- **Accent vibes**: the warm amber is the default, and Settings > Appearance lets
+  you pick a vibe (`amber | rose | violet | ocean | forest | graphite`) applied
+  via `data-accent` on the root. Each non-amber vibe is just two knobs - an
+  accent hue/saturation and a surface-tint hue/saturation - consumed by two
+  shared rules in `tokens.css`; amber keeps its bespoke values untouched.
 - `lib/theme.ts` resolves the preference and keeps `data-theme` on the document
   root in sync while set to `system`.
 - `color-scheme` is set per theme so native form controls and scrollbars match.

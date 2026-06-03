@@ -116,6 +116,30 @@
   color: var(--color-text-faint);
 }
 
+.swatches {
+  display: flex;
+  gap: var(--space-3);
+  flex-shrink: 0;
+}
+.swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-round);
+  background: var(--swatch);
+  box-shadow: 0 0 0 1px var(--color-border-strong);
+  transition:
+    transform var(--dur-fast) var(--ease-standard),
+    box-shadow var(--dur-fast) var(--ease-standard);
+}
+.swatch:hover {
+  transform: scale(1.12);
+}
+.swatchOn {
+  box-shadow:
+    0 0 0 2px var(--color-bg-elevated),
+    0 0 0 4px var(--swatch);
+}
+
 .toggle {
   position: relative;
   width: 40px;

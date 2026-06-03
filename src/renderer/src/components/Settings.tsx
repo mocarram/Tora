@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import type { AppSettings, PermissionStatus } from '@shared/ipc'
+import type { AccentTheme, AppSettings, PermissionStatus } from '@shared/ipc'
 import { formatBytes } from '@core/format'
 import { Icon } from './Icon'
 import { panelSpring } from '../lib/motion'
@@ -17,6 +17,17 @@ const SECTIONS: { id: Section; label: string }[] = [
   { id: 'sync', label: 'Sync' },
   { id: 'privacy', label: 'Privacy' },
   { id: 'about', label: 'About' },
+]
+
+// Selectable accent "vibes". The swatch colour is a representative accent; the
+// real retinting (accent + surfaces, per light/dark) lives in tokens.css.
+const ACCENTS: { id: AccentTheme; label: string; color: string }[] = [
+  { id: 'amber', label: 'Amber', color: '#e8843c' },
+  { id: 'rose', label: 'Rose', color: '#e0566f' },
+  { id: 'violet', label: 'Violet', color: '#9b7be8' },
+  { id: 'ocean', label: 'Ocean', color: '#3fa3e0' },
+  { id: 'forest', label: 'Forest', color: '#46b87f' },
+  { id: 'graphite', label: 'Graphite', color: '#9aa3b2' },
 ]
 
 interface SettingsProps {
@@ -140,6 +151,28 @@ export function Settings({ open, reducedMotion, onClose }: SettingsProps): React
                     ]}
                     onChange={(v) => update({ theme: v as AppSettings['theme'] })}
                   />
+                  <div className={styles.row}>
+                    <div className={styles.rowText}>
+                      <span className={styles.rowLabel}>Accent</span>
+                      <span className={styles.rowHint}>
+                        Pick the colour vibe for the whole app.
+                      </span>
+                    </div>
+                    <div className={styles.swatches} role="radiogroup" aria-label="Accent">
+                      {ACCENTS.map((a) => (
+                        <button
+                          key={a.id}
+                          className={`${styles.swatch} ${settings.accent === a.id ? styles.swatchOn : ''}`}
+                          style={{ ['--swatch' as string]: a.color }}
+                          role="radio"
+                          aria-checked={settings.accent === a.id}
+                          aria-label={a.label}
+                          title={a.label}
+                          onClick={() => update({ accent: a.id })}
+                        />
+                      ))}
+                    </div>
+                  </div>
                   <SelectRow
                     label="Window mode"
                     value={settings.windowMode}

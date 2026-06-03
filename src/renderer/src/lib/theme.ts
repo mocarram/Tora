@@ -1,4 +1,4 @@
-import type { ThemePreference } from '@shared/ipc'
+import type { AccentTheme, ThemePreference } from '@shared/ipc'
 
 /**
  * Resolves a theme preference to a concrete light/dark value and applies it to
@@ -6,6 +6,11 @@ import type { ThemePreference } from '@shared/ipc'
  */
 
 export type ResolvedTheme = 'light' | 'dark'
+
+/** Applies the accent "vibe" via data-accent; tokens.css does the retinting. */
+export function applyAccent(accent: AccentTheme): void {
+  document.documentElement.dataset.accent = accent
+}
 
 function systemTheme(): ResolvedTheme {
   if (typeof window === 'undefined' || !window.matchMedia) return 'dark'
