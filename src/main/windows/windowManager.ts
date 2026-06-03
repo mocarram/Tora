@@ -36,11 +36,14 @@ export class WindowManager {
       height: 420,
       show: false,
       frame: false,
-      transparent: true,
       resizable: true,
       fullscreenable: false,
       skipTaskbar: true,
       titleBarStyle: 'hiddenInset',
+      // NOTE: do NOT set `transparent: true` here. A transparent window defeats
+      // the native vibrancy material (and CSS backdrop-filter cannot blur the
+      // desktop). Leaving transparent off lets the vibrancy NSVisualEffectView
+      // fill the window so translucent surfaces read as real frosted glass.
       vibrancy: 'under-window',
       visualEffectState: 'active',
       backgroundColor: '#00000000',
