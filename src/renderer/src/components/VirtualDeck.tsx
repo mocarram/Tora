@@ -234,7 +234,7 @@ export function VirtualDeck(props: VirtualDeckProps): React.JSX.Element {
             <div
               className={styles.virtualSlot}
               key={item.id}
-              style={{ transform: `translateX(${index * STRIDE}px)` }}
+              style={{ transform: `translate(${index * STRIDE}px, -50%)` }}
               draggable
               onDragStart={(e) => {
                 e.dataTransfer.setData('application/x-tora-item', item.id)

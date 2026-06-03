@@ -7,6 +7,20 @@ import { shouldDismissOnBlur } from './dismissPolicy'
 const dir = dirname(fileURLToPath(import.meta.url))
 const isDev = !app.isPackaged
 
+// Panel geometry. The deck shows a square card (width === height); the panel is
+// sized to fit one square plus the surrounding chrome, and cannot shrink below
+// that (so it can never collapse into a thin line). Keep in sync with the
+// renderer: deck card = 268, topbar 52 + 1 border, statusbar 30 + 1 border, and
+// the deck's vertical padding (--space-7 = 20) top and bottom.
+const PANEL_CARD = 268
+const PANEL_CHROME = 53 + 31 + 40
+const PANEL_HEIGHT = PANEL_CARD + PANEL_CHROME
+const PANEL_MIN_WIDTH = 480
+const PANEL_MARGIN = 12
+// Window-mode (grid) minimums.
+const WINDOW_MIN_WIDTH = 640
+const WINDOW_MIN_HEIGHT = 420
+
 /**
  * Owns the single morphing BrowserWindow. "panel" mode is a frameless,
  * vibrancy-backed strip pinned to the bottom of the active display and summoned
@@ -103,18 +117,22 @@ export class WindowManager {
     const cursor = screen.getCursorScreenPoint()
     const display = screen.getDisplayNearestPoint(cursor)
     const { x, y, width, height } = display.workArea
-    const panelHeight = Math.min(440, Math.round(height * 0.5))
-    const margin = 12
+    // Fit one square card plus chrome, clamped to the display on small screens.
+    const panelHeight = Math.min(PANEL_HEIGHT, height - PANEL_MARGIN * 2)
+    // Prevent the panel from being resized down into a thin line; the minimum is
+    // the height actually shown, so the full square card always stays visible.
+    this.win.setMinimumSize(PANEL_MIN_WIDTH, panelHeight)
     this.win.setBounds({
-      x: x + margin,
-      y: y + height - panelHeight - margin,
-      width: width - margin * 2,
+      x: x + PANEL_MARGIN,
+      y: y + height - panelHeight - PANEL_MARGIN,
+      width: width - PANEL_MARGIN * 2,
       height: panelHeight,
     })
   }
 
   private positionWindow(): void {
     if (!this.win) return
+    this.win.setMinimumSize(WINDOW_MIN_WIDTH, WINDOW_MIN_HEIGHT)
     this.win.setBounds({ width: 1040, height: 680 })
     this.win.center()
   }
