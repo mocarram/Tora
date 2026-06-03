@@ -29,8 +29,12 @@ jobs:
 
   # PR-only gate: block a pull request that introduces a vulnerable or
   # disallowed-license dependency. Needs the base ref, so it only runs on PRs.
+  # The Dependency Review API is only available on public repositories (or
+  # private repos with GitHub Advanced Security), so this is skipped while the
+  # repo is private and self-activates once it goes public. npm audit above is
+  # the vulnerability gate in the meantime.
   dependency-review:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && github.event.repository.private == false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
