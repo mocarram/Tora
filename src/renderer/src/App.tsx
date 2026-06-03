@@ -242,42 +242,44 @@ export function App(): React.JSX.Element {
           }}
         />
 
-        <div className={styles.statusbar}>
-          <span className={styles.statusItem}>
-            <span
-              className={styles.statusDot}
-              style={{
-                background: store.settings?.captureEnabled
-                  ? 'var(--color-positive)'
-                  : 'var(--color-text-faint)',
-              }}
-            />
-            {store.settings?.captureEnabled ? 'Capturing' : 'Paused'}
-          </span>
-          <span className={styles.statusItem}>{stats?.itemCount ?? 0} items</span>
-          {stats && stats.softCapBytes > 0 && (
+        {store.queue.length === 0 && (
+          <div className={styles.statusbar}>
             <span className={styles.statusItem}>
-              <span className={styles.storageMeter}>
-                <span className={styles.storageFill} style={{ width: `${capPct}%` }} />
+              <span
+                className={styles.statusDot}
+                style={{
+                  background: store.settings?.captureEnabled
+                    ? 'var(--color-positive)'
+                    : 'var(--color-text-faint)',
+                }}
+              />
+              {store.settings?.captureEnabled ? 'Capturing' : 'Paused'}
+            </span>
+            <span className={styles.statusItem}>{stats?.itemCount ?? 0} items</span>
+            {stats && stats.softCapBytes > 0 && (
+              <span className={styles.statusItem}>
+                <span className={styles.storageMeter}>
+                  <span className={styles.storageFill} style={{ width: `${capPct}%` }} />
+                </span>
+                {formatBytes(stats.totalBytes)}
               </span>
-              {formatBytes(stats.totalBytes)}
+            )}
+            {store.settings?.retentionDays === null && (
+              <span className={styles.statusItem} style={{ color: 'var(--color-danger)' }}>
+                <Icon name="layers" size={12} /> Unlimited history
+              </span>
+            )}
+            <span className={`${styles.statusItem} ${styles.statusRight}`}>
+              Cmd-click or Q to queue
             </span>
-          )}
-          {store.settings?.retentionDays === null && (
-            <span className={styles.statusItem} style={{ color: 'var(--color-danger)' }}>
-              <Icon name="layers" size={12} /> Unlimited history
-            </span>
-          )}
-          <span className={`${styles.statusItem} ${styles.statusRight}`}>
-            Cmd-click or Q to queue
-          </span>
-          <button
-            className={styles.statusItem}
-            onClick={() => selectedItem && store.toggleQueue(selectedItem.id)}
-          >
-            <Icon name="queue" size={13} /> Queue selected
-          </button>
-        </div>
+            <button
+              className={styles.statusItem}
+              onClick={() => selectedItem && store.toggleQueue(selectedItem.id)}
+            >
+              <Icon name="queue" size={13} /> Queue selected
+            </button>
+          </div>
+        )}
       </div>
 
       <LargePreview
