@@ -1,9 +1,11 @@
-import { memo } from 'react'
+import { memo, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import type { ClipItem } from '@core/model'
 import { relativeTime } from '@core/format'
+import { useStore } from '../store/useStore'
 import { Icon } from './Icon'
 import { CardPreview } from './CardPreview'
+import { BoardMenu } from './BoardMenu'
 import { Tooltip } from './Tooltip'
 import { TYPE_META } from './typeMeta'
 import { cardVariants } from '../lib/motion'
@@ -35,7 +37,6 @@ function ClipCardImpl({
   onSelect,
   onActivate,
   onCopy,
-  onTogglePin,
   onDelete,
   onExpand,
   onEdit,
@@ -44,6 +45,18 @@ function ClipCardImpl({
   const meta = TYPE_META[item.type]
   const editable = EDITABLE.includes(item.type)
   const queued = queueIndex >= 0
+
+  const menuOpen = useStore((s) => s.openMenuId === item.id)
+  const setOpenMenuId = useStore((s) => s.setOpenMenuId)
+  const saveBtnRef = useRef<HTMLButtonElement>(null)
+
+  // If this card unmounts (e.g. virtualised away) while its menu is open, clear
+  // the global flag so the panel does not stay pinned open.
+  useEffect(() => {
+    return () => {
+      if (useStore.getState().openMenuId === item.id) useStore.getState().setOpenMenuId(null)
+    }
+  }, [item.id])
 
   const stop = (e: React.MouseEvent): void => e.stopPropagation()
 
@@ -106,13 +119,16 @@ function ClipCardImpl({
               <Icon name="copy" size={14} />
             </button>
           </Tooltip>
-          <Tooltip label={item.isPinned ? 'Unpin' : 'Pin'}>
+          <Tooltip label="Save to board">
             <button
+              ref={saveBtnRef}
               className={styles.action}
-              aria-label={item.isPinned ? 'Unpin' : 'Pin'}
+              aria-label="Save to board"
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
               onClick={(e) => {
                 stop(e)
-                onTogglePin(item.id, !item.isPinned)
+                setOpenMenuId(menuOpen ? null : item.id)
               }}
             >
               <Icon name="pin" size={14} filled={item.isPinned} />
@@ -170,6 +186,10 @@ function ClipCardImpl({
           </Tooltip>
         </div>
       </div>
+
+      {menuOpen && (
+        <BoardMenu item={item} anchorRef={saveBtnRef} onClose={() => setOpenMenuId(null)} />
+      )}
     </motion.div>
   )
 }

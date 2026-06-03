@@ -27,10 +27,13 @@ interface StoreState extends ViewState {
   locked: boolean
   settingsOpen: boolean
   updateStatus: UpdateStatus | null
+  /** Id of the card whose save-to-board menu is open (one at a time), or null. */
+  openMenuId: string | null
 
   setLocked: (locked: boolean) => void
   setSettingsOpen: (open: boolean) => void
   setUpdateStatus: (status: UpdateStatus) => void
+  setOpenMenuId: (id: string | null) => void
   init: () => Promise<void>
   reload: () => Promise<void>
   loadMore: () => Promise<void>
@@ -68,10 +71,12 @@ export const useStore = create<StoreState>((set, get) => ({
   locked: false,
   settingsOpen: false,
   updateStatus: null,
+  openMenuId: null,
 
   setLocked: (locked) => set({ locked }),
   setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
   setUpdateStatus: (updateStatus) => set({ updateStatus }),
+  setOpenMenuId: (openMenuId) => set({ openMenuId }),
 
   init: async () => {
     const [settings, boards, stats, syncStatus, updateStatus] = await Promise.all([

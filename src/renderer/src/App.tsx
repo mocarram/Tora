@@ -42,7 +42,8 @@ export function App(): React.JSX.Element {
     !!store.editingId ||
     newBoardOpen ||
     store.locked ||
-    onboardingOpen
+    onboardingOpen ||
+    !!store.openMenuId
   useEffect(() => {
     void window.tora.setHideSuppressed(modalOpen)
   }, [modalOpen])

@@ -596,6 +596,7 @@ export class Application {
         s.boards.reorderItems(boardId, req.orderedIds)
         refreshBoards()
       },
+      getItemBoards: (id: string) => s.boards.boardsForItem(id),
       getSettings: () => this.settings,
       updateSettings: (patch: Partial<AppSettings>) => this.applySettings(patch),
       getStorageStats: () => this.storageStats(),

@@ -31,6 +31,7 @@ const methods: ToraMethod[] = [
   'addItemToBoard',
   'removeItemFromBoard',
   'reorderBoardItems',
+  'getItemBoards',
   'getSettings',
   'updateSettings',
   'getStorageStats',

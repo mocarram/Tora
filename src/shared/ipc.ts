@@ -174,6 +174,8 @@ export interface ToraApi {
   addItemToBoard(req: AddToBoardRequest): Promise<void>
   removeItemFromBoard(req: AddToBoardRequest): Promise<void>
   reorderBoardItems(boardId: string, req: ReorderRequest): Promise<void>
+  /** Ids of the boards an item currently belongs to. */
+  getItemBoards(itemId: string): Promise<string[]>
 
   // Settings + stats
   getSettings(): Promise<AppSettings>
