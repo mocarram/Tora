@@ -1,4 +1,4 @@
-import { app, globalShortcut, ipcMain, nativeImage, protocol } from 'electron'
+import { app, globalShortcut, ipcMain, nativeImage, nativeTheme, protocol } from 'electron'
 import { readFile } from 'node:fs/promises'
 import { join, normalize } from 'node:path'
 import type { ClipItem, FileMetadata } from '@core/model'
@@ -100,6 +100,10 @@ export class Application {
       deviceId: loadOrCreateDeviceId(this.paths.base),
     }
     this.sync = createSyncProvider(this.settings.syncProvider, this.syncDeps)
+
+    // Drive the OS appearance from the saved preference so the native window
+    // vibrancy (and traffic lights) match the chosen theme, not just the OS one.
+    nativeTheme.themeSource = this.settings.theme
 
     this.registerBlobProtocol()
     this.windows.create(this.settings.windowMode)
@@ -280,6 +284,10 @@ export class Application {
     }
     if (patch.windowMode && patch.windowMode !== prev.windowMode) {
       this.windows.setMode(patch.windowMode)
+    }
+    if (patch.theme && patch.theme !== prev.theme) {
+      // Keep the native vibrancy material in step with the renderer theme.
+      nativeTheme.themeSource = patch.theme
     }
     if (patch.syncProvider && patch.syncProvider !== prev.syncProvider) {
       this.sync.stop()
