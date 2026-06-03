@@ -18,7 +18,7 @@
     border-color var(--dur-fast) var(--ease-standard);
 }
 
-/* The amber "stripe" - the tiger mark - on the leading edge. */
+/* The amber "stripe" on the leading edge. */
 .card::before {
   content: '';
   position: absolute;

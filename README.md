@@ -5,9 +5,6 @@ of cards you can search, pin, organise into boards, and paste straight back into
 the app you were using. Local by default, no telemetry. Built with Electron now,
 with a pure core designed to power a React Native iOS app later.
 
-> Tora means "tiger". The interface is a stack of warm paper cards marked with a
-> single tiger-amber stripe. See `DESIGN.md`.
-
 ## Features
 
 - Captures text, rich text, images, files, URLs, colours, and code, with source

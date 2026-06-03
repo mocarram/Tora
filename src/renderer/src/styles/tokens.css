@@ -1,8 +1,8 @@
 /*
  * Tora design tokens.
  *
- * Identity: "Tora" (tiger). A clipboard as a stack of physical paper cards,
- * inked in warm charcoal, marked with a single tiger-amber accent. Two layers:
+ * Identity: a clipboard as a stack of physical paper cards, inked in warm
+ * charcoal, marked with a single amber accent. Two layers:
  *   1. Primitives  - raw scales, never used directly by components.
  *   2. Semantic    - the only tokens components reference.
  *
@@ -31,7 +31,7 @@
   --paper-4: #e4dac8;
   --paper-5: #d3c6ad;
 
-  /* ---- Primitive: tiger amber accent ramp ---- */
+  /* ---- Primitive: amber accent ramp ---- */
   --amber-2: #f6c98a;
   --amber-3: #f0ad5e;
   --amber-4: #e8843c;

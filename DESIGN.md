@@ -5,9 +5,9 @@ built against the tokens and patterns documented here. No em dashes anywhere.
 
 ## Concept
 
-Tora means "tiger". The product metaphor is a **stack of physical paper cards**:
-each clip is a card, inked in warm charcoal, marked with a single tiger-amber
-stripe on its leading edge. The interaction language is tactile and layered:
+The product metaphor is a **stack of physical paper cards**: each clip is a
+card, inked in warm charcoal, marked with a single amber stripe on its leading
+edge. The interaction language is tactile and layered:
 real depth (directional warm shadows, never a flat blur), spring-led motion, and
 a horizontal "deck" you flick through.
 
@@ -39,7 +39,7 @@ tokenised (`--text-*`, `--weight-*`, `--leading-*`, `--tracking-*`).
 
 ## Colour
 
-Warm, restrained, paper-and-ink. One accent (tiger amber). Defined as two token
+Warm, restrained, paper-and-ink. One accent (amber). Defined as two token
 layers in `styles/tokens.css`:
 
 1. **Primitives** - raw ramps (`--ink-*`, `--paper-*`, `--amber-*`, signals).

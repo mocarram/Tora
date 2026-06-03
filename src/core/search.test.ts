@@ -31,7 +31,7 @@ describe('rankItems', () => {
   const items: SearchCandidate[] = [
     { id: '1', text: 'design tokens', secondary: 'Figma', updatedAt: 100 },
     { id: '2', text: 'const spring = 520', secondary: 'VS Code', updatedAt: 200 },
-    { id: '3', text: 'tiger amber accent', secondary: 'Notes', updatedAt: 300 },
+    { id: '3', text: 'warm amber accent', secondary: 'Notes', updatedAt: 300 },
   ]
 
   it('returns all by recency for empty query', () => {

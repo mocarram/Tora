@@ -28,8 +28,8 @@ was Linux, so macOS-native and GUI paths are type/build/test-verified only).
   ranker lives in `core/` (pure, tested, iOS-reusable) and the horizontal deck is
   a small custom virtualizer, avoiding library API churn and giving full control
   of the "stack of cards" feel.
-- **Design:** a committed, opinionated identity (DESIGN.md): Tora the tiger, a
-  deck of warm paper cards with one tiger-amber accent. Two-layer design tokens
+- **Design:** a committed, opinionated identity (DESIGN.md): a deck of warm
+  paper cards with one amber accent. Two-layer design tokens
   (primitive ramps to semantic), a self-hosted variable-font trio (Space Grotesk
   / Hanken Grotesk / JetBrains Mono via `@fontsource-variable`, bundled not
   fetched), spring-led motion that respects reduced-motion. No purple/blue, no

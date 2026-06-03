@@ -1,5 +1,5 @@
 // Generates Tora's raster assets from code so no opaque binaries are committed
-// by hand: the app icon (dark tile + amber tiger stripes) and a monochrome
+// by hand: the app icon (dark tile + amber stripes) and a monochrome
 // macOS menu-bar template icon. Run: node scripts/gen-assets.mjs
 import { deflateSync } from 'node:zlib'
 import { mkdirSync, writeFileSync } from 'node:fs'
