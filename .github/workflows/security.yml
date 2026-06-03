@@ -23,6 +23,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - run: npm install -g npm@latest
       - name: npm audit (fail on high or critical)
         run: npm audit --audit-level=high
 

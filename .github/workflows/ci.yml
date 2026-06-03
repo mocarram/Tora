@@ -24,6 +24,9 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      # The .npmrc supply-chain cooldown (min-release-age) is honoured by
+      # npm >= 11.10, which also satisfies the engines floor in package.json.
+      - run: npm install -g npm@latest
       - run: npm ci
       - name: Typecheck
         run: npm run typecheck
