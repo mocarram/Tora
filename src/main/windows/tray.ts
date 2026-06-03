@@ -30,18 +30,21 @@ export class TrayController {
     image.setTemplateImage(true)
     this.tray = new Tray(image.isEmpty() ? nativeImage.createEmpty() : image)
     this.tray.setToolTip('Tora')
+    // Left-click summons the app; right-click opens the menu. We deliberately do
+    // NOT call setContextMenu, since on macOS that makes a left-click open the
+    // menu instead of the app.
     this.tray.on('click', () => this.callbacks.onToggleWindow())
-    this.refresh()
+    this.tray.on('right-click', () => {
+      if (this.tray) this.tray.popUpContextMenu(this.buildMenu())
+    })
   }
 
   setCapturing(capturing: boolean): void {
     this.capturing = capturing
-    this.refresh()
   }
 
-  private refresh(): void {
-    if (!this.tray) return
-    const menu = Menu.buildFromTemplate([
+  private buildMenu(): Menu {
+    return Menu.buildFromTemplate([
       { label: 'Open Tora', click: () => this.callbacks.onToggleWindow() },
       { type: 'separator' },
       {
@@ -52,7 +55,6 @@ export class TrayController {
       { type: 'separator' },
       { label: 'Quit Tora', click: () => this.callbacks.onQuit() },
     ])
-    this.tray.setContextMenu(menu)
   }
 
   destroy(): void {

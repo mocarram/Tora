@@ -25,8 +25,10 @@ interface StoreState extends ViewState {
   queue: string[]
   ready: boolean
   locked: boolean
+  settingsOpen: boolean
 
   setLocked: (locked: boolean) => void
+  setSettingsOpen: (open: boolean) => void
   init: () => Promise<void>
   reload: () => Promise<void>
   loadMore: () => Promise<void>
@@ -62,8 +64,10 @@ export const useStore = create<StoreState>((set, get) => ({
   queue: [],
   ready: false,
   locked: false,
+  settingsOpen: false,
 
   setLocked: (locked) => set({ locked }),
+  setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
 
   init: async () => {
     const [settings, boards, stats, syncStatus] = await Promise.all([

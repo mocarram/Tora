@@ -11,6 +11,8 @@ import styles from './ClipCard.module.css'
 export interface ClipCardProps {
   item: ClipItem
   selected: boolean
+  /** Position in the paste queue, or -1 when not queued. */
+  queueIndex: number
   reducedMotion: boolean
   onSelect: (id: string) => void
   onActivate: (id: string) => void
@@ -18,11 +20,16 @@ export interface ClipCardProps {
   onTogglePin: (id: string, pinned: boolean) => void
   onDelete: (id: string) => void
   onExpand: (id: string) => void
+  onEdit: (id: string) => void
+  onToggleQueue: (id: string) => void
 }
+
+const EDITABLE: ClipItem['type'][] = ['text', 'richText', 'code', 'url', 'color']
 
 function ClipCardImpl({
   item,
   selected,
+  queueIndex,
   reducedMotion,
   onSelect,
   onActivate,
@@ -30,10 +37,20 @@ function ClipCardImpl({
   onTogglePin,
   onDelete,
   onExpand,
+  onEdit,
+  onToggleQueue,
 }: ClipCardProps): React.JSX.Element {
   const meta = TYPE_META[item.type]
+  const editable = EDITABLE.includes(item.type)
+  const queued = queueIndex >= 0
 
   const stop = (e: React.MouseEvent): void => e.stopPropagation()
+
+  // Cmd/Ctrl-click toggles queue membership (multi-select); a plain click selects.
+  const handleClick = (e: React.MouseEvent): void => {
+    if (e.metaKey || e.ctrlKey) onToggleQueue(item.id)
+    else onSelect(item.id)
+  }
 
   return (
     <motion.div
@@ -42,18 +59,24 @@ function ClipCardImpl({
       initial="initial"
       animate="animate"
       exit="exit"
-      className={`${styles.card} ${selected ? styles.selected : ''}`}
+      className={`${styles.card} ${selected ? styles.selected : ''} ${queued ? styles.queued : ''}`}
       role="option"
       aria-selected={selected}
       tabIndex={-1}
       data-item-id={item.id}
-      onClick={() => onSelect(item.id)}
+      onClick={handleClick}
       onDoubleClick={() => onActivate(item.id)}
     >
       <div className={styles.header}>
-        <span className={styles.typeIcon}>
-          <Icon name={meta.icon} size={13} />
-        </span>
+        {queued ? (
+          <span className={styles.queueBadge} title={`Queued #${queueIndex + 1}`}>
+            {queueIndex + 1}
+          </span>
+        ) : (
+          <span className={styles.typeIcon}>
+            <Icon name={meta.icon} size={13} />
+          </span>
+        )}
         <span className={styles.source}>{item.sourceApp ?? meta.label}</span>
         {item.isPinned ? (
           <span className={styles.pin} title="Pinned">
@@ -92,6 +115,30 @@ function ClipCardImpl({
           >
             <Icon name="pin" size={14} filled={item.isPinned} />
           </button>
+          <button
+            className={`${styles.action} ${queued ? styles.actionOn : ''}`}
+            title={queued ? 'Remove from queue' : 'Add to queue'}
+            aria-label={queued ? 'Remove from queue' : 'Add to queue'}
+            onClick={(e) => {
+              stop(e)
+              onToggleQueue(item.id)
+            }}
+          >
+            <Icon name="queue" size={14} />
+          </button>
+          {editable ? (
+            <button
+              className={styles.action}
+              title="Edit text"
+              aria-label="Edit text"
+              onClick={(e) => {
+                stop(e)
+                onEdit(item.id)
+              }}
+            >
+              <Icon name="edit" size={14} />
+            </button>
+          ) : null}
           <button
             className={styles.action}
             title="Large preview"

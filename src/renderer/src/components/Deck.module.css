@@ -21,6 +21,24 @@
   max-height: 320px;
 }
 
+.grid {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  outline: none;
+}
+.gridTrack {
+  position: relative;
+  width: 100%;
+}
+.gridCell {
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform;
+}
+
 .virtualTrack {
   position: relative;
   height: 100%;

@@ -127,6 +127,7 @@ export type ToraEvent =
   | { kind: 'sync-status'; status: SyncStatus }
   | { kind: 'panel-shown' }
   | { kind: 'panel-hidden' }
+  | { kind: 'open-settings' }
   | { kind: 'locked' }
   | { kind: 'unlocked' }
 

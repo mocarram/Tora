@@ -139,6 +139,7 @@ export class ItemsRepo {
   updateText(
     id: string,
     fields: {
+      type: ClipItemType
       previewText: string
       contentHash: string
       byteSize: number
@@ -148,10 +149,11 @@ export class ItemsRepo {
     const at = Date.now()
     this.db
       .prepare(
-        `UPDATE items SET preview_text = ?, content_hash = ?, byte_size = ?, metadata = ?, updated_at = ?
+        `UPDATE items SET type = ?, preview_text = ?, content_hash = ?, byte_size = ?, metadata = ?, updated_at = ?
          WHERE id = ?`,
       )
       .run(
+        fields.type,
         fields.previewText,
         fields.contentHash,
         fields.byteSize,

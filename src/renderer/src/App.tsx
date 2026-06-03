@@ -10,6 +10,7 @@ import { Settings } from './components/Settings'
 import { QueueBar } from './components/QueueBar'
 import { LockScreen } from './components/LockScreen'
 import { Onboarding } from './components/Onboarding'
+import { TextPrompt } from './components/TextPrompt'
 import { Icon } from './components/Icon'
 import { useStore } from './store/useStore'
 import { useToraBridge } from './hooks/useToraBridge'
@@ -22,7 +23,9 @@ export function App(): React.JSX.Element {
 
   const store = useStore()
   const searchRef = useRef<HTMLInputElement>(null)
-  const [settingsOpen, setSettingsOpen] = useState(false)
+  const settingsOpen = store.settingsOpen
+  const setSettingsOpen = store.setSettingsOpen
+  const [newBoardOpen, setNewBoardOpen] = useState(false)
   const [queueFormat, setQueueFormat] = useState<PasteFormat>('keep')
 
   const reducedMotion = prefersReducedMotion() || (store.settings?.reduceMotion ?? false)
@@ -117,6 +120,10 @@ export function App(): React.JSX.Element {
         case 'E':
           if (id) store.edit(id)
           break
+        case 'q':
+        case 'Q':
+          if (id) store.toggleQueue(id)
+          break
         case 'p':
         case 'P':
           if (id && selectedItem) togglePin(id, !selectedItem.isPinned)
@@ -150,10 +157,7 @@ export function App(): React.JSX.Element {
         activeBoardId={store.boardId}
         onFilter={(filter) => store.setView({ filter })}
         onBoard={(boardId) => store.setView({ boardId })}
-        onNewBoard={() => {
-          const name = window.prompt('Board name')
-          if (name) void window.tora.createBoard({ name })
-        }}
+        onNewBoard={() => setNewBoardOpen(true)}
         onOpenSettings={() => setSettingsOpen(true)}
         onAddToBoard={(boardId, itemId) => void window.tora.addItemToBoard({ boardId, itemId })}
         onReorderBoards={(orderedIds) => void window.tora.reorderBoards({ orderedIds })}
@@ -191,6 +195,7 @@ export function App(): React.JSX.Element {
           total={store.total}
           selectedId={store.selectedId}
           queue={store.queue}
+          layout={store.settings?.windowMode === 'window' ? 'grid' : 'deck'}
           reducedMotion={reducedMotion}
           onSelect={store.select}
           onActivate={(id) => paste(id)}
@@ -198,6 +203,8 @@ export function App(): React.JSX.Element {
           onTogglePin={togglePin}
           onDelete={remove}
           onExpand={store.expand}
+          onEdit={store.edit}
+          onToggleQueue={store.toggleQueue}
           onNeedMore={() => void store.loadMore()}
         />
 
@@ -240,8 +247,11 @@ export function App(): React.JSX.Element {
               <Icon name="layers" size={12} /> Unlimited history
             </span>
           )}
+          <span className={`${styles.statusItem} ${styles.statusRight}`}>
+            Cmd-click or Q to queue
+          </span>
           <button
-            className={`${styles.statusItem} ${styles.statusRight}`}
+            className={styles.statusItem}
             onClick={() => selectedItem && store.toggleQueue(selectedItem.id)}
           >
             <Icon name="queue" size={13} /> Queue selected
@@ -283,6 +293,19 @@ export function App(): React.JSX.Element {
         }
         reducedMotion={reducedMotion}
         onComplete={() => void window.tora.updateSettings({ onboardingComplete: true })}
+      />
+
+      <TextPrompt
+        open={newBoardOpen}
+        title="New board"
+        placeholder="Board name"
+        confirmLabel="Create"
+        reducedMotion={reducedMotion}
+        onCancel={() => setNewBoardOpen(false)}
+        onConfirm={(name) => {
+          void window.tora.createBoard({ name })
+          setNewBoardOpen(false)
+        }}
       />
 
       {store.locked && (
