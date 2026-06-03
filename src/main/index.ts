@@ -3,6 +3,16 @@ import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { Application } from './app/application'
 
+// Last-resort handlers so a stray rejection or throw in the main process is
+// logged instead of taking the app down silently. The menu-bar app should keep
+// running; individual operations already guard their own failures.
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled promise rejection in main process:', reason)
+})
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception in main process:', err)
+})
+
 // Product name for menus, notifications, and the userData folder. The dock
 // *name* in development still reads "Electron" because that is the dev binary's
 // bundle; the packaged app (electron-builder productName + build/icon) shows
