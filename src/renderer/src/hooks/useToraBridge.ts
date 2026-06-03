@@ -15,6 +15,7 @@ export function useToraBridge(): void {
   const setLocked = useStore((s) => s.setLocked)
   const setSettingsOpen = useStore((s) => s.setSettingsOpen)
   const refreshStats = useStore((s) => s.refreshStats)
+  const setUpdateStatus = useStore((s) => s.setUpdateStatus)
   const theme = useStore((s) => s.settings?.theme ?? 'system')
 
   useEffect(() => {
@@ -49,6 +50,9 @@ export function useToraBridge(): void {
         case 'open-settings':
           setSettingsOpen(true)
           break
+        case 'update-status':
+          setUpdateStatus(event.status)
+          break
         case 'locked':
           setLocked(true)
           break
@@ -60,5 +64,13 @@ export function useToraBridge(): void {
       }
     })
     return off
-  }, [applyEvent, setBoards, setSettings, setLocked, setSettingsOpen, refreshStats])
+  }, [
+    applyEvent,
+    setBoards,
+    setSettings,
+    setLocked,
+    setSettingsOpen,
+    refreshStats,
+    setUpdateStatus,
+  ])
 }

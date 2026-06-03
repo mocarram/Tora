@@ -33,6 +33,7 @@ import { SearchIndex } from '../services/searchIndex'
 import { ClipboardWriter } from '../services/clipboardWriter'
 import { ElectronPasteboard } from '../services/pasteboard'
 import { RetentionService } from '../services/retention'
+import { Updater } from '../services/updater'
 import { pasteIntoFrontApp } from '../services/pasteInjector'
 import { getPermissions, requestAccessibility, biometricUnlock } from '../services/permissions'
 import { createSyncProvider, type SyncController, type SyncDeps } from '../sync'
@@ -58,6 +59,7 @@ export class Application {
   private readonly tray: TrayController
   private sync!: SyncController
   private syncDeps!: SyncDeps
+  private readonly updater = new Updater((status) => this.emit({ kind: 'update-status', status }))
   private readonly paths = resolvePaths()
   private settings: AppSettings
 
@@ -130,6 +132,9 @@ export class Application {
 
     // Retroactively thumbnail image files captured before the feature existed.
     void this.backfillFileThumbnails()
+
+    // Begin checking for updates (no-op in dev / unsigned builds).
+    this.updater.start()
   }
 
   /** Bring the window to the front (used by the dock icon / second instance). */
@@ -139,6 +144,7 @@ export class Application {
 
   dispose(): void {
     this.windows.markQuitting()
+    this.updater.stop()
     globalShortcut.unregisterAll()
     this.watcher.stop()
     this.retention.stop()
@@ -602,6 +608,9 @@ export class Application {
       hidePanel: () => this.windows.hide(),
       setWindowMode: (mode: AppSettings['windowMode']) => this.applySettings({ windowMode: mode }),
       setHideSuppressed: (suppressed: boolean) => this.windows.setHideSuppressed(suppressed),
+      getUpdateStatus: () => this.updater.getStatus(),
+      checkForUpdates: () => this.updater.check(),
+      installUpdate: () => this.updater.install(),
     }
   }
 }

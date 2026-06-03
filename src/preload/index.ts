@@ -43,6 +43,9 @@ const methods: ToraMethod[] = [
   'hidePanel',
   'setWindowMode',
   'setHideSuppressed',
+  'getUpdateStatus',
+  'checkForUpdates',
+  'installUpdate',
 ]
 
 const api = {} as Record<string, unknown>

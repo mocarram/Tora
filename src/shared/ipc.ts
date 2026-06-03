@@ -130,6 +130,20 @@ export type ToraEvent =
   | { kind: 'open-settings' }
   | { kind: 'locked' }
   | { kind: 'unlocked' }
+  | { kind: 'update-status'; status: UpdateStatus }
+
+/** In-app update lifecycle, surfaced to the renderer for the update banner. */
+export type UpdateState = 'idle' | 'checking' | 'available' | 'downloading' | 'downloaded' | 'error'
+
+export interface UpdateStatus {
+  state: UpdateState
+  /** The version being offered/downloaded, when known. */
+  version: string | null
+  /** Download progress 0-100 while downloading. */
+  percent: number | null
+  /** Human-readable message when state is "error". */
+  error: string | null
+}
 
 /**
  * The full bridge API. Implemented in main (handlers) and surfaced to the
@@ -179,6 +193,11 @@ export interface ToraApi {
   setWindowMode(mode: AppSettings['windowMode']): Promise<void>
   /** Suppress panel auto-hide on blur while a modal/overlay is open. */
   setHideSuppressed(suppressed: boolean): Promise<void>
+
+  // Updates
+  getUpdateStatus(): Promise<UpdateStatus>
+  checkForUpdates(): Promise<void>
+  installUpdate(): Promise<void>
 
   // Events
   onEvent(listener: (event: ToraEvent) => void): () => void

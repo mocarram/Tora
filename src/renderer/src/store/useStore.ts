@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { Board, ClipItem, QuickFilter } from '@core/model'
-import type { AppSettings, StorageStats, SyncStatus } from '@shared/ipc'
+import type { AppSettings, StorageStats, SyncStatus, UpdateStatus } from '@shared/ipc'
 
 const PAGE_SIZE = 120
 
@@ -26,9 +26,11 @@ interface StoreState extends ViewState {
   ready: boolean
   locked: boolean
   settingsOpen: boolean
+  updateStatus: UpdateStatus | null
 
   setLocked: (locked: boolean) => void
   setSettingsOpen: (open: boolean) => void
+  setUpdateStatus: (status: UpdateStatus) => void
   init: () => Promise<void>
   reload: () => Promise<void>
   loadMore: () => Promise<void>
@@ -65,18 +67,29 @@ export const useStore = create<StoreState>((set, get) => ({
   ready: false,
   locked: false,
   settingsOpen: false,
+  updateStatus: null,
 
   setLocked: (locked) => set({ locked }),
   setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
+  setUpdateStatus: (updateStatus) => set({ updateStatus }),
 
   init: async () => {
-    const [settings, boards, stats, syncStatus] = await Promise.all([
+    const [settings, boards, stats, syncStatus, updateStatus] = await Promise.all([
       api().getSettings(),
       api().listBoards(),
       api().getStorageStats(),
       api().getSyncStatus(),
+      api().getUpdateStatus(),
     ])
-    set({ settings, boards, stats, syncStatus, ready: true, locked: settings.appLockEnabled })
+    set({
+      settings,
+      boards,
+      stats,
+      syncStatus,
+      updateStatus,
+      ready: true,
+      locked: settings.appLockEnabled,
+    })
     await get().reload()
   },
 
