@@ -64,6 +64,8 @@ export interface FileMetadata {
   kind: 'file'
   paths: string[]
   names: string[]
+  /** Set when the file is an image and a thumbnail blob was generated. */
+  thumbnailRef?: string
 }
 
 export interface CodeMetadata {

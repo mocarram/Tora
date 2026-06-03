@@ -1,8 +1,9 @@
-import { app, globalShortcut, ipcMain, protocol } from 'electron'
+import { app, globalShortcut, ipcMain, nativeImage, protocol } from 'electron'
 import { readFile } from 'node:fs/promises'
 import { join, normalize } from 'node:path'
-import type { ClipItem } from '@core/model'
+import type { ClipItem, FileMetadata } from '@core/model'
 import { FAVOURITES_BOARD_ID } from '@core/model'
+import { isPreviewableImage } from '@core/fileType'
 import {
   IPC,
   type AddToBoardRequest,
@@ -151,12 +152,36 @@ export class Application {
           result.item = this.storage.items.getById(result.item.id) ?? result.item
         }
       }
+
+      // Generate a thumbnail for image FILES so file cards show a preview.
+      if (result.item.type === 'file' && result.item.metadata.kind === 'file') {
+        const updated = await this.attachFileThumbnail(result.item.id, result.item.metadata)
+        if (updated) result.item = updated
+      }
+
       this.search.markStale()
       this.emit({ kind: 'item-added', item: result.item })
       this.sync.notifyLocalChange()
     } else if (result.kind === 'deduped' && result.item) {
       this.emit({ kind: 'item-updated', item: result.item })
     }
+  }
+
+  /**
+   * If a captured file is an image, render a thumbnail from it so the file card
+   * shows a preview. Non-image files (zip, pdf, etc.) are left as name + size.
+   * Returns the updated item, or null when no thumbnail was produced.
+   */
+  private async attachFileThumbnail(id: string, meta: FileMetadata): Promise<ClipItem | null> {
+    const path = meta.paths.find((p) => isPreviewableImage(p))
+    if (!path) return null
+    let image = nativeImage.createFromPath(path)
+    if (image.isEmpty()) return null
+    if (image.getSize().width > 1024) image = image.resize({ width: 1024, quality: 'best' })
+    await this.storage.blobs.writeBuffer(id, 'thumb.png', image.toPNG())
+    this.storage.items.setContentRef(id, id) // ensure blob cleanup on delete
+    this.storage.items.setMetadata(id, { ...meta, thumbnailRef: `${id}/thumb.png` })
+    return this.storage.items.getById(id)
   }
 
   // ---- Events ------------------------------------------------------------
@@ -257,7 +282,13 @@ export class Application {
       }
     }
     if (item.type === 'file' && item.metadata.kind === 'file') {
-      return { type: 'file', filePaths: item.metadata.paths }
+      // Image files: include the thumbnail so the large preview shows the image.
+      const thumb = ref ? await this.storage.blobs.readBuffer(ref, 'thumb.png') : null
+      return {
+        type: 'file',
+        filePaths: item.metadata.paths,
+        ...(thumb ? { imageDataUrl: `data:image/png;base64,${thumb.toString('base64')}` } : {}),
+      }
     }
     const text = ref ? await this.storage.blobs.readText(ref, 'text.txt') : null
     const html = ref ? await this.storage.blobs.readText(ref, 'content.html') : null

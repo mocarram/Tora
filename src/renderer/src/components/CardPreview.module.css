@@ -138,6 +138,46 @@
   color: #fff;
 }
 
+.fileImage {
+  position: relative;
+  height: 100%;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background:
+    linear-gradient(45deg, var(--color-bg) 25%, transparent 25%) 0 0 / 16px 16px,
+    linear-gradient(-45deg, var(--color-bg) 25%, transparent 25%) 0 8px / 16px 16px,
+    var(--color-bg-elevated);
+}
+.fileImage .thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.fileOverlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: var(--space-4) var(--space-4) var(--space-3);
+  background: linear-gradient(to top, var(--color-scrim), transparent);
+}
+.fileOverlayName {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fileOverlayMeta {
+  font-size: var(--text-2xs);
+  color: rgba(255, 255, 255, 0.8);
+}
+
 .file {
   display: flex;
   flex-direction: column;
