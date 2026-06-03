@@ -41,7 +41,7 @@ const PATHS: Record<IconName, string> = {
   color:
     'M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2s-1-2 0-3 3 0 3-2a8 8 0 0 0-7-9zM7.5 12.5h.01M10 8h.01M14.5 8h.01',
   code: 'M9 8l-4 4 4 4M15 8l4 4-4 4',
-  pin: 'M12 3l4 4-1.5 1.5L15 14l-3 3-3-3 .5-5.5L8 7z M9 18l-3 3',
+  pin: 'M18 21l-6-4.5L6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z',
   copy: 'M9 9h10v10H9zM5 15V5h10',
   paste: 'M9 4h6v3H9zM7 5H5v15h14V5h-2M9 12h6M9 16h4',
   trash: 'M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13',
