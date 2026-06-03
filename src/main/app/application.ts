@@ -484,6 +484,7 @@ export class Application {
       triggerSync: () => this.sync.syncNow(),
       hidePanel: () => this.windows.hide(),
       setWindowMode: (mode: AppSettings['windowMode']) => this.applySettings({ windowMode: mode }),
+      setHideSuppressed: (suppressed: boolean) => this.windows.setHideSuppressed(suppressed),
     }
   }
 }

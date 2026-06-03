@@ -42,6 +42,7 @@ const methods: ToraMethod[] = [
   'triggerSync',
   'hidePanel',
   'setWindowMode',
+  'setHideSuppressed',
 ]
 
 const api = {} as Record<string, unknown>

@@ -29,6 +29,22 @@ export function App(): React.JSX.Element {
   const [queueFormat, setQueueFormat] = useState<PasteFormat>('keep')
 
   const reducedMotion = prefersReducedMotion() || (store.settings?.reduceMotion ?? false)
+  const windowMode = store.settings?.windowMode ?? 'panel'
+  const onboardingOpen =
+    store.ready && !!store.settings && !store.settings.onboardingComplete && !store.locked
+
+  // Tell main to suppress panel auto-hide while any modal/overlay is open, so
+  // clicking outside the app does not yank the panel away mid-task.
+  const modalOpen =
+    settingsOpen ||
+    !!store.expandedId ||
+    !!store.editingId ||
+    newBoardOpen ||
+    store.locked ||
+    onboardingOpen
+  useEffect(() => {
+    void window.tora.setHideSuppressed(modalOpen)
+  }, [modalOpen])
 
   const selectedItem = useMemo(
     () => store.items.find((i) => i.id === store.selectedId) ?? null,
@@ -84,7 +100,10 @@ export function App(): React.JSX.Element {
         if (typing && document.activeElement === searchRef.current) {
           searchRef.current?.blur()
         } else if (!overlay) {
-          void window.tora.hidePanel()
+          // Panel mode: Esc dismisses (it is a popover). Window mode stays open
+          // like a normal window; Esc just clears the selection.
+          if (windowMode === 'panel') void window.tora.hidePanel()
+          else store.select(null)
         }
         return
       }
@@ -141,7 +160,7 @@ export function App(): React.JSX.Element {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [store, settingsOpen, selectedItem, moveSelection, copy, paste, togglePin, remove])
+  }, [store, settingsOpen, windowMode, selectedItem, moveSelection, copy, paste, togglePin, remove])
 
   const stats = store.stats
   const capPct =
@@ -288,9 +307,7 @@ export function App(): React.JSX.Element {
       />
 
       <Onboarding
-        open={
-          store.ready && !!store.settings && !store.settings.onboardingComplete && !store.locked
-        }
+        open={onboardingOpen}
         reducedMotion={reducedMotion}
         onComplete={() => void window.tora.updateSettings({ onboardingComplete: true })}
       />

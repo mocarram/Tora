@@ -2,6 +2,7 @@ import { app, BrowserWindow, screen, shell } from 'electron'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { IPC, type AppSettings, type ToraEvent } from '@shared/ipc'
+import { shouldDismissOnBlur } from './dismissPolicy'
 
 const dir = dirname(fileURLToPath(import.meta.url))
 const isDev = !app.isPackaged
@@ -16,10 +17,16 @@ export class WindowManager {
   private win: BrowserWindow | null = null
   private mode: AppSettings['windowMode'] = 'panel'
   private quitting = false
+  /** When true, panel auto-hide on blur is suppressed (a modal/overlay is open). */
+  private hideSuppressed = false
 
   /** Allow the window to actually close (called when the app is quitting). */
   markQuitting(): void {
     this.quitting = true
+  }
+
+  setHideSuppressed(suppressed: boolean): void {
+    this.hideSuppressed = suppressed
   }
 
   create(initialMode: AppSettings['windowMode']): BrowserWindow {
@@ -53,9 +60,19 @@ export class WindowManager {
     })
     win.webContents.on('will-navigate', (e) => e.preventDefault())
 
-    // In panel mode, hide when focus is lost (click-away dismiss).
+    // Panel mode is a modal popover: clicking outside (losing focus) dismisses
+    // it. Window mode stays open like a normal app window. Guards prevent
+    // glitchy hides: an open overlay (hideSuppressed), DevTools focus, or an
+    // already-hidden window must not trigger a dismiss.
     win.on('blur', () => {
-      if (this.mode === 'panel' && !isDev) this.hide()
+      if (win.isDestroyed()) return
+      const dismiss = shouldDismissOnBlur({
+        mode: this.mode,
+        hideSuppressed: this.hideSuppressed,
+        visible: win.isVisible(),
+        devToolsFocused: win.webContents.isDevToolsFocused(),
+      })
+      if (dismiss) this.hide()
     })
 
     // Closing the window only hides it (menu-bar app stays alive). The window is
@@ -111,7 +128,8 @@ export class WindowManager {
     win.setAlwaysOnTop(mode === 'panel', 'floating')
     if (mode === 'panel') this.positionPanel()
     else this.positionWindow()
-    this.emit(mode === 'panel' ? { kind: 'panel-shown' } : { kind: 'panel-hidden' })
+    // No visibility event here: a layout change is not a show/hide, and emitting
+    // panel-hidden would spuriously re-trigger the app lock.
   }
 
   show(): void {
