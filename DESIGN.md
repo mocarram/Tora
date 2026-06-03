@@ -59,6 +59,18 @@ code, the storage meter, and the brand mark stripes.
   root in sync while set to `system`.
 - `color-scheme` is set per theme so native form controls and scrollbars match.
 
+### Material (frosted glass)
+
+The surfaces are translucent so the native window vibrancy reads through as
+frosted glass (an Apple-like tone), while the warm-amber identity, layout, and
+left rail stay the same. Semantic surface tokens (`--color-card`, `--color-rail`,
+`--color-window`, `--color-bg-elevated`) are `rgba` tints layered over the
+vibrancy, and chrome/cards/overlays add a `backdrop-filter` blur
+(`--glass-blur`, `--glass-blur-soft`). The card deck is virtualized, so only the
+~10-30 visible cards ever carry a backdrop filter. The app-lock screen is the
+one deliberately opaque surface (heavy blur + near-opaque fill) so locked
+content is never visible.
+
 ## Motion
 
 Spring-led and tactile, defined in `lib/motion.ts` and mirrored by CSS duration

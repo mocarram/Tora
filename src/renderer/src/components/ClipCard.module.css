@@ -6,6 +6,9 @@
   height: 100%;
   text-align: left;
   background: var(--color-card);
+  /* Frosted glass: the translucent tint over a backdrop blur. */
+  backdrop-filter: blur(var(--glass-blur-soft)) saturate(150%);
+  -webkit-backdrop-filter: blur(var(--glass-blur-soft)) saturate(150%);
   border: 1px solid var(--color-card-edge);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);

@@ -115,59 +115,66 @@
 :root[data-theme='dark'] {
   color-scheme: dark;
 
-  --color-window: rgba(16, 13, 10, 0.72);
-  --color-bg: var(--ink-1);
-  --color-bg-elevated: var(--ink-2);
-  --color-rail: rgba(20, 17, 13, 0.55);
+  --color-window: rgba(18, 15, 11, 0.4);
+  /* Translucent surfaces so the native window vibrancy reads through as frosted
+     glass (Apple-like). Tints layer over the blurred desktop. */
+  --color-bg: rgba(12, 10, 7, 0.5);
+  --color-bg-elevated: rgba(30, 25, 19, 0.86);
+  --color-rail: rgba(24, 20, 15, 0.3);
 
-  --color-card: var(--ink-3);
-  --color-card-raised: var(--ink-4);
-  --color-card-edge: rgba(255, 247, 235, 0.06);
-  --color-card-hover: var(--ink-4);
-  --color-card-active: var(--ink-5);
+  --color-card: rgba(46, 39, 30, 0.46);
+  --color-card-raised: rgba(60, 51, 39, 0.74);
+  --color-card-edge: rgba(255, 250, 242, 0.1);
+  --color-card-hover: rgba(60, 51, 39, 0.58);
+  --color-card-active: rgba(74, 63, 49, 0.8);
+  /* Backdrop blur radius applied to glass surfaces. */
+  --glass-blur: 24px;
+  --glass-blur-soft: 14px;
 
-  --color-text: #ece6dc;
+  --color-text: #f3eee5;
   --color-text-muted: var(--ink-9);
   --color-text-faint: var(--ink-8);
   --color-text-inverted: var(--ink-0);
 
   --color-accent: var(--amber-4);
   --color-accent-strong: var(--amber-3);
-  --color-accent-quiet: rgba(232, 132, 60, 0.14);
+  --color-accent-quiet: rgba(232, 132, 60, 0.16);
   --color-on-accent: #1a1208;
 
-  --color-border: rgba(255, 247, 235, 0.08);
-  --color-border-strong: rgba(255, 247, 235, 0.16);
+  --color-border: rgba(255, 250, 242, 0.1);
+  --color-border-strong: rgba(255, 250, 242, 0.2);
   --color-focus-ring: var(--amber-3);
 
   --color-positive: var(--signal-positive);
   --color-danger: var(--signal-danger);
   --color-info: var(--signal-info);
 
-  --color-scrim: rgba(0, 0, 0, 0.5);
-  --color-input: rgba(255, 247, 235, 0.05);
+  --color-scrim: rgba(0, 0, 0, 0.4);
+  --color-input: rgba(255, 250, 242, 0.07);
 
-  /* Stacked-card depth: warm, directional, never a flat blur. */
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 16px rgba(0, 0, 0, 0.34);
-  --shadow-raised: 0 2px 4px rgba(0, 0, 0, 0.45), 0 16px 40px rgba(0, 0, 0, 0.5);
-  --shadow-overlay: 0 24px 70px rgba(0, 0, 0, 0.6);
-  --shadow-inset-top: inset 0 1px 0 rgba(255, 247, 235, 0.05);
+  /* Soft, diffuse depth for glass; lighter than the old solid-card shadows. */
+  --shadow-card: 0 1px 1px rgba(0, 0, 0, 0.22), 0 6px 18px rgba(0, 0, 0, 0.26);
+  --shadow-raised: 0 2px 4px rgba(0, 0, 0, 0.3), 0 16px 40px rgba(0, 0, 0, 0.44);
+  --shadow-overlay: 0 30px 80px rgba(0, 0, 0, 0.55);
+  --shadow-inset-top: inset 0 1px 0 rgba(255, 250, 242, 0.08);
 }
 
 /* ============ LIGHT THEME ============ */
 :root[data-theme='light'] {
   color-scheme: light;
 
-  --color-window: rgba(244, 239, 231, 0.78);
-  --color-bg: var(--paper-2);
-  --color-bg-elevated: var(--paper-1);
-  --color-rail: rgba(247, 242, 233, 0.6);
+  --color-window: rgba(244, 240, 233, 0.5);
+  --color-bg: rgba(247, 243, 236, 0.6);
+  --color-bg-elevated: rgba(252, 250, 245, 0.9);
+  --color-rail: rgba(249, 245, 238, 0.36);
 
-  --color-card: var(--paper-0);
-  --color-card-raised: var(--paper-0);
-  --color-card-edge: rgba(20, 17, 13, 0.05);
-  --color-card-hover: var(--paper-1);
-  --color-card-active: var(--paper-3);
+  --color-card: rgba(255, 253, 249, 0.6);
+  --color-card-raised: rgba(255, 255, 255, 0.86);
+  --color-card-edge: rgba(20, 17, 13, 0.06);
+  --color-card-hover: rgba(255, 255, 255, 0.74);
+  --color-card-active: rgba(236, 229, 217, 0.86);
+  --glass-blur: 24px;
+  --glass-blur-soft: 14px;
 
   --color-text: #1a1713;
   --color-text-muted: #6f6450;
@@ -176,23 +183,23 @@
 
   --color-accent: var(--amber-5);
   --color-accent-strong: var(--amber-6);
-  --color-accent-quiet: rgba(213, 106, 34, 0.12);
+  --color-accent-quiet: rgba(213, 106, 34, 0.14);
   --color-on-accent: #fffaf2;
 
   --color-border: rgba(20, 17, 13, 0.1);
-  --color-border-strong: rgba(20, 17, 13, 0.18);
+  --color-border-strong: rgba(20, 17, 13, 0.2);
   --color-focus-ring: var(--amber-5);
 
   --color-positive: #3f7d4f;
   --color-danger: #b0432d;
   --color-info: #3f6f8a;
 
-  --color-scrim: rgba(40, 32, 22, 0.28);
-  --color-input: rgba(20, 17, 13, 0.04);
+  --color-scrim: rgba(40, 32, 22, 0.2);
+  --color-input: rgba(20, 17, 13, 0.05);
 
-  --shadow-card: 0 1px 2px rgba(60, 48, 30, 0.1), 0 6px 16px rgba(60, 48, 30, 0.12);
-  --shadow-raised: 0 2px 5px rgba(60, 48, 30, 0.14), 0 16px 38px rgba(60, 48, 30, 0.2);
-  --shadow-overlay: 0 24px 64px rgba(40, 32, 22, 0.3);
+  --shadow-card: 0 1px 1px rgba(60, 48, 30, 0.08), 0 6px 18px rgba(60, 48, 30, 0.12);
+  --shadow-raised: 0 2px 5px rgba(60, 48, 30, 0.12), 0 16px 38px rgba(60, 48, 30, 0.18);
+  --shadow-overlay: 0 30px 70px rgba(40, 32, 22, 0.26);
   --shadow-inset-top: inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
