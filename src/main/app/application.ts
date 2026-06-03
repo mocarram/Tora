@@ -294,26 +294,58 @@ export class Application {
     this.storage.items.touch(itemId)
   }
 
+  /**
+   * Dismiss Tora so the previously active app regains focus. On macOS hiding the
+   * window is not enough (the app stays active and Cmd+V would go nowhere), so
+   * we hide the whole app, which returns focus to the prior app.
+   */
+  private dismissForPaste(): void {
+    if (process.platform === 'darwin') app.hide()
+    else this.windows.hide()
+  }
+
+  /**
+   * True when we can synthesise the paste keystroke. If Accessibility is not
+   * granted yet, the content is already on the clipboard and we open the prompt
+   * so the next paste works (the user can also paste manually with Cmd+V).
+   */
+  private canInjectPaste(): boolean {
+    if (process.platform !== 'darwin') return true
+    if (getPermissions().accessibility) return true
+    void requestAccessibility()
+    return false
+  }
+
   private async pasteItem(req: PasteRequest): Promise<void> {
     const item = this.storage.items.getById(req.itemId)
     if (!item) return
     const text = await this.writer.write(item, req.format)
     this.watcher.markSelfCopy(text)
-    this.windows.hide()
-    await delay(120)
-    await pasteIntoFrontApp()
     this.storage.items.touch(req.itemId)
+    if (!this.canInjectPaste()) return
+    this.dismissForPaste()
+    await delay(150)
+    try {
+      await pasteIntoFrontApp()
+    } catch {
+      // Content is on the clipboard; a manual Cmd+V still works.
+    }
   }
 
   private async queuePaste(req: QueuePasteRequest): Promise<void> {
-    this.windows.hide()
-    await delay(120)
+    if (!this.canInjectPaste()) return
+    this.dismissForPaste()
+    await delay(150)
     for (const id of req.itemIds) {
       const item = this.storage.items.getById(id)
       if (!item) continue
       const text = await this.writer.write(item, req.format)
       this.watcher.markSelfCopy(text)
-      await pasteIntoFrontApp()
+      try {
+        await pasteIntoFrontApp()
+      } catch {
+        // Skip a failed paste; keep the queue going.
+      }
       await delay(Math.max(40, req.delayMs))
     }
   }
