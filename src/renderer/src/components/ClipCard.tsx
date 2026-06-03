@@ -4,6 +4,7 @@ import type { ClipItem } from '@core/model'
 import { relativeTime } from '@core/format'
 import { Icon } from './Icon'
 import { CardPreview } from './CardPreview'
+import { Tooltip } from './Tooltip'
 import { TYPE_META } from './typeMeta'
 import { cardVariants } from '../lib/motion'
 import styles from './ClipCard.module.css'
@@ -93,74 +94,80 @@ function ClipCardImpl({
       <div className={styles.footer}>
         <span>{meta.label}</span>
         <div className={styles.actions}>
-          <button
-            className={styles.action}
-            title="Copy"
-            aria-label="Copy"
-            onClick={(e) => {
-              stop(e)
-              onCopy(item.id)
-            }}
-          >
-            <Icon name="copy" size={14} />
-          </button>
-          <button
-            className={styles.action}
-            title={item.isPinned ? 'Unpin' : 'Pin'}
-            aria-label={item.isPinned ? 'Unpin' : 'Pin'}
-            onClick={(e) => {
-              stop(e)
-              onTogglePin(item.id, !item.isPinned)
-            }}
-          >
-            <Icon name="pin" size={14} filled={item.isPinned} />
-          </button>
-          <button
-            className={`${styles.action} ${queued ? styles.actionOn : ''}`}
-            title={queued ? 'Remove from queue' : 'Add to queue'}
-            aria-label={queued ? 'Remove from queue' : 'Add to queue'}
-            onClick={(e) => {
-              stop(e)
-              onToggleQueue(item.id)
-            }}
-          >
-            <Icon name="queue" size={14} />
-          </button>
-          {editable ? (
+          <Tooltip label="Copy">
             <button
               className={styles.action}
-              title="Edit text"
-              aria-label="Edit text"
+              aria-label="Copy"
               onClick={(e) => {
                 stop(e)
-                onEdit(item.id)
+                onCopy(item.id)
               }}
             >
-              <Icon name="edit" size={14} />
+              <Icon name="copy" size={14} />
             </button>
+          </Tooltip>
+          <Tooltip label={item.isPinned ? 'Unpin' : 'Pin'}>
+            <button
+              className={styles.action}
+              aria-label={item.isPinned ? 'Unpin' : 'Pin'}
+              onClick={(e) => {
+                stop(e)
+                onTogglePin(item.id, !item.isPinned)
+              }}
+            >
+              <Icon name="pin" size={14} filled={item.isPinned} />
+            </button>
+          </Tooltip>
+          <Tooltip label={queued ? 'Remove from queue' : 'Add to queue'}>
+            <button
+              className={`${styles.action} ${queued ? styles.actionOn : ''}`}
+              aria-label={queued ? 'Remove from queue' : 'Add to queue'}
+              onClick={(e) => {
+                stop(e)
+                onToggleQueue(item.id)
+              }}
+            >
+              <Icon name="queue" size={14} />
+            </button>
+          </Tooltip>
+          {editable ? (
+            <Tooltip label="Edit text">
+              <button
+                className={styles.action}
+                aria-label="Edit text"
+                onClick={(e) => {
+                  stop(e)
+                  onEdit(item.id)
+                }}
+              >
+                <Icon name="edit" size={14} />
+              </button>
+            </Tooltip>
           ) : null}
-          <button
-            className={styles.action}
-            title="Large preview"
-            aria-label="Large preview"
-            onClick={(e) => {
-              stop(e)
-              onExpand(item.id)
-            }}
-          >
-            <Icon name="expand" size={14} />
-          </button>
-          <button
-            className={`${styles.action} ${styles.actionDanger}`}
-            title="Delete"
-            aria-label="Delete"
-            onClick={(e) => {
-              stop(e)
-              onDelete(item.id)
-            }}
-          >
-            <Icon name="trash" size={14} />
-          </button>
+          <Tooltip label="Large preview">
+            <button
+              className={styles.action}
+              aria-label="Large preview"
+              onClick={(e) => {
+                stop(e)
+                onExpand(item.id)
+              }}
+            >
+              <Icon name="expand" size={14} />
+            </button>
+          </Tooltip>
+          <Tooltip label="Delete">
+            <button
+              className={`${styles.action} ${styles.actionDanger}`}
+              aria-label="Delete"
+              onClick={(e) => {
+                stop(e)
+                onDelete(item.id)
+              }}
+            >
+              <Icon name="trash" size={14} />
+            </button>
+          </Tooltip>
         </div>
       </div>
     </motion.div>
