@@ -8,12 +8,18 @@ was Linux, so macOS-native and GUI paths are type/build/test-verified only).
 
 ## Decisions
 
-- **Toolchain (current at build time):** Electron 42, electron-vite 5, Vite 7,
+- **Toolchain (current at build time):** Electron 41 (see note below),
+  electron-vite 5, Vite 7,
   React 19, TypeScript 6 (strict, including `noUncheckedIndexedAccess` and
   `exactOptionalPropertyTypes`), ESLint 10 + typescript-eslint 8, Vitest 4,
   Playwright 1.6, electron-builder 26, better-sqlite3 12. Vite was pinned to 7
   (not 8) for electron-vite compatibility; rationale and the dependency analysis
-  are in the Phase 0 commit.
+  are in the Phase 0 commit. **Electron was pinned to 41, not the latest 42:**
+  `better-sqlite3@12.10.0` (its newest) does not compile against Electron 42's
+  V8 13.8 (the `v8::External` pointer-tag API change); it builds cleanly on
+  Electron 41. Bump to 42 once better-sqlite3 ships a compatible release. This
+  surfaced only when building the native module against real Electron headers on
+  macOS (the Linux CI host used a Node prebuild), and is noted in GAPS.md.
 - **No `any`**, no em dashes (an ESLint `no-restricted-syntax` rule enforces the
   latter in code), and `core/` is forbidden from importing Electron or Node
   built-ins by an ESLint rule - so the iOS-reuse boundary is mechanically
