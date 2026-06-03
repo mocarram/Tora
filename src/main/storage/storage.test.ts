@@ -117,6 +117,28 @@ describe('ItemsRepo', () => {
     expect(items[0]?.id).toBe(a)
   })
 
+  it('a copied (touched) item jumps to the front, after pinned items', () => {
+    // Models clicking the copy icon: copyItem touches the item, which must move
+    // it to the front of the list but never ahead of a pinned item.
+    const pin = addText('pin', 'p')
+    const x = addText('x', 'x')
+    const y = addText('y', 'y')
+    storage.items.setPinned(pin, true)
+    // Distinct recency, x oldest then y.
+    storage.items.touch(x, 1000)
+    storage.items.touch(y, 2000)
+    // Copying x touches it to "now"; it should pass y but stay behind the pin.
+    storage.items.touch(x, 3000)
+    const { items } = storage.items.query({
+      filter: 'all',
+      boardId: null,
+      pinnedOnly: false,
+      limit: 10,
+      offset: 0,
+    })
+    expect(items.map((i) => i.id)).toEqual([pin, x, y])
+  })
+
   it('soft deletes and excludes from queries', () => {
     const id = addText('bye', 'x')
     storage.items.softDelete(id)
