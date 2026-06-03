@@ -10,6 +10,14 @@ files:
   - out/**/*
   - package.json
 
+# Tray icons must ship inside the app (loaded from process.resourcesPath at
+# runtime). The @2x variant is auto-selected on retina.
+extraResources:
+  - from: build/trayTemplate.png
+    to: trayTemplate.png
+  - from: build/trayTemplate@2x.png
+    to: trayTemplate@2x.png
+
 asarUnpack:
   # Native module must stay unpacked so its .node binary can be loaded.
   - '**/node_modules/better-sqlite3/**'
