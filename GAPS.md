@@ -13,10 +13,16 @@ by types, lint, build, and unit/integration tests only - not by running the app.
   produced, but the window, vibrancy, frameless bottom-panel positioning, and
   spring motion were not seen running there. On macOS a normal `npm install`
   downloads the binary; then `npm run rebuild` and `npm run dev`.
-- **Native module ABI.** `better-sqlite3` installs a Node prebuild here and is
-  exercised by the test suite under Node. For the packaged app it must be rebuilt
-  against Electron's ABI: `npm run rebuild` (electron-builder also does this at
-  package time via `npmRebuild: true`). Not run here.
+- **Native module ABI / Electron version.** `better-sqlite3` installs a Node
+  prebuild here and is exercised by the test suite under Node. For the packaged
+  app it must be rebuilt against Electron's ABI: `npm run rebuild`
+  (electron-builder also does this at package time via `npmRebuild: true`).
+  **Electron is pinned to 41, not 42:** `better-sqlite3@12.10.0` (its newest) does
+  not compile against Electron 42's V8 13.8 (`v8::External` pointer-tag API
+  change). Verified empirically - it builds cleanly on Electron 41. Bump to 42
+  once better-sqlite3 ships a compatible release. This only surfaces when building
+  the native module against real Electron headers (the Linux CI host uses a Node
+  prebuild and never hit it).
 - **Clipboard capture.** `ClipboardWatcher` uses Electron's `clipboard` API,
   including macOS concealed/transient markers (`org.nspasteboard.*`), `public.file-url`
   reading, and image buffers. Logic is structured and the downstream pipeline is
