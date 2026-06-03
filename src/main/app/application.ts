@@ -78,7 +78,7 @@ export class Application {
       onToggleCapture: () => void this.setCaptureEnabled(!this.settings.captureEnabled),
       onOpenSettings: () => {
         this.windows.show()
-        this.emit({ kind: 'panel-shown' })
+        this.emit({ kind: 'open-settings' })
       },
       onQuit: () => app.quit(),
     })
@@ -358,12 +358,19 @@ export class Application {
   private editItem(req: EditItemRequest): ClipItem | null {
     const item = this.storage.items.getById(req.itemId)
     if (!item) return null
+    // Re-classify the edited text so a URL stays a URL, code stays code, etc.
     const classified = classifyCapture({ text: req.text })
+    const fallback = {
+      kind: 'text' as const,
+      charCount: req.text.length,
+      wordCount: countWords(req.text),
+    }
     const updated = this.storage.items.updateText(req.itemId, {
-      previewText: toPreviewLine(req.text),
+      type: classified?.type ?? 'text',
+      previewText: classified?.previewText ?? toPreviewLine(req.text),
       contentHash: classified?.contentHash ?? hashString(req.text),
       byteSize: Buffer.byteLength(req.text, 'utf8'),
-      metadata: { kind: 'text', charCount: req.text.length, wordCount: countWords(req.text) },
+      metadata: classified?.metadata ?? fallback,
     })
     if (updated?.contentRef) {
       void this.storage.blobs.writeText(updated.contentRef, 'text.txt', req.text)

@@ -13,6 +13,7 @@ export function useToraBridge(): void {
   const setBoards = useStore((s) => s.setBoards)
   const setSettings = useStore((s) => s.setSettings)
   const setLocked = useStore((s) => s.setLocked)
+  const setSettingsOpen = useStore((s) => s.setSettingsOpen)
   const refreshStats = useStore((s) => s.refreshStats)
   const theme = useStore((s) => s.settings?.theme ?? 'system')
 
@@ -45,6 +46,9 @@ export function useToraBridge(): void {
         case 'panel-hidden':
           if (useStore.getState().settings?.appLockEnabled) setLocked(true)
           break
+        case 'open-settings':
+          setSettingsOpen(true)
+          break
         case 'locked':
           setLocked(true)
           break
@@ -56,5 +60,5 @@ export function useToraBridge(): void {
       }
     })
     return off
-  }, [applyEvent, setBoards, setSettings, setLocked, refreshStats])
+  }, [applyEvent, setBoards, setSettings, setLocked, setSettingsOpen, refreshStats])
 }

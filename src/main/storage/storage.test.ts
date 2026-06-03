@@ -135,6 +135,19 @@ describe('ItemsRepo', () => {
     expect(stats.totalBytes).toBe(6)
   })
 
+  it('updateText reclassifies the type (edit a note into a url)', () => {
+    const id = addText('a plain note', 'h')
+    const updated = storage.items.updateText(id, {
+      type: 'url',
+      previewText: 'https://tora.app',
+      contentHash: 'url:https://tora.app',
+      byteSize: 16,
+      metadata: { kind: 'url', url: 'https://tora.app', host: 'tora.app' },
+    })
+    expect(updated?.type).toBe('url')
+    expect(updated?.metadata.kind).toBe('url')
+  })
+
   it('records sync state on insert', () => {
     const id = addText('synced', 'h')
     const row = storage.db

@@ -120,6 +120,7 @@ describe('ICloudDriveController (two instances, shared folder)', () => {
     const base = Date.now()
     a.storage.items.touch(item.id, base + 10_000)
     b.storage.items.updateText(item.id, {
+      type: 'text',
       previewText: 'edited on B',
       contentHash: 'hb',
       byteSize: 11,

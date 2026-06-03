@@ -37,6 +37,33 @@
   opacity: 1;
 }
 
+.queued {
+  border-color: var(--color-accent-strong);
+}
+.queued::before {
+  opacity: 1;
+}
+
+.queueBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-sm);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  flex-shrink: 0;
+}
+
+.actionOn {
+  background: var(--color-accent-quiet);
+  color: var(--color-accent);
+}
+
 .card:hover {
   background: var(--color-card-hover);
 }

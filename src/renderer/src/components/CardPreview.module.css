@@ -100,13 +100,22 @@
   height: 100%;
   border-radius: var(--radius-sm);
   overflow: hidden;
-  background: var(--color-bg);
+  /* Subtle checker so transparent images and letterboxing read clearly. */
+  background:
+    linear-gradient(45deg, var(--color-bg) 25%, transparent 25%) 0 0 / 16px 16px,
+    linear-gradient(-45deg, var(--color-bg) 25%, transparent 25%) 0 8px / 16px 16px,
+    var(--color-bg-elevated);
 }
-.thumb,
+.thumb {
+  width: 100%;
+  height: 100%;
+  /* Show the whole image, sharp, rather than a cropped/blurry cover. */
+  object-fit: contain;
+  display: block;
+}
 .thumbPlaceholder {
   width: 100%;
   height: 100%;
-  object-fit: cover;
   display: block;
 }
 .thumbPlaceholder {
