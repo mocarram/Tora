@@ -25,10 +25,24 @@ asarUnpack:
 # Rebuild native deps against the Electron ABI at package time.
 npmRebuild: true
 
+# In-app updates (electron-updater) read releases from this public GitHub repo.
+# Publishing happens only with `electron-builder --publish`; a plain build never
+# uploads anything.
+publish:
+  provider: github
+  owner: mocarram
+  repo: tora
+
 mac:
   category: public.app-category.productivity
   target:
+    # dmg for first-time manual download; zip is what electron-updater actually
+    # applies (Squirrel.Mac) and what produces latest-mac.yml.
     - target: dmg
+      arch:
+        - arm64
+        - x64
+    - target: zip
       arch:
         - arm64
         - x64

@@ -58,6 +58,40 @@ entitlements an Electron app needs (JIT, unsigned executable memory, library
 validation disabled). Accessibility for paste injection is requested at runtime
 via the macOS TCC prompt and needs no static entitlement.
 
+## In-app updates (electron-updater)
+
+Tora checks for updates on launch and every 6 hours, downloads in the background,
+and shows a "Restart" pill when an update is ready (`src/main/services/updater.ts`,
+`components/UpdateBanner.tsx`). The updater is **inert in dev and on unsigned
+builds**, so it never interferes locally; macOS only applies **signed** updates.
+
+The feed is GitHub Releases on the public `mocarram/tora` repo
+(`publish:` in `electron-builder.yml`). The mac `zip` target produces the artifact
+electron-updater applies plus the `latest-mac.yml` manifest; the `dmg` is for
+first-time manual download.
+
+### Cutting a release
+
+1. Bump `version` in `package.json` (this is the version users update to).
+2. Export the signing + notarization env vars above and set `mac.notarize: true`.
+3. Provide a token so electron-builder can create the GitHub release:
+   ```bash
+   export GH_TOKEN="<a GitHub token with repo/contents write on mocarram/tora>"
+   npm run build
+   npx electron-builder --mac --publish always
+   ```
+   This uploads the `.dmg`, the `.zip` (both arches), and `latest-mac.yml` to a
+   GitHub Release. Installed apps pick it up on their next check.
+
+Notes:
+- Auto-update needs the release artifacts to be **public**, which is why the repo
+  (or at least its releases) must be public. A private repo would require shipping
+  a token in the app - don't.
+- Both `arm64` and `x64` are published; electron-updater serves each Mac the right
+  one via `latest-mac.yml`.
+- Pre-releases: tag/mark the GitHub release as a pre-release and set a `channel`
+  if you later want a separate beta track.
+
 ## Config slots left to you
 
 - `appId` is `com.tora.clipboard`; change it to your own bundle id.
@@ -72,3 +106,6 @@ via the macOS TCC prompt and needs no static entitlement.
 - [ ] `mac.notarize: true`
 - [ ] `npm run dist:mac` produces a signed, notarized dmg
 - [ ] Launch from `/Applications`, grant Accessibility, verify capture + paste
+- [ ] `version` bumped in `package.json`
+- [ ] `GH_TOKEN` exported; `electron-builder --mac --publish always` uploads dmg + zip + latest-mac.yml
+- [ ] A prior installed build updates itself to the new release
