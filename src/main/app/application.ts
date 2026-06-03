@@ -30,6 +30,7 @@ import { ClipboardWatcher } from '../capture/clipboardWatcher'
 import { getFrontmostApp } from '../capture/sourceApp'
 import { SearchIndex } from '../services/searchIndex'
 import { ClipboardWriter } from '../services/clipboardWriter'
+import { ElectronPasteboard } from '../services/pasteboard'
 import { RetentionService } from '../services/retention'
 import { pasteIntoFrontApp } from '../services/pasteInjector'
 import { getPermissions, requestAccessibility, biometricUnlock } from '../services/permissions'
@@ -64,7 +65,11 @@ export class Application {
     this.storage = new Storage({ dbFile: paths.dbFile, blobDir: paths.blobDir })
     this.pipeline = new CapturePipeline(this.storage)
     this.search = new SearchIndex(this.storage)
-    this.writer = new ClipboardWriter(this.storage)
+    this.writer = new ClipboardWriter(
+      this.storage,
+      new ElectronPasteboard(),
+      join(paths.base, 'paste-cache'),
+    )
     this.retention = new RetentionService(this.storage)
     this.settings = { ...this.storage.settings.get() }
     this.watcher = new ClipboardWatcher((input) => this.onCapture(input))

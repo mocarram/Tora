@@ -1,8 +1,9 @@
 import { clipboard } from 'electron'
 import { fileURLToPath } from 'node:url'
-import { statSync } from 'node:fs'
+import { realpathSync, statSync } from 'node:fs'
 import { hashBytes, hashString } from '@core/hash'
 import type { CaptureInput } from '@core/capture'
+import { parseFilenamesPlist } from '../services/filenamesPlist'
 
 /**
  * Low-frequency pasteboard observer. Polls at a relaxed interval (event-driven
@@ -131,15 +132,41 @@ export class ClipboardWatcher {
     }
   }
 
-  /** macOS file copy: read the file-url pasteboard type. Single file best-effort. */
+  /**
+   * macOS file copy. Reads the NSFilenamesPboardType plist for one-or-many real
+   * paths, falling back to a single public.file-url. macOS often hands over an
+   * opaque file-reference URL (file:///.file/id=...), so each path is resolved
+   * to its real on-disk location via realpath.
+   */
   private readFilePaths(): string[] | null {
     if (process.platform !== 'darwin') return null
+    const fromPlist = this.readFilenamesPlist()
+    if (fromPlist && fromPlist.length > 0) return fromPlist.map((p) => this.resolveRealPath(p))
     try {
       const url = clipboard.read('public.file-url')
       if (!url) return null
-      return [fileURLToPath(url.trim())]
+      return [this.resolveRealPath(fileURLToPath(url.trim()))]
     } catch {
       return null
+    }
+  }
+
+  private readFilenamesPlist(): string[] | null {
+    try {
+      const buf = clipboard.readBuffer('NSFilenamesPboardType')
+      if (!buf || buf.length === 0) return null
+      const paths = parseFilenamesPlist(buf.toString('utf8'))
+      return paths.length > 0 ? paths : null
+    } catch {
+      return null
+    }
+  }
+
+  private resolveRealPath(p: string): string {
+    try {
+      return realpathSync(p)
+    } catch {
+      return p
     }
   }
 
@@ -157,7 +184,10 @@ export class ClipboardWatcher {
   static imageBlobs(): { ext: string; full: Uint8Array; thumbnail: Uint8Array } | null {
     const img = clipboard.readImage()
     if (img.isEmpty()) return null
-    const thumb = img.resize({ width: 480, quality: 'good' })
+    // Only downscale (never upscale, which would blur small images). A 1024px
+    // cap keeps card thumbnails sharp on retina without storing the full asset.
+    const { width } = img.getSize()
+    const thumb = width > 1024 ? img.resize({ width: 1024, quality: 'best' }) : img
     return { ext: 'png', full: img.toPNG(), thumbnail: thumb.toPNG() }
   }
 }

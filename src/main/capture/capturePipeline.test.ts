@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from 'node:fs'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -68,5 +68,29 @@ describe('CapturePipeline', () => {
   it('totals blob bytes on disk', async () => {
     await pipeline.ingest({ text: 'measure me please' })
     expect(await storage.blobs.totalBytes()).toBeGreaterThan(0)
+  })
+
+  it('references the blob for image items (so paste can restore the image)', async () => {
+    const r = await pipeline.ingest({
+      image: { format: 'png', width: 10, height: 10, byteLength: 4, hash: 'h' },
+    })
+    expect(r.item?.type).toBe('image')
+    expect(r.item?.contentRef).toBe(r.item?.id)
+  })
+
+  it('caches file bytes so paste survives source deletion', async () => {
+    const src = join(dir, 'src.bin')
+    writeFileSync(src, 'binary-ish content')
+    const r = await pipeline.ingest({ filePaths: [src], fileSizes: [18] })
+    expect(r.item?.type).toBe('file')
+    expect(r.item?.contentRef).toBe(r.item?.id)
+    expect(storage.blobs.has(r.item!.id, 'f0')).toBe(true)
+    expect(await storage.blobs.readText(r.item!.id, 'f0')).toBe('binary-ish content')
+  })
+
+  it('does not cache when the file is missing (path-only)', async () => {
+    const r = await pipeline.ingest({ filePaths: [join(dir, 'absent.txt')], fileSizes: [0] })
+    expect(r.item?.type).toBe('file')
+    expect(r.item?.contentRef).toBeNull()
   })
 })
