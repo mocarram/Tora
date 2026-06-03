@@ -51,6 +51,12 @@ Accent ramp is amber (`--amber-2..6`). The single accent appears as: the card
 leading-edge stripe, selection state, active nav, focus ring, links/keywords in
 code, the storage meter, and the brand mark stripes.
 
+One deliberate exception: text fields (the search bar) use the **native macOS
+focus ring** via the CSS `AccentColor` system color plus a soft glow
+(`--color-focus-native`, `--color-focus-glow`). This follows the user's System
+Settings accent (blue by default) so focused inputs feel native rather than
+fighting the system, while everything else stays warm amber.
+
 ### Themes
 
 - **Dark** (default) and **Light**. The app follows the macOS appearance via
