@@ -177,6 +177,8 @@ export interface ToraApi {
   // Window
   hidePanel(): Promise<void>
   setWindowMode(mode: AppSettings['windowMode']): Promise<void>
+  /** Suppress panel auto-hide on blur while a modal/overlay is open. */
+  setHideSuppressed(suppressed: boolean): Promise<void>
 
   // Events
   onEvent(listener: (event: ToraEvent) => void): () => void
