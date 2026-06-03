@@ -1,6 +1,6 @@
-import { app, globalShortcut, ipcMain, nativeImage, nativeTheme, protocol } from 'electron'
+import { app, globalShortcut, ipcMain, nativeImage, nativeTheme, protocol, session } from 'electron'
 import { readFile } from 'node:fs/promises'
-import { join, normalize } from 'node:path'
+import { join, normalize, sep } from 'node:path'
 import type { ClipItem, FileMetadata } from '@core/model'
 import { FAVOURITES_BOARD_ID } from '@core/model'
 import { isPreviewableImage } from '@core/fileType'
@@ -105,6 +105,7 @@ export class Application {
     // vibrancy (and traffic lights) match the chosen theme, not just the OS one.
     nativeTheme.themeSource = this.settings.theme
 
+    this.hardenSession()
     this.registerBlobProtocol()
     this.windows.create(this.settings.windowMode)
     this.tray.create()
@@ -251,13 +252,29 @@ export class Application {
 
   /** Serve blob files (thumbnails/images) to the renderer by path, sandboxed
    *  to the blob directory so a crafted URL cannot escape it. */
+  /**
+   * Tighten the default session. Tora renders only its own local content and
+   * never needs web permissions (camera, mic, geolocation, notifications, etc.),
+   * so deny every permission request and check outright. Defence in depth on top
+   * of the locked-down navigation and CSP.
+   */
+  private hardenSession(): void {
+    const ses = session.defaultSession
+    ses.setPermissionRequestHandler((_wc, _permission, callback) => callback(false))
+    ses.setPermissionCheckHandler(() => false)
+  }
+
   private registerBlobProtocol(): void {
     const root = this.paths.blobDir
     protocol.handle('tora-blob', async (request) => {
       const { pathname } = new URL(request.url)
       const rel = normalize(decodeURIComponent(pathname)).replace(/^([/.]+)/, '')
       const file = join(root, rel)
-      if (!file.startsWith(root)) return new Response('Forbidden', { status: 403 })
+      // Containment check with a separator boundary so a sibling directory that
+      // merely shares the prefix (e.g. "<root>-evil") cannot be served.
+      if (file !== root && !file.startsWith(root + sep)) {
+        return new Response('Forbidden', { status: 403 })
+      }
       try {
         const data = await readFile(file)
         return new Response(new Uint8Array(data), {
