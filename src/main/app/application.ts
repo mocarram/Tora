@@ -407,7 +407,13 @@ export class Application {
     if (!item) return
     const text = await this.writer.write(item, this.settings.pasteFormatDefault)
     this.watcher.markSelfCopy(text)
-    this.storage.items.touch(itemId)
+    const updated = this.storage.items.touch(itemId)
+    // The copied item is now what is on the clipboard, so it becomes the most
+    // recent and jumps to the front of the list (after any pinned items, per the
+    // query ordering). Emit so an open panel reorders immediately instead of
+    // only reflecting it on the next reopen. The renderer keeps the viewport and
+    // selection where they are.
+    if (updated) this.emit({ kind: 'item-updated', item: updated })
   }
 
   /**
