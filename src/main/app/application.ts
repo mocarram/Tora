@@ -399,7 +399,7 @@ export class Application {
     if (process.platform !== 'darwin' || !app.dock) return
     const file = app.isPackaged
       ? join(process.resourcesPath, 'icons', `${accent}.png`)
-      : join(dirname(fileURLToPath(import.meta.url)), '../../build/icons', `${accent}.png`)
+      : join(dirname(fileURLToPath(import.meta.url)), '../../build/accent-icons', `${accent}.png`)
     const image = nativeImage.createFromPath(file)
     if (!image.isEmpty()) app.dock.setIcon(image)
   }

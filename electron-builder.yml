@@ -18,7 +18,9 @@ extraResources:
   - from: build/trayTemplate@2x.png
     to: trayTemplate@2x.png
   # Per-accent Dock icons, swapped at runtime to match the chosen accent vibe.
-  - from: build/icons
+  # Source dir is build/accent-icons (NOT build/icons, which electron-builder
+  # reserves as an icon-set directory); shipped to resources as icons/.
+  - from: build/accent-icons
     to: icons
     filter: ['*.png']
 

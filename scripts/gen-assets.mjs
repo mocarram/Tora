@@ -293,17 +293,19 @@ function trayTemplate(size) {
 }
 
 mkdirSync(join(root, 'build'), { recursive: true })
-mkdirSync(join(root, 'build', 'icons'), { recursive: true })
+mkdirSync(join(root, 'build', 'accent-icons'), { recursive: true })
 
 // Default bundle icon (amber) -> build/icon.png, baked into the .icns at package
-// time. Per-accent variants -> build/icons/<accent>.png, bundled as resources
-// and swapped onto the Dock at runtime when the user changes their accent.
+// time. Per-accent variants -> build/accent-icons/<accent>.png, bundled as
+// resources and swapped onto the Dock at runtime when the accent changes. The
+// directory is deliberately NOT named build/icons, which electron-builder
+// reserves for a size-named icon set.
 writeFileSync(join(root, 'build', 'icon.png'), appIcon(1024, VIBES.amber))
 for (const [name, shade] of Object.entries(VIBES)) {
-  writeFileSync(join(root, 'build', 'icons', `${name}.png`), appIcon(1024, shade))
+  writeFileSync(join(root, 'build', 'accent-icons', `${name}.png`), appIcon(1024, shade))
 }
 writeFileSync(join(root, 'build', 'trayTemplate.png'), trayTemplate(22))
 writeFileSync(join(root, 'build', 'trayTemplate@2x.png'), trayTemplate(44))
 console.log(
-  `Wrote build/icon.png, build/icons/{${Object.keys(VIBES).join(',')}}.png, build/trayTemplate*.png`,
+  `Wrote build/icon.png, build/accent-icons/{${Object.keys(VIBES).join(',')}}.png, build/trayTemplate*.png`,
 )
