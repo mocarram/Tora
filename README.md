@@ -64,7 +64,8 @@ SQLite schema and `sync_state` map across unchanged (see `DATA.md`).
 Requires Node 22+.
 
 ```bash
-npm install          # on macOS, run: npm run rebuild   (native module vs Electron ABI)
+npm install          # downloads the Electron binary; then on macOS:
+npm run rebuild      # rebuild better-sqlite3 against the Electron ABI
 npm run dev          # launch the app with HMR
 npm test             # unit + integration tests (node)
 npm run typecheck    # strict TS, node + web projects
@@ -73,9 +74,9 @@ npm run build        # typecheck + build main/preload/renderer
 npm run dist:mac     # package a .dmg (see RELEASE.md for signing)
 ```
 
-> This repo's `.npmrc` sets `ELECTRON_SKIP_BINARY_DOWNLOAD=1` so it installs in
-> headless CI. To actually run the GUI on macOS, unset it and reinstall, then
-> `npm run rebuild`. See `GAPS.md`.
+> Headless CI skips the Electron binary by exporting
+> `ELECTRON_SKIP_BINARY_DOWNLOAD=1` as a workflow env var (see
+> `.github/workflows/ci.yml`); local installs download it normally.
 
 ## Status
 
