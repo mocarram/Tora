@@ -15,6 +15,12 @@ const isDev = !app.isPackaged
 export class WindowManager {
   private win: BrowserWindow | null = null
   private mode: AppSettings['windowMode'] = 'panel'
+  private quitting = false
+
+  /** Allow the window to actually close (called when the app is quitting). */
+  markQuitting(): void {
+    this.quitting = true
+  }
 
   create(initialMode: AppSettings['windowMode']): BrowserWindow {
     this.mode = initialMode
@@ -52,6 +58,16 @@ export class WindowManager {
       if (this.mode === 'panel' && !isDev) this.hide()
     })
 
+    // Closing the window only hides it (menu-bar app stays alive). The window is
+    // destroyed only when the app is actually quitting, so we never hold a dead
+    // reference and keep sending to it.
+    win.on('close', (e) => {
+      if (!this.quitting) {
+        e.preventDefault()
+        this.hide()
+      }
+    })
+
     if (isDev && process.env.ELECTRON_RENDERER_URL) {
       void win.loadURL(process.env.ELECTRON_RENDERER_URL)
     } else {
@@ -83,47 +99,57 @@ export class WindowManager {
     this.win.center()
   }
 
+  /** The window if it exists and is not destroyed, otherwise null. */
+  private get live(): BrowserWindow | null {
+    return this.win && !this.win.isDestroyed() ? this.win : null
+  }
+
   setMode(mode: AppSettings['windowMode']): void {
     this.mode = mode
-    if (!this.win) return
-    this.win.setAlwaysOnTop(mode === 'panel', 'floating')
+    const win = this.live
+    if (!win) return
+    win.setAlwaysOnTop(mode === 'panel', 'floating')
     if (mode === 'panel') this.positionPanel()
     else this.positionWindow()
     this.emit(mode === 'panel' ? { kind: 'panel-shown' } : { kind: 'panel-hidden' })
   }
 
   show(): void {
-    if (!this.win) return
+    const win = this.live
+    if (!win) return
     if (this.mode === 'panel') {
       this.positionPanel()
-      this.win.setAlwaysOnTop(true, 'floating')
+      win.setAlwaysOnTop(true, 'floating')
     }
-    this.win.show()
-    this.win.focus()
+    win.show()
+    win.focus()
     this.emit({ kind: 'panel-shown' })
   }
 
   hide(): void {
-    if (!this.win) return
-    this.win.hide()
+    const win = this.live
+    if (!win) return
+    win.hide()
     this.emit({ kind: 'panel-hidden' })
   }
 
   toggle(): void {
-    if (!this.win) return
-    if (this.win.isVisible() && this.win.isFocused()) this.hide()
+    const win = this.live
+    if (!win) return
+    if (win.isVisible() && win.isFocused()) this.hide()
     else this.show()
   }
 
   isVisible(): boolean {
-    return this.win?.isVisible() ?? false
+    return this.live?.isVisible() ?? false
   }
 
   get window(): BrowserWindow | null {
-    return this.win
+    return this.live
   }
 
   emit(event: ToraEvent): void {
-    this.win?.webContents.send(IPC.event, event)
+    const win = this.live
+    if (win) win.webContents.send(IPC.event, event)
   }
 }
