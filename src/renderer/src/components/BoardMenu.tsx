@@ -130,16 +130,30 @@ export function BoardMenu({ item, anchorRef, onClose }: BoardMenuProps): React.J
       <div className={styles.divider} />
 
       {creating ? (
-        <input
-          className={styles.input}
-          autoFocus
-          placeholder="Board name"
-          value={newName}
-          onChange={(e) => setNewName(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') createAndAdd()
-          }}
-        />
+        <div className={styles.create}>
+          <input
+            className={styles.input}
+            autoFocus
+            placeholder="Board name"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            onKeyDown={(e) => {
+              // Keep keystrokes out of the global shortcut handler. Without this,
+              // Enter creates the board, closes the menu (unmounting the input),
+              // and the now-unfocused window handler also pastes the item.
+              e.stopPropagation()
+              if (e.key === 'Enter') createAndAdd()
+            }}
+          />
+          <button
+            className={styles.createSave}
+            aria-label="Create board"
+            disabled={!newName.trim()}
+            onClick={createAndAdd}
+          >
+            <Icon name="check" size={14} />
+          </button>
+        </div>
       ) : (
         <button className={styles.row} role="menuitem" onClick={() => setCreating(true)}>
           <Icon name="plus" size={15} />

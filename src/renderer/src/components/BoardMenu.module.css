@@ -51,8 +51,15 @@
   background: var(--color-border);
 }
 
+.create {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
 .input {
-  height: 32px;
+  flex: 1;
+  min-width: 0;
+  height: 28px;
   padding: 0 var(--space-3);
   border-radius: var(--radius-sm);
   background: var(--color-input);
@@ -63,4 +70,21 @@
 }
 .input::placeholder {
   color: var(--color-text-faint);
+}
+.createSave {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+.createSave:hover:not(:disabled) {
+  background: var(--color-accent-strong);
+}
+.createSave:disabled {
+  opacity: 0.45;
 }
