@@ -16,7 +16,12 @@ export function CardPreview({ item }: { item: ClipItem }): React.JSX.Element {
       return <ColorPreview hex={item.metadata.hex} />
     case 'url':
       return (
-        <UrlPreview url={item.metadata.url} host={item.metadata.host} title={item.metadata.title} />
+        <UrlPreview
+          url={item.metadata.url}
+          host={item.metadata.host}
+          title={item.metadata.title}
+          faviconRef={item.metadata.faviconRef}
+        />
       )
     case 'image':
       return (
@@ -81,15 +86,21 @@ function UrlPreview({
   url,
   host,
   title,
+  faviconRef,
 }: {
   url: string
   host: string
   title?: string | undefined
+  faviconRef?: string | undefined
 }): React.JSX.Element {
   return (
     <div className={styles.url}>
       <div className={styles.favicon} aria-hidden="true">
-        {host.charAt(0).toUpperCase()}
+        {faviconRef ? (
+          <img src={`tora-blob://media/${faviconRef}`} alt="" className={styles.faviconImg} />
+        ) : (
+          host.charAt(0).toUpperCase()
+        )}
       </div>
       <div className={styles.urlText}>
         {title ? <span className={styles.urlTitle}>{title}</span> : null}

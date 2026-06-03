@@ -34,6 +34,7 @@ import { ClipboardWriter } from '../services/clipboardWriter'
 import { ElectronPasteboard } from '../services/pasteboard'
 import { RetentionService } from '../services/retention'
 import { Updater } from '../services/updater'
+import { fetchLinkPreview } from '../services/linkPreview'
 import { pasteIntoFrontApp } from '../services/pasteInjector'
 import { getPermissions, requestAccessibility, biometricUnlock } from '../services/permissions'
 import { createSyncProvider, type SyncController, type SyncDeps } from '../sync'
@@ -189,6 +190,12 @@ export class Application {
       this.search.markStale()
       this.emit({ kind: 'item-added', item: result.item })
       this.sync.notifyLocalChange()
+
+      // Enrich link cards with a title + favicon out of band (opt-in), so
+      // capture stays instant and a network hiccup never blocks it.
+      if (result.item.type === 'url' && this.settings.fetchLinkPreviews) {
+        void this.enrichLinkPreview(result.item.id)
+      }
     } else if (result.kind === 'deduped' && result.item) {
       this.emit({ kind: 'item-updated', item: result.item })
     }
@@ -221,6 +228,52 @@ export class Application {
     this.storage.items.setContentRef(id, id) // ensure blob cleanup on delete
     this.storage.items.setMetadata(id, { ...meta, thumbnailRef: `${id}/thumb.png` })
     return this.storage.items.getById(id)
+  }
+
+  /**
+   * Fetch a link's title + favicon and fold them into the url item's metadata,
+   * storing the favicon as a blob (served via tora-blob://). Best-effort: does
+   * nothing if the fetch yields neither. Emits item-updated so the card lights up.
+   */
+  private async enrichLinkPreview(id: string): Promise<void> {
+    const item = this.storage.items.getById(id)
+    if (!item || item.metadata.kind !== 'url') return
+    const preview = await fetchLinkPreview(item.metadata.url)
+    if (!preview.title && !preview.faviconPng) return
+
+    const nextMeta = { ...item.metadata }
+    if (preview.title) nextMeta.title = preview.title
+    if (preview.faviconPng) {
+      await this.storage.blobs.writeBuffer(id, 'favicon.png', preview.faviconPng)
+      nextMeta.faviconRef = `${id}/favicon.png`
+      this.storage.items.setContentRef(id, id) // so the blob is cleaned on delete
+    }
+    this.storage.items.setMetadata(id, nextMeta)
+    const updated = this.storage.items.getById(id)
+    if (updated) {
+      this.search.markStale()
+      this.emit({ kind: 'item-updated', item: updated })
+    }
+  }
+
+  /**
+   * When the user turns link previews on, backfill the most recent link items
+   * that have no preview yet. Bounded and sequential so it never floods the
+   * network. New links are handled at capture time.
+   */
+  private async backfillLinkPreviews(): Promise<void> {
+    const links = this.storage.items.query({
+      filter: 'links',
+      boardId: null,
+      pinnedOnly: false,
+      limit: 50,
+      offset: 0,
+    }).items
+    for (const item of links) {
+      if (item.metadata.kind === 'url' && !item.metadata.title && !item.metadata.faviconRef) {
+        await this.enrichLinkPreview(item.id)
+      }
+    }
   }
 
   /**
@@ -311,6 +364,9 @@ export class Application {
     if (patch.theme && patch.theme !== prev.theme) {
       // Keep the native vibrancy material in step with the renderer theme.
       nativeTheme.themeSource = patch.theme
+    }
+    if (patch.fetchLinkPreviews && !prev.fetchLinkPreviews) {
+      void this.backfillLinkPreviews()
     }
     if (patch.syncProvider && patch.syncProvider !== prev.syncProvider) {
       this.sync.stop()

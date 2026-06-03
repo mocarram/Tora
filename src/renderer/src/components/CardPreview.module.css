@@ -72,6 +72,12 @@
   font-family: var(--font-display);
   font-weight: var(--weight-bold);
   flex-shrink: 0;
+  overflow: hidden;
+}
+.faviconImg {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
 }
 .urlText {
   display: flex;
