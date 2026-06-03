@@ -11,6 +11,7 @@ import { QueueBar } from './components/QueueBar'
 import { LockScreen } from './components/LockScreen'
 import { Onboarding } from './components/Onboarding'
 import { TextPrompt } from './components/TextPrompt'
+import { UpdateBanner } from './components/UpdateBanner'
 import { Icon } from './components/Icon'
 import { useStore } from './store/useStore'
 import { useToraBridge } from './hooks/useToraBridge'
@@ -324,6 +325,8 @@ export function App(): React.JSX.Element {
           setNewBoardOpen(false)
         }}
       />
+
+      <UpdateBanner />
 
       {store.locked && (
         <LockScreen reducedMotion={reducedMotion} onUnlock={() => store.setLocked(false)} />
