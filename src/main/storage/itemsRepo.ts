@@ -170,6 +170,11 @@ export class ItemsRepo {
     this.db.prepare('UPDATE items SET metadata = ? WHERE id = ?').run(JSON.stringify(metadata), id)
   }
 
+  /** Set the on-disk blob reference (so blob cleanup on delete works). */
+  setContentRef(id: string, ref: string): void {
+    this.db.prepare('UPDATE items SET content_ref = ? WHERE id = ?').run(ref, id)
+  }
+
   softDelete(id: string): void {
     const at = Date.now()
     this.db.prepare('UPDATE items SET deleted_at = ? WHERE id = ?').run(at, id)

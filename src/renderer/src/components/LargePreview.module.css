@@ -89,6 +89,11 @@
   display: block;
   margin: 0 auto;
 }
+.fileDetail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
 .fileList {
   list-style: none;
   display: flex;

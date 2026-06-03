@@ -28,7 +28,13 @@ export function CardPreview({ item }: { item: ClipItem }): React.JSX.Element {
         />
       )
     case 'file':
-      return <FilePreview names={item.metadata.names} bytes={item.byteSize} />
+      return (
+        <FilePreview
+          names={item.metadata.names}
+          bytes={item.byteSize}
+          thumbnailRef={item.metadata.thumbnailRef}
+        />
+      )
     default:
       return <p className={styles.text}>{item.previewText}</p>
   }
@@ -119,9 +125,40 @@ function ImagePreview({
   )
 }
 
-function FilePreview({ names, bytes }: { names: string[]; bytes: number }): React.JSX.Element {
+function FilePreview({
+  names,
+  bytes,
+  thumbnailRef,
+}: {
+  names: string[]
+  bytes: number
+  thumbnailRef?: string | undefined
+}): React.JSX.Element {
   const primary = names[0] ?? 'file'
   const extra = names.length - 1
+
+  // Image files show a thumbnail with the name/size overlaid; other files keep
+  // the plain name + size layout.
+  if (thumbnailRef) {
+    return (
+      <div className={styles.fileImage}>
+        <img
+          src={`tora-blob://media/${thumbnailRef}`}
+          alt=""
+          className={styles.thumb}
+          loading="lazy"
+        />
+        <div className={styles.fileOverlay}>
+          <span className={styles.fileOverlayName}>{primary}</span>
+          <span className={`${styles.fileOverlayMeta} mono`}>
+            {formatBytes(bytes)}
+            {extra > 0 ? ` +${extra} more` : ''}
+          </span>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className={styles.file}>
       <span className={styles.fileName}>{primary}</span>

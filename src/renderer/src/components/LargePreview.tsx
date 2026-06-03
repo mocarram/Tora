@@ -123,13 +123,18 @@ function Body({
   }
   if (content.type === 'file' && content.filePaths) {
     return (
-      <ul className={styles.fileList}>
-        {content.filePaths.map((p) => (
-          <li key={p} className="mono">
-            {p}
-          </li>
-        ))}
-      </ul>
+      <div className={styles.fileDetail}>
+        {content.imageDataUrl ? (
+          <img className={styles.image} src={content.imageDataUrl} alt="" />
+        ) : null}
+        <ul className={styles.fileList}>
+          {content.filePaths.map((p) => (
+            <li key={p} className="mono">
+              {p}
+            </li>
+          ))}
+        </ul>
+      </div>
     )
   }
   if (content.type === 'code' && content.text) {
