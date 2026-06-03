@@ -81,22 +81,34 @@ function fillRoundRect(buf, w, x0, y0, rw, rh, radius, colour) {
   }
 }
 
-// App icon: dark warm tile with three amber stripes (the Tora mark).
-function appIcon(size) {
-  const buf = Buffer.alloc(size * size * 4)
+// App icon: a macOS-style rounded tile with transparent padding (the art fills
+// ~80% of the canvas, matching Apple's icon grid so it sizes like other Dock
+// icons), bearing the three amber Tora stripes.
+function appIcon(canvas) {
+  const buf = Buffer.alloc(canvas * canvas * 4)
   const ink = [21, 18, 14, 255]
   const amber = [232, 132, 60, 255]
-  fillRoundRect(buf, size, 0, 0, size, size, Math.round(size * 0.22), ink)
-  const stripeH = Math.round(size * 0.09)
-  const gap = Math.round(size * 0.07)
-  const left = Math.round(size * 0.26)
-  const widths = [0.48, 0.32, 0.42]
-  let y = Math.round(size * 0.32)
+
+  // ~10% transparent margin each side -> tile is ~80% of the canvas.
+  const margin = Math.round(canvas * 0.1)
+  const tile = canvas - margin * 2
+  const x0 = margin
+  const y0 = margin
+  const radius = Math.round(tile * 0.2237) // Apple squircle corner ratio
+  fillRoundRect(buf, canvas, x0, y0, tile, tile, radius, ink)
+
+  // Three stripes, centred within the tile.
+  const stripeH = Math.round(tile * 0.1)
+  const gap = Math.round(tile * 0.075)
+  const left = x0 + Math.round(tile * 0.2)
+  const widths = [0.52, 0.34, 0.46]
+  const blockH = stripeH * 3 + gap * 2
+  let y = y0 + Math.round((tile - blockH) / 2)
   for (const wf of widths) {
-    fillRoundRect(buf, size, left, y, Math.round(size * wf), stripeH, Math.round(stripeH / 2), amber)
+    fillRoundRect(buf, canvas, left, y, Math.round(tile * wf), stripeH, Math.round(stripeH / 2), amber)
     y += stripeH + gap
   }
-  return encodePng(size, size, buf)
+  return encodePng(canvas, canvas, buf)
 }
 
 // Menu-bar template: transparent with black stripes (macOS recolours it).
@@ -116,7 +128,7 @@ function trayTemplate(size) {
 }
 
 mkdirSync(join(root, 'build'), { recursive: true })
-writeFileSync(join(root, 'build', 'icon.png'), appIcon(512))
+writeFileSync(join(root, 'build', 'icon.png'), appIcon(1024))
 writeFileSync(join(root, 'build', 'trayTemplate.png'), trayTemplate(22))
 writeFileSync(join(root, 'build', 'trayTemplate@2x.png'), trayTemplate(44))
 console.log('Wrote build/icon.png, build/trayTemplate.png, build/trayTemplate@2x.png')
