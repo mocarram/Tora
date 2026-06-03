@@ -34,10 +34,15 @@ protocol.registerSchemesAsPrivileged([
 
 let application: Application | null = null
 
-void app.whenReady().then(async () => {
-  application = new Application()
-  await application.start()
-})
+void app
+  .whenReady()
+  .then(async () => {
+    application = new Application()
+    await application.start()
+  })
+  .catch((err: unknown) => {
+    console.error('Failed to start Tora:', err)
+  })
 
 app.on('second-instance', () => {
   // The running instance handles summon via tray/hotkey; nothing to do here.
