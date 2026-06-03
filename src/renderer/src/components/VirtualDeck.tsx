@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ClipItem } from '@core/model'
 import { ClipCard } from './ClipCard'
 import { Icon } from './Icon'
+import { computeHorizontalScroll } from '../lib/wheelScroll'
 import styles from './Deck.module.css'
 
 // Horizontal "deck" geometry (panel mode).
@@ -47,6 +48,9 @@ export function VirtualDeck(props: VirtualDeckProps): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null)
   const [scroll, setScroll] = useState(0)
   const [size, setSize] = useState({ w: 1200, h: 600 })
+  // The empty state renders a different element than the scroll container, so
+  // this toggles the container's existence (used as a wheel-listener dep).
+  const isEmpty = items.length === 0
 
   useEffect(() => {
     const el = containerRef.current
@@ -65,6 +69,31 @@ export function VirtualDeck(props: VirtualDeckProps): React.JSX.Element {
     const r = requestAnimationFrame(() => setScroll(0))
     return () => cancelAnimationFrame(r)
   }, [props.layout])
+
+  // Map a vertical mouse wheel to horizontal movement in the deck (panel) layout
+  // so a plain wheel can scroll the single horizontal row. Attached natively and
+  // non-passive: a React onWheel handler is passive, so its preventDefault would
+  // be ignored and the conversion would double-scroll or do nothing. Setting
+  // scrollLeft drives the existing onScroll handler (virtualization + load-more).
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el || props.layout !== 'deck') return
+    const onWheel = (e: WheelEvent): void => {
+      const result = computeHorizontalScroll({
+        deltaX: e.deltaX,
+        deltaY: e.deltaY,
+        deltaMode: e.deltaMode,
+        scrollLeft: el.scrollLeft,
+        maxScrollLeft: el.scrollWidth - el.clientWidth,
+      })
+      if (!result.handled) return
+      e.preventDefault()
+      el.scrollLeft = result.nextScrollLeft
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+    // Re-run when the container appears/disappears (isEmpty) to (re)attach.
+  }, [props.layout, isEmpty])
 
   // Keep the keyboard-selected card within the viewport (both layouts).
   useEffect(() => {
@@ -107,7 +136,7 @@ export function VirtualDeck(props: VirtualDeckProps): React.JSX.Element {
     />
   )
 
-  if (items.length === 0) {
+  if (isEmpty) {
     return (
       <div className={styles.empty}>
         <span className={styles.emptyMark} aria-hidden="true">
