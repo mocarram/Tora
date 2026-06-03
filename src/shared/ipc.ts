@@ -10,9 +10,13 @@ import type { Board, ClipItem, ClipItemType, QuickFilter, RetentionDays } from '
 
 export type ThemePreference = 'system' | 'light' | 'dark'
 export type PasteFormat = 'keep' | 'plain'
+/** Accent "vibe": retints the accent and surfaces. "amber" is the default. */
+export type AccentTheme = 'amber' | 'rose' | 'violet' | 'ocean' | 'forest' | 'graphite'
 
 export interface AppSettings {
   theme: ThemePreference
+  /** Accent colour vibe applied via the document's data-accent attribute. */
+  accent: AccentTheme
   globalHotkey: string
   launchAtLogin: boolean
   retentionDays: RetentionDays

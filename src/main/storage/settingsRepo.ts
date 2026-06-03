@@ -4,6 +4,7 @@ import type { AppSettings } from '@shared/ipc'
 /** Sensible, privacy-first defaults. Password managers excluded out of the box. */
 export const DEFAULT_SETTINGS: AppSettings = {
   theme: 'system',
+  accent: 'amber',
   globalHotkey: 'CommandOrControl+Shift+V',
   launchAtLogin: false,
   retentionDays: 30,

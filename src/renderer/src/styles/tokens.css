@@ -222,6 +222,83 @@
   --shadow-inset-top: inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
+/* ============ ACCENT VIBES ============
+ * The default warm "amber" vibe lives in the base dark/light themes above and is
+ * left untouched (data-accent absent or "amber"). Every other vibe is expressed
+ * as just two hue/saturation knobs - one for the accent ramp, one for the
+ * translucent surface fills - consumed by the two shared rules below. Highlight,
+ * border, sheen and text tokens stay neutral so the glass tuning is preserved.
+ * Set on the document root via data-accent (see lib/theme.ts).
+ */
+
+/* Accent ramp + surface fills for any non-amber vibe, dark theme. */
+:root[data-theme='dark'][data-accent]:not([data-accent='amber']) {
+  --color-accent: hsl(var(--accent-h) var(--accent-s) 62%);
+  --color-accent-strong: hsl(var(--accent-h) var(--accent-s) 71%);
+  --color-accent-quiet: hsla(var(--accent-h), var(--accent-s), 60%, 0.16);
+  --color-on-accent: hsl(var(--accent-h) 45% 10%);
+  --color-focus-ring: hsl(var(--accent-h) var(--accent-s) 71%);
+
+  --color-window: hsla(var(--tint-h), var(--tint-s), 6%, 0.14);
+  --color-bg: hsla(var(--tint-h), var(--tint-s), 4%, 0.5);
+  --color-bg-elevated: hsla(var(--tint-h), var(--tint-s), 10%, 0.82);
+  --color-rail: hsla(var(--tint-h), var(--tint-s), 8%, 0.18);
+  --color-card: hsla(var(--tint-h), var(--tint-s), 15%, 0.42);
+  --color-card-raised: hsla(var(--tint-h), var(--tint-s), 20%, 0.7);
+  --color-card-hover: hsla(var(--tint-h), var(--tint-s), 20%, 0.55);
+  --color-card-active: hsla(var(--tint-h), var(--tint-s), 25%, 0.78);
+}
+
+/* Accent ramp + surface fills for any non-amber vibe, light theme. */
+:root[data-theme='light'][data-accent]:not([data-accent='amber']) {
+  --color-accent: hsl(var(--accent-h) var(--accent-s) 45%);
+  --color-accent-strong: hsl(var(--accent-h) var(--accent-s) 37%);
+  --color-accent-quiet: hsla(var(--accent-h), var(--accent-s), 45%, 0.14);
+  --color-on-accent: hsl(var(--accent-h) 80% 97%);
+  --color-focus-ring: hsl(var(--accent-h) var(--accent-s) 45%);
+
+  --color-window: hsla(var(--tint-h), var(--tint-s), 93%, 0.22);
+  --color-bg: hsla(var(--tint-h), var(--tint-s), 95%, 0.55);
+  --color-bg-elevated: hsla(var(--tint-h), var(--tint-s), 97%, 0.86);
+  --color-rail: hsla(var(--tint-h), var(--tint-s), 95%, 0.24);
+  --color-card: hsla(var(--tint-h), var(--tint-s), 99%, 0.55);
+  --color-card-raised: hsla(var(--tint-h), var(--tint-s), 100%, 0.82);
+  --color-card-hover: hsla(var(--tint-h), var(--tint-s), 100%, 0.7);
+  --color-card-active: hsla(var(--tint-h), var(--tint-s), 89%, 0.84);
+}
+
+/* Per-vibe knobs (hue + saturation), shared across light and dark. */
+:root[data-accent='rose'] {
+  --accent-h: 350;
+  --accent-s: 72%;
+  --tint-h: 350;
+  --tint-s: 22%;
+}
+:root[data-accent='violet'] {
+  --accent-h: 265;
+  --accent-s: 58%;
+  --tint-h: 265;
+  --tint-s: 22%;
+}
+:root[data-accent='ocean'] {
+  --accent-h: 205;
+  --accent-s: 70%;
+  --tint-h: 210;
+  --tint-s: 26%;
+}
+:root[data-accent='forest'] {
+  --accent-h: 150;
+  --accent-s: 48%;
+  --tint-h: 150;
+  --tint-s: 20%;
+}
+:root[data-accent='graphite'] {
+  --accent-h: 220;
+  --accent-s: 14%;
+  --tint-h: 220;
+  --tint-s: 10%;
+}
+
 /* Honour the OS request to reduce motion. JS also reads this (motion.ts). */
 @media (prefers-reduced-motion: reduce) {
   :root {
