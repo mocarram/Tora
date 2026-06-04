@@ -21,7 +21,9 @@ export class SearchIndex {
     const rows = this.storage.items.allSearchRows()
     this.candidates = rows.map((r) => ({
       id: r.id,
-      text: r.previewText,
+      // A user-set title is the strongest signal for "what is this clip", so it
+      // leads the searchable text ahead of the preview.
+      text: r.title ? `${r.title} ${r.previewText}` : r.previewText,
       secondary: r.sourceApp,
       updatedAt: r.updatedAt,
     }))

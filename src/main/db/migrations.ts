@@ -93,6 +93,15 @@ export const MIGRATIONS: Migration[] = [
       `)
     },
   },
+  {
+    version: 3,
+    name: 'user-editable clip title',
+    up: (db) => {
+      // Optional custom label the user types on a card to remember what a clip
+      // is. NULL means "fall back to the source app / type label".
+      db.exec('ALTER TABLE items ADD COLUMN title TEXT')
+    },
+  },
 ]
 
 export function runMigrations(db: Database): number {

@@ -33,6 +33,7 @@ interface VirtualDeckProps {
   onExpand: (id: string) => void
   onEdit: (id: string) => void
   onToggleQueue: (id: string) => void
+  onSetTitle: (id: string, title: string | null) => void
   onNeedMore: () => void
 }
 
@@ -133,6 +134,7 @@ export function VirtualDeck(props: VirtualDeckProps): React.JSX.Element {
       onExpand={props.onExpand}
       onEdit={props.onEdit}
       onToggleQueue={props.onToggleQueue}
+      onSetTitle={props.onSetTitle}
     />
   )
 

@@ -151,6 +151,18 @@ describe('ItemsRepo', () => {
     expect(storage.items.getById(id)?.deletedAt).not.toBeNull()
   })
 
+  it('sets and clears a custom title (kept out of ordering)', () => {
+    const id = addText('some payload', 'tt')
+    const before = storage.items.getById(id)!.updatedAt
+    expect(storage.items.getById(id)?.title).toBeNull()
+    storage.items.setTitle(id, 'My label')
+    const after = storage.items.getById(id)!
+    expect(after.title).toBe('My label')
+    expect(after.updatedAt).toBe(before) // renaming must not reorder
+    storage.items.setTitle(id, null)
+    expect(storage.items.getById(id)?.title).toBeNull()
+  })
+
   it('reports stats', () => {
     addText('aaaa', 'a')
     addText('bb', 'b')

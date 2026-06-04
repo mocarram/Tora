@@ -168,6 +168,8 @@ export interface ToraApi {
   pinItem(itemId: string, pinned: boolean): Promise<void>
   deleteItem(itemId: string): Promise<void>
   editItem(req: EditItemRequest): Promise<ClipItem | null>
+  /** Set or clear (null) a clip's user-defined title. */
+  setItemTitle(itemId: string, title: string | null): Promise<void>
   /** Erase stored clips, blobs, and custom boards; optionally reset settings. */
   clearData(req: ClearDataRequest): Promise<void>
 

@@ -232,6 +232,7 @@ export function App(): React.JSX.Element {
           onExpand={store.expand}
           onEdit={store.edit}
           onToggleQueue={store.toggleQueue}
+          onSetTitle={(id, title) => void window.tora.setItemTitle(id, title)}
           onNeedMore={() => void store.loadMore()}
         />
 

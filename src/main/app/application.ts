@@ -632,6 +632,13 @@ export class Application {
         removed(id)
       },
       editItem: (req: EditItemRequest) => this.editItem(req),
+      setItemTitle: (id: string, title: string | null) => {
+        s.items.setTitle(id, title)
+        const item = s.items.getById(id)
+        if (item) this.emit({ kind: 'item-updated', item })
+        this.search.markStale()
+        this.sync.notifyLocalChange()
+      },
       clearData: async (req: ClearDataRequest) => {
         await s.wipeData()
         this.search.markStale()

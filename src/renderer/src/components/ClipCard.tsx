@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import type { ClipItem } from '@core/model'
 import { relativeTime } from '@core/format'
@@ -25,6 +25,8 @@ export interface ClipCardProps {
   onExpand: (id: string) => void
   onEdit: (id: string) => void
   onToggleQueue: (id: string) => void
+  /** Set or clear (null) the card's custom title. */
+  onSetTitle: (id: string, title: string | null) => void
 }
 
 const EDITABLE: ClipItem['type'][] = ['text', 'richText', 'code', 'url', 'color']
@@ -41,6 +43,7 @@ function ClipCardImpl({
   onExpand,
   onEdit,
   onToggleQueue,
+  onSetTitle,
 }: ClipCardProps): React.JSX.Element {
   const meta = TYPE_META[item.type]
   const editable = EDITABLE.includes(item.type)
@@ -49,6 +52,28 @@ function ClipCardImpl({
   const menuOpen = useStore((s) => s.openMenuId === item.id)
   const setOpenMenuId = useStore((s) => s.setOpenMenuId)
   const saveBtnRef = useRef<HTMLButtonElement>(null)
+
+  // Inline, in-place title editing (no popup). The default label is the source
+  // app or the type name; a saved title replaces it. Saving the default or an
+  // empty string clears the custom title.
+  const defaultLabel = item.sourceApp ?? meta.label
+  const titleText = item.title && item.title.length > 0 ? item.title : defaultLabel
+  const [editingTitle, setEditingTitle] = useState(false)
+  const titleRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (editingTitle) {
+      titleRef.current?.focus()
+      titleRef.current?.select()
+    }
+  }, [editingTitle])
+
+  const commitTitle = (raw: string): void => {
+    const next = raw.trim()
+    const title = next.length === 0 || next === defaultLabel ? null : next
+    if ((item.title ?? null) !== title) onSetTitle(item.id, title)
+    setEditingTitle(false)
+  }
 
   // If this card unmounts (e.g. virtualised away) while its menu is open, clear
   // the global flag so the panel does not stay pinned open.
@@ -91,13 +116,43 @@ function ClipCardImpl({
             <Icon name={meta.icon} size={13} />
           </span>
         )}
-        <span className={styles.source}>{item.sourceApp ?? meta.label}</span>
+        <div className={styles.headText}>
+          {editingTitle ? (
+            <input
+              ref={titleRef}
+              className={styles.titleInput}
+              defaultValue={item.title ?? defaultLabel}
+              placeholder={defaultLabel}
+              spellCheck={false}
+              maxLength={120}
+              aria-label="Clip title"
+              onClick={stop}
+              onKeyDown={(e) => {
+                e.stopPropagation()
+                if (e.key === 'Enter') commitTitle(e.currentTarget.value)
+                else if (e.key === 'Escape') setEditingTitle(false)
+              }}
+              onBlur={(e) => commitTitle(e.currentTarget.value)}
+            />
+          ) : (
+            <button
+              className={styles.title}
+              title="Click to rename"
+              onClick={(e) => {
+                stop(e)
+                setEditingTitle(true)
+              }}
+            >
+              {titleText}
+            </button>
+          )}
+          <span className={styles.time}>{relativeTime(item.updatedAt)}</span>
+        </div>
         {item.isPinned ? (
           <span className={styles.pin} title="Pinned">
             <Icon name="pin" size={13} filled />
           </span>
         ) : null}
-        <span className={styles.time}>{relativeTime(item.updatedAt)}</span>
       </div>
 
       <div className={styles.body}>

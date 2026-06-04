@@ -22,6 +22,7 @@ const methods: ToraMethod[] = [
   'pinItem',
   'deleteItem',
   'editItem',
+  'setItemTitle',
   'clearData',
   'listBoards',
   'createBoard',

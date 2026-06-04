@@ -9,6 +9,7 @@ interface ItemRow {
   updated_at: number
   source_app: string | null
   source_bundle_id: string | null
+  title: string | null
   preview_text: string
   content_ref: string | null
   content_hash: string
@@ -21,6 +22,7 @@ interface ItemRow {
 /** Lightweight projection used to build the in-memory search index. */
 export interface SearchRow {
   id: string
+  title: string | null
   previewText: string
   sourceApp: string | null
   type: ClipItemType
@@ -62,6 +64,7 @@ function mapRow(row: ItemRow): ClipItem {
     updatedAt: row.updated_at,
     sourceApp: row.source_app,
     sourceBundleId: row.source_bundle_id,
+    title: row.title,
     previewText: row.preview_text,
     contentRef: row.content_ref,
     contentHash: row.content_hash,
@@ -244,20 +247,27 @@ export class ItemsRepo {
   allSearchRows(): SearchRow[] {
     const rows = this.db
       .prepare(
-        'SELECT id, preview_text, source_app, type, updated_at, is_pinned FROM items WHERE deleted_at IS NULL',
+        'SELECT id, title, preview_text, source_app, type, updated_at, is_pinned FROM items WHERE deleted_at IS NULL',
       )
       .all() as Pick<
       ItemRow,
-      'id' | 'preview_text' | 'source_app' | 'type' | 'updated_at' | 'is_pinned'
+      'id' | 'title' | 'preview_text' | 'source_app' | 'type' | 'updated_at' | 'is_pinned'
     >[]
     return rows.map((r) => ({
       id: r.id,
+      title: r.title,
       previewText: r.preview_text,
       sourceApp: r.source_app,
       type: r.type as ClipItemType,
       updatedAt: r.updated_at,
       isPinned: r.is_pinned === 1,
     }))
+  }
+
+  /** Set or clear (null) the user's custom title. Does not change ordering. */
+  setTitle(id: string, title: string | null): void {
+    this.db.prepare('UPDATE items SET title = ? WHERE id = ?').run(title, id)
+    markChange(this.db, 'item', id)
   }
 
   getMany(ids: string[]): ClipItem[] {

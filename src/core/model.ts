@@ -21,6 +21,8 @@ export interface ClipItem {
   sourceApp: string | null
   /** macOS bundle id of the source app, if known. */
   sourceBundleId: string | null
+  /** User-set custom title shown on the card; null falls back to source/type. */
+  title: string | null
   /** Short preview string shown in list rows. */
   previewText: string
   /** On-disk reference (relative blob path) for the full payload, if any. */
