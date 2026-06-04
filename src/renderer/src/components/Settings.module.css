@@ -184,6 +184,70 @@
   border-color: var(--color-accent);
 }
 
+.subhead {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-faint);
+  margin-top: var(--space-6);
+  margin-bottom: var(--space-1);
+}
+
+.shortcutList {
+  display: flex;
+  flex-direction: column;
+}
+.shortcutRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.shortcutRow:last-child {
+  border-bottom: none;
+}
+.shortcutKeys {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+  width: 140px;
+}
+.chord,
+.chordKey {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.shortcutLabel {
+  font-size: var(--text-md);
+  color: var(--color-text-muted);
+}
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-card);
+  border: 1px solid var(--color-border-strong);
+  box-shadow: 0 1px 0 var(--color-border-strong);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text);
+  line-height: 1;
+}
+.kbdPlus,
+.kbdOr {
+  font-size: var(--text-sm);
+  color: var(--color-text-faint);
+}
+
 .warn {
   font-size: var(--text-sm);
   color: var(--color-danger);

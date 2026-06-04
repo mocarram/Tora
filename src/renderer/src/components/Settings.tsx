@@ -255,9 +255,10 @@ export function Settings({ open, reducedMotion, onClose }: SettingsProps): React
                     onChange={(v) => update({ globalHotkey: v })}
                   />
                   <p className={styles.hintBlock}>
-                    Use accelerator syntax, for example CommandOrControl+Shift+V. In-app: / to
-                    search, arrow keys to move, Enter to paste, P to pin, Delete to remove.
+                    Use accelerator syntax, for example CommandOrControl+Shift+V.
                   </p>
+                  <h3 className={styles.subhead}>While Tora is open</h3>
+                  <ShortcutList />
                 </Group>
               )}
 
@@ -438,6 +439,50 @@ function Group({
       <h2 className={styles.groupTitle}>{title}</h2>
       {children}
     </section>
+  )
+}
+
+/**
+ * The in-app keyboard shortcuts, kept in step with the handler in App.tsx. Each
+ * entry's `keys` is a list of alternatives (any one works); a single alternative
+ * may itself be a chord of keys pressed together, joined with "+".
+ */
+const IN_APP_SHORTCUTS: { keys: string[][]; label: string }[] = [
+  { keys: [['/']], label: 'Search your history' },
+  { keys: [['↑'], ['↓'], ['←'], ['→']], label: 'Move between clips' },
+  { keys: [['Space']], label: 'Open the large preview' },
+  { keys: [['↵']], label: 'Paste the selected clip' },
+  { keys: [['⇧', '↵']], label: 'Paste as plain text' },
+  { keys: [['C']], label: 'Copy to the clipboard' },
+  { keys: [['E']], label: 'Edit the clip' },
+  { keys: [['Q']], label: 'Add to the paste queue' },
+  { keys: [['P']], label: 'Pin or unpin' },
+  { keys: [['⌫']], label: 'Remove the clip' },
+  { keys: [['Esc']], label: 'Dismiss Tora' },
+]
+
+function ShortcutList(): React.JSX.Element {
+  return (
+    <dl className={styles.shortcutList}>
+      {IN_APP_SHORTCUTS.map((s) => (
+        <div key={s.label} className={styles.shortcutRow}>
+          <dt className={styles.shortcutKeys}>
+            {s.keys.map((chord, i) => (
+              <span key={i} className={styles.chord}>
+                {i > 0 ? <span className={styles.kbdOr}>or</span> : null}
+                {chord.map((key, j) => (
+                  <span key={j} className={styles.chordKey}>
+                    {j > 0 ? <span className={styles.kbdPlus}>+</span> : null}
+                    <kbd className={styles.kbd}>{key}</kbd>
+                  </span>
+                ))}
+              </span>
+            ))}
+          </dt>
+          <dd className={styles.shortcutLabel}>{s.label}</dd>
+        </div>
+      ))}
+    </dl>
   )
 }
 
