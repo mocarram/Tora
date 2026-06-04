@@ -28,6 +28,7 @@ import { hashString } from '@core/hash'
 import { classifyCapture, type CaptureInput } from '@core/capture'
 import { resolvePaths } from '../paths'
 import { Storage } from '../storage'
+import { secureDir } from '../storage/dataSecurity'
 import { DEFAULT_SETTINGS } from '../storage/settingsRepo'
 import { matchesQuickFilter } from '../storage/itemsRepo'
 import { CapturePipeline } from '../capture/capturePipeline'
@@ -93,6 +94,9 @@ export class Application {
   }
 
   async start(): Promise<void> {
+    // Lock the whole data tree to the owner before anything is written into it,
+    // so the clipboard db, blobs, and sync key are never world-readable.
+    await secureDir(this.paths.base)
     await this.storage.init()
     // Re-read settings post-init (defaults written) and apply.
     this.settings = this.storage.settings.get()

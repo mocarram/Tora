@@ -1,5 +1,6 @@
 import { nativeImage } from 'electron'
 import { extractTitle, resolveFavicon } from './linkPreviewParse'
+import { resolvesToPublicHost } from './ssrfGuard'
 
 /**
  * Fetches a link's title and favicon for the URL card preview. Only ever called
@@ -16,6 +17,7 @@ import { extractTitle, resolveFavicon } from './linkPreviewParse'
 
 const TIMEOUT_MS = 6000
 const MAX_HTML_BYTES = 512 * 1024
+const MAX_REDIRECTS = 5
 const FAVICON_PX = 32
 const UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Tora/1.0 Safari/537.36'
@@ -55,14 +57,35 @@ async function fetchBytes(href: string): Promise<{ buf: Buffer; contentType: str
   const ctrl = new AbortController()
   const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS)
   try {
-    const res = await fetch(href, {
-      signal: ctrl.signal,
-      redirect: 'follow',
-      headers: { 'User-Agent': UA, Accept: 'text/html,image/*,*/*' },
-    })
-    if (!res.ok) return null
-    const buf = Buffer.from(await res.arrayBuffer())
-    return { buf, contentType: res.headers.get('content-type') ?? '' }
+    // Redirects are followed by hand so the SSRF check runs on every hop: a
+    // public URL must not be able to bounce the request to an internal host.
+    let target = href
+    for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+      let url: URL
+      try {
+        url = new URL(target)
+      } catch {
+        return null
+      }
+      if (url.protocol !== 'http:' && url.protocol !== 'https:') return null
+      if (!(await resolvesToPublicHost(url.hostname))) return null
+
+      const res = await fetch(target, {
+        signal: ctrl.signal,
+        redirect: 'manual',
+        headers: { 'User-Agent': UA, Accept: 'text/html,image/*,*/*' },
+      })
+      if (res.status >= 300 && res.status < 400) {
+        const location = res.headers.get('location')
+        if (!location) return null
+        target = new URL(location, target).href
+        continue
+      }
+      if (!res.ok) return null
+      const buf = Buffer.from(await res.arrayBuffer())
+      return { buf, contentType: res.headers.get('content-type') ?? '' }
+    }
+    return null // too many redirects
   } catch {
     return null
   } finally {

@@ -2,6 +2,7 @@ import { safeStorage } from 'electron'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { generateKey } from './crypto'
+import { FILE_MODE, secureDirSync, secureFileSync } from '../storage/dataSecurity'
 
 /**
  * Resolves the 32-byte sync encryption key. A random key is generated once and
@@ -18,6 +19,7 @@ import { generateKey } from './crypto'
 export function loadOrCreateSyncKey(syncDir: string): Buffer {
   const wrappedPath = join(syncDir, 'key.bin')
   mkdirSync(dirname(wrappedPath), { recursive: true })
+  secureDirSync(dirname(wrappedPath))
 
   const available = safeStorage.isEncryptionAvailable()
 
@@ -45,8 +47,14 @@ function tryReadKey(path: string, available: boolean): Buffer | null {
 
 function persistKey(path: string, key: Buffer, available: boolean): void {
   try {
-    if (available) writeFileSync(path, safeStorage.encryptString(key.toString('binary')))
-    else writeFileSync(path, key) // unwrapped fallback for non-macOS dev hosts
+    // Write owner-only from the outset so the wrapped key is never briefly
+    // group/other-readable between creation and a follow-up chmod.
+    if (available) {
+      writeFileSync(path, safeStorage.encryptString(key.toString('binary')), { mode: FILE_MODE })
+    } else {
+      writeFileSync(path, key, { mode: FILE_MODE }) // unwrapped fallback for non-macOS dev hosts
+    }
+    secureFileSync(path) // enforce mode even if the file already existed
   } catch {
     // If we cannot persist (rare), the in-memory key still works for this run.
   }

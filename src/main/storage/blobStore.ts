@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs'
 import { mkdir, readFile, rm, stat, writeFile, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
+import { secureDir } from './dataSecurity'
 
 /**
  * On-disk blob store. Large payloads (full text, HTML, RTF, images, thumbnails)
@@ -12,6 +13,8 @@ export class BlobStore {
 
   async init(): Promise<void> {
     await mkdir(this.baseDir, { recursive: true })
+    // Blobs are clipboard payloads (images, full text); keep the tree owner-only.
+    await secureDir(this.baseDir)
   }
 
   private dirFor(ref: string): string {

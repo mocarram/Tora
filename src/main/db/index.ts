@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3'
 import { runMigrations } from './migrations'
+import { secureFileSync } from '../storage/dataSecurity'
 
 /**
  * Opens the SQLite database with sensible pragmas for a local desktop app and
@@ -13,6 +14,11 @@ export function openDatabase(filename: string): Database.Database {
   db.pragma('foreign_keys = ON')
   db.pragma('busy_timeout = 5000')
   runMigrations(db)
+  // The db holds clipboard history; lock it (and the WAL/SHM sidecars that WAL
+  // mode just created) to owner-only so other local users cannot read it.
+  secureFileSync(filename)
+  secureFileSync(`${filename}-wal`)
+  secureFileSync(`${filename}-shm`)
   return db
 }
 
