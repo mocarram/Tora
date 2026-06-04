@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import hljs from 'highlight.js/lib/common'
 import type { ClipItem } from '@core/model'
@@ -42,6 +42,28 @@ export function LargePreview({
 
   const content = item && loaded.id === item.id ? loaded.data : null
 
+  // Inline title editing in the header, mirroring the card. Tracked by item id
+  // so it resets automatically when a different item is opened.
+  const [editingTitleId, setEditingTitleId] = useState<string | null>(null)
+  const titleRef = useRef<HTMLInputElement>(null)
+  const editingTitle = !!item && editingTitleId === item.id
+  const defaultLabel = item ? (item.sourceApp ?? TYPE_META[item.type].label) : ''
+
+  useEffect(() => {
+    if (editingTitle) {
+      titleRef.current?.focus()
+      titleRef.current?.select()
+    }
+  }, [editingTitle])
+
+  const commitTitle = (it: ClipItem, raw: string): void => {
+    const dl = it.sourceApp ?? TYPE_META[it.type].label
+    const next = raw.trim()
+    const title = next.length === 0 || next === dl ? null : next
+    if ((it.title ?? null) !== title) void window.tora.setItemTitle(it.id, title)
+    setEditingTitleId(null)
+  }
+
   useEffect(() => {
     if (!item) return
     const onKey = (e: KeyboardEvent): void => {
@@ -76,9 +98,30 @@ export function LargePreview({
               <span className={styles.headIcon}>
                 <Icon name={TYPE_META[item.type].icon} size={15} />
               </span>
-              <span className={styles.headTitle}>
-                {item.sourceApp ?? TYPE_META[item.type].label}
-              </span>
+              {editingTitle ? (
+                <input
+                  ref={titleRef}
+                  className={styles.headTitleInput}
+                  defaultValue={item.title ?? defaultLabel}
+                  placeholder={defaultLabel}
+                  spellCheck={false}
+                  maxLength={120}
+                  aria-label="Clip title"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') commitTitle(item, e.currentTarget.value)
+                    else if (e.key === 'Escape') setEditingTitleId(null)
+                  }}
+                  onBlur={(e) => commitTitle(item, e.currentTarget.value)}
+                />
+              ) : (
+                <button
+                  className={styles.headTitle}
+                  title="Click to rename"
+                  onClick={() => setEditingTitleId(item.id)}
+                >
+                  {item.title && item.title.length > 0 ? item.title : defaultLabel}
+                </button>
+              )}
               <span className={`${styles.headMeta} mono`}>
                 {formatBytes(item.byteSize)} - {relativeTime(item.updatedAt)}
               </span>

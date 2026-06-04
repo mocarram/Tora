@@ -44,6 +44,30 @@
 }
 .headTitle {
   font-weight: var(--weight-semibold);
+  color: var(--color-text);
+  text-align: left;
+  max-width: 340px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-radius: var(--radius-xs);
+  transition: color var(--dur-fast) var(--ease-standard);
+}
+.headTitle:hover {
+  color: var(--color-accent);
+}
+.headTitleInput {
+  min-width: 200px;
+  max-width: 340px;
+  padding: 2px var(--space-3);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+  background: var(--color-input);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-xs);
+}
+.headTitleInput:focus {
+  outline: none;
 }
 .headMeta {
   font-size: var(--text-xs);
