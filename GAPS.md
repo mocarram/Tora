@@ -39,6 +39,9 @@ by types, lint, build, and unit/integration tests only - not by running the app.
 - **Per-accent Dock icon** (`app.dock.setIcon`) - the six variants are generated
   and bundled, and the swap-on-accent-change code path is wired, but Dock
   recolouring is macOS-only and was not exercised on the Linux host.
+- **Spaces / all-desktops panel** (`setVisibleOnAllWorkspaces`) - the panel is
+  marked to join all Spaces so it opens on the active desktop instead of pulling
+  focus back to its origin Space. macOS-only; not exercised on the Linux host.
 - **safeStorage key wrapping** (`keyStore.ts`) - on macOS the sync key is wrapped
   by the Keychain. On a host without safeStorage it falls back to an **unwrapped**
   key file (clearly a dev-only fallback). Not verified on macOS.

@@ -109,7 +109,25 @@ export class WindowManager {
     }
 
     this.win = win
+    this.applyWorkspaceBehavior()
     return win
+  }
+
+  /**
+   * In panel mode the window is a hotkey-summoned popover, so it must appear on
+   * whichever Space (desktop) is currently active rather than yanking the user
+   * back to the Space it was last shown on. Marking it visible on all Spaces
+   * (NSWindowCollectionBehaviorCanJoinAllSpaces) does that and also lets it
+   * surface over fullscreen apps. A full window stays a normal, Space-bound
+   * window. macOS-only; not runtime-verified on the Linux host (see GAPS.md).
+   */
+  private applyWorkspaceBehavior(): void {
+    const win = this.live
+    if (!win || process.platform !== 'darwin') return
+    win.setVisibleOnAllWorkspaces(this.mode === 'panel', {
+      visibleOnFullScreen: true,
+      skipTransformProcessType: true,
+    })
   }
 
   private positionPanel(): void {
@@ -147,6 +165,7 @@ export class WindowManager {
     const win = this.live
     if (!win) return
     win.setAlwaysOnTop(mode === 'panel', 'floating')
+    this.applyWorkspaceBehavior()
     if (mode === 'panel') this.positionPanel()
     else this.positionWindow()
     // No visibility event here: a layout change is not a show/hide, and emitting
