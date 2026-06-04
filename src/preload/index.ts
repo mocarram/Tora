@@ -39,6 +39,7 @@ const methods: ToraMethod[] = [
   'setCaptureEnabled',
   'getPermissions',
   'requestAccessibility',
+  'relaunchApp',
   'unlock',
   'getSyncStatus',
   'triggerSync',

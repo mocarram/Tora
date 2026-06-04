@@ -196,6 +196,15 @@
   padding-top: var(--space-5);
 }
 
+.linkBtn {
+  color: var(--color-accent);
+  font-weight: var(--weight-medium);
+  text-decoration: underline;
+}
+.linkBtn:hover {
+  color: var(--color-accent-strong);
+}
+
 .smallBtn {
   height: 30px;
   padding: 0 var(--space-5);

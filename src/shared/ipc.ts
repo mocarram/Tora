@@ -196,6 +196,8 @@ export interface ToraApi {
   // Permissions + lock
   getPermissions(): Promise<PermissionStatus>
   requestAccessibility(): Promise<void>
+  /** Quit and relaunch (e.g. to apply a freshly granted Accessibility permission). */
+  relaunchApp(): Promise<void>
   unlock(): Promise<boolean>
 
   // Sync

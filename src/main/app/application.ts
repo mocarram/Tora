@@ -689,6 +689,10 @@ export class Application {
       setCaptureEnabled: (enabled: boolean) => this.setCaptureEnabled(enabled),
       getPermissions: () => getPermissions(),
       requestAccessibility: () => requestAccessibility(),
+      relaunchApp: () => {
+        app.relaunch()
+        app.exit(0)
+      },
       unlock: () => biometricUnlock('Unlock Tora'),
       getSyncStatus: () => this.sync.status(),
       triggerSync: () => this.sync.syncNow(),

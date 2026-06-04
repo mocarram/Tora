@@ -55,7 +55,18 @@ export function Settings({ open, reducedMotion, onClose }: SettingsProps): React
   const [confirm, setConfirm] = useState<'history' | 'reset' | null>(null)
 
   useEffect(() => {
-    if (open) void window.tora.getPermissions().then(setPerms)
+    if (!open) return undefined
+    const refresh = (): void => void window.tora.getPermissions().then(setPerms)
+    refresh()
+    // macOS reports the trust state per process and only after the app sees the
+    // change, so re-check when the window regains focus (returning from System
+    // Settings) and periodically, instead of only once when this panel opens.
+    window.addEventListener('focus', refresh)
+    const id = setInterval(refresh, 2000)
+    return () => {
+      window.removeEventListener('focus', refresh)
+      clearInterval(id)
+    }
   }, [open])
 
   useEffect(() => {
@@ -302,6 +313,18 @@ export function Settings({ open, reducedMotion, onClose }: SettingsProps): React
                       </button>
                     )}
                   </div>
+                  {perms && !perms.accessibility ? (
+                    <p className={styles.warn}>
+                      Already enabled Tora in System Settings but it still shows as not granted?
+                      macOS only applies Accessibility after the app restarts.{' '}
+                      <button
+                        className={styles.linkBtn}
+                        onClick={() => void window.tora.relaunchApp()}
+                      >
+                        Restart Tora
+                      </button>
+                    </p>
+                  ) : null}
                   <p className={styles.hintBlock}>
                     Concealed and transient clipboard content (such as passwords) is never stored.
                     Password managers are excluded by default. Everything stays on this device
