@@ -50,6 +50,7 @@ const methods: ToraMethod[] = [
   'checkForUpdates',
   'installUpdate',
   'getAppVersion',
+  'getAppIcon',
 ]
 
 const api = {} as Record<string, unknown>

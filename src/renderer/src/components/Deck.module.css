@@ -49,9 +49,9 @@
   top: 50%;
   left: 0;
   width: 268px;
-  /* Square cards: height matches the width. Centered vertically (top: 50% plus
-     the translateY below) so they stay square at any panel height. */
-  height: 268px;
+  /* Landscape cards: a touch shorter than wide. Centered vertically (top: 50%
+     plus the translateY below) so they sit centred at any panel height. */
+  height: 216px;
   will-change: transform;
 }
 

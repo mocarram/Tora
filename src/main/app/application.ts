@@ -34,6 +34,7 @@ import { matchesQuickFilter } from '../storage/itemsRepo'
 import { CapturePipeline } from '../capture/capturePipeline'
 import { ClipboardWatcher } from '../capture/clipboardWatcher'
 import { getFrontmostApp } from '../capture/sourceApp'
+import { getAppIconDataUrl } from '../capture/appIcon'
 import { SearchIndex } from '../services/searchIndex'
 import { ClipboardWriter } from '../services/clipboardWriter'
 import { ElectronPasteboard } from '../services/pasteboard'
@@ -707,6 +708,7 @@ export class Application {
       checkForUpdates: () => this.updater.check(),
       installUpdate: () => this.updater.install(),
       getAppVersion: () => app.getVersion(),
+      getAppIcon: (bundleId: string) => getAppIconDataUrl(bundleId),
     }
   }
 }

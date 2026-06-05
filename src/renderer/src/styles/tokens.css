@@ -43,6 +43,18 @@
   --signal-danger: #c1543d;
   --signal-info: #5a8aa6;
 
+  /* ---- Primitive: per-type card-header tints ----
+   * One muted jewel tone per clip type so a card is identifiable at a glance
+   * (like Paste's coloured headers). Deliberately desaturated and shared across
+   * light and dark, since the header always carries light text over them. */
+  --type-text: #6f7280;
+  --type-richText: #a9743a;
+  --type-image: #c25a44;
+  --type-file: #5e8a5b;
+  --type-url: #4179a1;
+  --type-color: #8f6296;
+  --type-code: #3f827c;
+
   /* ---- Type ---- */
   --font-display: 'Space Grotesk Variable', ui-sans-serif, system-ui, sans-serif;
   --font-text: 'Hanken Grotesk Variable', ui-sans-serif, system-ui, sans-serif;

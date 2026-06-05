@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import type { ClipItem } from '@core/model'
 import { relativeTime } from '@core/format'
 import { useStore } from '../store/useStore'
+import { useAppIcon } from '../lib/appIcon'
 import { Icon } from './Icon'
 import { CardPreview } from './CardPreview'
 import { BoardMenu } from './BoardMenu'
@@ -48,6 +49,10 @@ function ClipCardImpl({
   const meta = TYPE_META[item.type]
   const editable = EDITABLE.includes(item.type)
   const queued = queueIndex >= 0
+
+  // The icon of the app the clip was copied from (Paste-style "source"). Null
+  // until resolved or when unresolvable; the card falls back to its type glyph.
+  const sourceIcon = useAppIcon(item.sourceBundleId)
 
   const menuOpen = useStore((s) => s.openMenuId === item.id)
   const setOpenMenuId = useStore((s) => s.setOpenMenuId)
@@ -106,16 +111,9 @@ function ClipCardImpl({
       onClick={handleClick}
       onDoubleClick={() => onActivate(item.id)}
     >
-      <div className={styles.header}>
-        {queued ? (
-          <span className={styles.queueBadge} title={`Queued #${queueIndex + 1}`}>
-            {queueIndex + 1}
-          </span>
-        ) : (
-          <span className={styles.typeIcon}>
-            <Icon name={meta.icon} size={13} />
-          </span>
-        )}
+      {/* Prominent, type-coloured header: title + time, with the source app on
+          the side (its icon, or the type glyph as a fallback). */}
+      <div className={styles.header} data-type={item.type}>
         <div className={styles.headText}>
           {editingTitle ? (
             <input
@@ -148,19 +146,38 @@ function ClipCardImpl({
           )}
           <span className={styles.time}>{relativeTime(item.updatedAt)}</span>
         </div>
+
         {item.isPinned ? (
           <span className={styles.pin} title="Pinned">
-            <Icon name="pin" size={13} filled />
+            <Icon name="pin" size={12} filled />
           </span>
         ) : null}
+
+        {queued ? (
+          <span className={styles.queueBadge} title={`Queued #${queueIndex + 1}`}>
+            {queueIndex + 1}
+          </span>
+        ) : (
+          <span
+            className={styles.source}
+            title={item.sourceApp ? `Copied from ${item.sourceApp}` : meta.label}
+          >
+            {sourceIcon ? (
+              <img className={styles.sourceImg} src={sourceIcon} alt="" />
+            ) : (
+              <Icon name={meta.icon} size={15} />
+            )}
+          </span>
+        )}
       </div>
 
       <div className={styles.body}>
         <CardPreview item={item} />
       </div>
 
+      {/* Actions live in the footer, always visible for a quick single click. */}
       <div className={styles.footer}>
-        <span>{meta.label}</span>
+        <span className={styles.typeLabel}>{meta.label}</span>
         <div className={styles.actions}>
           <Tooltip label="Copy">
             <button

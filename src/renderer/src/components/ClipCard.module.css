@@ -15,10 +15,12 @@
   overflow: hidden;
   transition:
     background var(--dur-fast) var(--ease-standard),
-    border-color var(--dur-fast) var(--ease-standard);
+    border-color var(--dur-fast) var(--ease-standard),
+    box-shadow var(--dur-fast) var(--ease-standard),
+    transform var(--dur-fast) var(--ease-standard);
 }
 
-/* The amber "stripe" on the leading edge. */
+/* The amber "stripe" on the leading edge, shown for selection/queue. */
 .card::before {
   content: '';
   position: absolute;
@@ -29,11 +31,18 @@
   background: var(--color-accent);
   opacity: 0;
   transition: opacity var(--dur-fast) var(--ease-standard);
+  z-index: 1;
+}
+
+.card:hover {
+  background: var(--glass-sheen), var(--color-card-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-raised);
 }
 
 .selected {
   border-color: var(--color-accent);
-  background: var(--color-card-raised);
+  background: var(--glass-sheen), var(--color-card-raised);
   box-shadow: var(--shadow-raised);
 }
 .selected::before {
@@ -47,51 +56,41 @@
   opacity: 1;
 }
 
-.queueBadge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: var(--radius-sm);
-  background: var(--color-accent);
-  color: var(--color-on-accent);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-bold);
-  flex-shrink: 0;
-}
-
-.actionOn {
-  background: var(--color-accent-quiet);
-  color: var(--color-accent);
-}
-
-.card:hover {
-  background: var(--color-card-hover);
-}
-
+/* ---- Header: a prominent, type-coloured band ---- */
 .header {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-4) var(--space-5);
-  color: var(--color-text-muted);
-  /* Accent band: a tinted gradient fading down into the card, so the title
-     reads like a labelled header (the user's "what is this" line). */
-  background: linear-gradient(180deg, var(--color-accent-quiet), transparent);
+  padding: var(--space-4) var(--space-4) var(--space-4) var(--space-5);
+  /* The type tint, solid at the top and easing into the card so it reads as a
+     labelled header rather than a hard block. Per-type colour set below. */
+  --band: var(--type-text);
+  background: linear-gradient(
+    180deg,
+    var(--band) 0%,
+    color-mix(in srgb, var(--band) 82%, transparent) 100%
+  );
 }
-
-.typeIcon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: var(--radius-sm);
-  background: var(--color-accent-quiet);
-  color: var(--color-accent);
-  flex-shrink: 0;
+.header[data-type='text'] {
+  --band: var(--type-text);
+}
+.header[data-type='richText'] {
+  --band: var(--type-richText);
+}
+.header[data-type='image'] {
+  --band: var(--type-image);
+}
+.header[data-type='file'] {
+  --band: var(--type-file);
+}
+.header[data-type='url'] {
+  --band: var(--type-url);
+}
+.header[data-type='color'] {
+  --band: var(--type-color);
+}
+.header[data-type='code'] {
+  --band: var(--type-code);
 }
 
 .headText {
@@ -102,22 +101,23 @@
   min-width: 0;
 }
 
-/* The clip title: bold, inline-editable in place. */
+/* The clip title: bold, light over the band, inline-editable in place. */
 .title {
   font-size: var(--text-sm);
   font-weight: var(--weight-bold);
-  color: var(--color-text);
+  color: #fdfbf6;
   letter-spacing: var(--tracking-wide);
   text-align: left;
   max-width: 100%;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
   border-radius: var(--radius-xs);
-  transition: color var(--dur-fast) var(--ease-standard);
+  transition: opacity var(--dur-fast) var(--ease-standard);
 }
 .title:hover {
-  color: var(--color-accent);
+  opacity: 0.82;
 }
 
 .titleInput {
@@ -128,9 +128,9 @@
   font-size: var(--text-sm);
   font-weight: var(--weight-bold);
   letter-spacing: var(--tracking-wide);
-  color: var(--color-text);
-  background: var(--color-input);
-  border: 1px solid var(--color-accent);
+  color: #1a1713;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: var(--radius-xs);
 }
 .titleInput:focus {
@@ -140,65 +140,89 @@
 .time {
   font-family: var(--font-mono);
   font-size: var(--text-2xs);
-  color: var(--color-text-faint);
+  color: rgba(255, 255, 255, 0.78);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
 }
 
 .pin {
   flex-shrink: 0;
-  color: var(--color-accent);
+  color: #fdfbf6;
   display: inline-flex;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
 }
 
+/* The source app, on the side: its real icon, or the type glyph as a fallback. */
+.source {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+  color: #fdfbf6;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.sourceImg {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  border-radius: var(--radius-xs);
+}
+
+.queueBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.92);
+  color: #1a1713;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  flex-shrink: 0;
+}
+
+/* ---- Body: the clip content ---- */
 .body {
   flex: 1;
   min-height: 0;
-  padding: 0 var(--space-5) var(--space-5);
+  padding: var(--space-5) var(--space-5) var(--space-4);
   overflow: hidden;
 }
 
-.text {
-  font-size: var(--text-md);
-  line-height: var(--leading-snug);
-  color: var(--color-text);
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  line-clamp: 4;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  word-break: break-word;
-}
-
+/* ---- Footer: type label and the always-visible action row ---- */
 .footer {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-3) var(--space-5);
+  padding: var(--space-2) var(--space-3) var(--space-2) var(--space-5);
   border-top: 1px solid var(--color-border);
   color: var(--color-text-faint);
   font-size: var(--text-2xs);
   font-family: var(--font-mono);
 }
+.typeLabel {
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caps);
+}
 
-/* Quick actions revealed on hover/selection, keyboard-reachable. */
 .actions {
   display: flex;
   gap: var(--space-1);
   margin-left: auto;
-  opacity: 0;
-  transition: opacity var(--dur-fast) var(--ease-standard);
-}
-.card:hover .actions,
-.selected .actions,
-.card:focus-within .actions {
-  opacity: 1;
 }
 
 .action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   border-radius: var(--radius-sm);
   color: var(--color-text-muted);
   transition:
@@ -211,4 +235,8 @@
 }
 .actionDanger:hover {
   color: var(--color-danger);
+}
+.actionOn {
+  background: var(--color-accent-quiet);
+  color: var(--color-accent);
 }
