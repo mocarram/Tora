@@ -43,7 +43,9 @@ async function resolve(bundleId: string): Promise<string | null> {
   try {
     const path = await appPath(bundleId)
     if (!path) return null
-    const icon = await app.getFileIcon(path, { size: 'normal' })
+    // `POSIX path of` an .app bundle ends in a slash; strip it so getFileIcon
+    // reads the application icon rather than a generic folder icon.
+    const icon = await app.getFileIcon(path.replace(/\/$/, ''), { size: 'normal' })
     if (icon.isEmpty()) return null
     const png = icon.resize({ width: ICON_PX, height: ICON_PX, quality: 'best' }).toPNG()
     return `data:image/png;base64,${png.toString('base64')}`
