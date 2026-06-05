@@ -157,18 +157,14 @@ function ClipCardImpl({
           <span className={styles.queueBadge} title={`Queued #${queueIndex + 1}`}>
             {queueIndex + 1}
           </span>
-        ) : (
+        ) : sourceIcon ? (
           <span
             className={styles.source}
-            title={item.sourceApp ? `Copied from ${item.sourceApp}` : meta.label}
+            title={item.sourceApp ? `Copied from ${item.sourceApp}` : undefined}
           >
-            {sourceIcon ? (
-              <img className={styles.sourceImg} src={sourceIcon} alt="" />
-            ) : (
-              <Icon name={meta.icon} size={15} />
-            )}
+            <img className={styles.sourceImg} src={sourceIcon} alt="" />
           </span>
-        )}
+        ) : null}
       </div>
 
       <div className={styles.body}>
