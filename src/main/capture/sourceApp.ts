@@ -45,27 +45,37 @@ export async function getFrontmostApp(): Promise<SourceApp> {
 function queryLaunchServices(): Promise<SourceApp> {
   return new Promise((resolve) => {
     execFile('lsappinfo', ['front'], { timeout: 1500 }, (err, stdout) => {
-      const asn = stdout.trim().replace(/^"|"$/g, '')
-      if (err || !asn) {
+      // Guarded: a throw here is async and would escape getFrontmostApp's
+      // try/catch, crashing the main process.
+      try {
+        const asn = (stdout || '').trim().replace(/^"|"$/g, '')
+        if (err || !asn) {
+          resolve(EMPTY)
+          return
+        }
+        execFile(
+          'lsappinfo',
+          ['info', '-only', 'bundleid', '-only', 'name', asn],
+          { timeout: 1500 },
+          (err2, out2) => {
+            try {
+              if (err2) {
+                resolve(EMPTY)
+                return
+              }
+              const fields = parseLsappinfo(out2 || '')
+              resolve({
+                name: fields['LSDisplayName'] ?? fields['CFBundleName'] ?? null,
+                bundleId: fields['CFBundleIdentifier'] ?? fields['LSBundleIdentifier'] ?? null,
+              })
+            } catch {
+              resolve(EMPTY)
+            }
+          },
+        )
+      } catch {
         resolve(EMPTY)
-        return
       }
-      execFile(
-        'lsappinfo',
-        ['info', '-only', 'bundleid', '-only', 'name', asn],
-        { timeout: 1500 },
-        (err2, out2) => {
-          if (err2) {
-            resolve(EMPTY)
-            return
-          }
-          const fields = parseLsappinfo(out2)
-          resolve({
-            name: fields['LSDisplayName'] ?? fields['CFBundleName'] ?? null,
-            bundleId: fields['CFBundleIdentifier'] ?? fields['LSBundleIdentifier'] ?? null,
-          })
-        },
-      )
     })
   })
 }
@@ -87,15 +97,19 @@ function querySystemEvents(): Promise<SourceApp> {
     'tell application "System Events" to get {name, bundle identifier} of first application process whose frontmost is true'
   return new Promise((resolve, reject) => {
     execFile('osascript', ['-e', script], { timeout: 1500 }, (err, stdout) => {
-      if (err) {
-        reject(new Error(err.message))
-        return
+      try {
+        if (err) {
+          reject(new Error(err.message))
+          return
+        }
+        const parts = (stdout || '').trim().split(', ')
+        resolve({
+          name: parts[0]?.trim() || null,
+          bundleId: parts[1]?.trim() || null,
+        })
+      } catch (e) {
+        reject(e instanceof Error ? e : new Error(String(e)))
       }
-      const parts = stdout.trim().split(', ')
-      resolve({
-        name: parts[0]?.trim() || null,
-        bundleId: parts[1]?.trim() || null,
-      })
     })
   })
 }

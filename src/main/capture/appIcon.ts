@@ -66,15 +66,21 @@ function appPathViaSpotlight(bundleId: string): Promise<string | null> {
       [`kMDItemCFBundleIdentifier == '${bundleId}'`],
       { timeout: 1500 },
       (err, stdout) => {
-        if (err) {
+        // Guarded: a throw inside this callback is async and would escape the
+        // surrounding try/catch, crashing the main process.
+        try {
+          if (err) {
+            resolve(null)
+            return
+          }
+          const hit = (stdout || '')
+            .split('\n')
+            .map((line) => line.trim())
+            .find((line) => line.endsWith('.app'))
+          resolve(hit ?? null)
+        } catch {
           resolve(null)
-          return
         }
-        const hit = stdout
-          .split('\n')
-          .map((line) => line.trim())
-          .find((line) => line.endsWith('.app'))
-        resolve(hit ?? null)
       },
     )
   })
@@ -85,12 +91,16 @@ function appPathViaOsascript(bundleId: string): Promise<string | null> {
   const script = `POSIX path of (path to application id "${bundleId}")`
   return new Promise((resolve) => {
     execFile('osascript', ['-e', script], { timeout: 1500 }, (err, stdout) => {
-      if (err) {
+      try {
+        if (err) {
+          resolve(null)
+          return
+        }
+        const path = (stdout || '').trim().replace(/\/$/, '')
+        resolve(path.length > 0 ? path : null)
+      } catch {
         resolve(null)
-        return
       }
-      const path = stdout.trim().replace(/\/$/, '')
-      resolve(path.length > 0 ? path : null)
     })
   })
 }

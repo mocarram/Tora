@@ -162,7 +162,16 @@ function ClipCardImpl({
             className={styles.source}
             title={item.sourceApp ? `Copied from ${item.sourceApp}` : undefined}
           >
-            <img className={styles.sourceImg} src={sourceIcon} alt="" />
+            <img
+              className={styles.sourceImg}
+              src={sourceIcon}
+              alt=""
+              onError={(e) => {
+                // A broken data URL hides the whole chip rather than showing a
+                // broken-image glyph.
+                e.currentTarget.parentElement?.style.setProperty('display', 'none')
+              }}
+            />
           </span>
         ) : null}
       </div>
