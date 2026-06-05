@@ -106,140 +106,138 @@ function ClipCardImpl({
       onClick={handleClick}
       onDoubleClick={() => onActivate(item.id)}
     >
-      <div className={styles.header}>
+      <div className={styles.body}>
+        <CardPreview item={item} />
+      </div>
+
+      {/* Quick actions float over the content on hover/selection, so they cost
+          no permanent vertical space (Paste-style). */}
+      <div className={styles.actions}>
+        <Tooltip label="Copy">
+          <button
+            className={styles.action}
+            aria-label="Copy"
+            onClick={(e) => {
+              stop(e)
+              onCopy(item.id)
+            }}
+          >
+            <Icon name="copy" size={14} />
+          </button>
+        </Tooltip>
+        <Tooltip label="Save to board">
+          <button
+            ref={saveBtnRef}
+            className={styles.action}
+            aria-label="Save to board"
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            onClick={(e) => {
+              stop(e)
+              setOpenMenuId(menuOpen ? null : item.id)
+            }}
+          >
+            <Icon name="pin" size={14} filled={item.isPinned} />
+          </button>
+        </Tooltip>
+        <Tooltip label={queued ? 'Remove from queue' : 'Add to queue'}>
+          <button
+            className={`${styles.action} ${queued ? styles.actionOn : ''}`}
+            aria-label={queued ? 'Remove from queue' : 'Add to queue'}
+            onClick={(e) => {
+              stop(e)
+              onToggleQueue(item.id)
+            }}
+          >
+            <Icon name="queue" size={14} />
+          </button>
+        </Tooltip>
+        {editable ? (
+          <Tooltip label="Edit text">
+            <button
+              className={styles.action}
+              aria-label="Edit text"
+              onClick={(e) => {
+                stop(e)
+                onEdit(item.id)
+              }}
+            >
+              <Icon name="edit" size={14} />
+            </button>
+          </Tooltip>
+        ) : null}
+        <Tooltip label="Large preview">
+          <button
+            className={styles.action}
+            aria-label="Large preview"
+            onClick={(e) => {
+              stop(e)
+              onExpand(item.id)
+            }}
+          >
+            <Icon name="expand" size={14} />
+          </button>
+        </Tooltip>
+        <Tooltip label="Delete">
+          <button
+            className={`${styles.action} ${styles.actionDanger}`}
+            aria-label="Delete"
+            onClick={(e) => {
+              stop(e)
+              onDelete(item.id)
+            }}
+          >
+            <Icon name="trash" size={14} />
+          </button>
+        </Tooltip>
+      </div>
+
+      {/* Single quiet meta line: type/queue badge, inline-editable title, time. */}
+      <div className={styles.meta}>
         {queued ? (
           <span className={styles.queueBadge} title={`Queued #${queueIndex + 1}`}>
             {queueIndex + 1}
           </span>
         ) : (
-          <span className={styles.typeIcon}>
-            <Icon name={meta.icon} size={13} />
+          <span className={styles.badge}>
+            <Icon name={meta.icon} size={12} />
           </span>
         )}
-        <div className={styles.headText}>
-          {editingTitle ? (
-            <input
-              ref={titleRef}
-              className={styles.titleInput}
-              defaultValue={item.title ?? defaultLabel}
-              placeholder={defaultLabel}
-              spellCheck={false}
-              maxLength={120}
-              aria-label="Clip title"
-              onClick={stop}
-              onKeyDown={(e) => {
-                e.stopPropagation()
-                if (e.key === 'Enter') commitTitle(e.currentTarget.value)
-                else if (e.key === 'Escape') setEditingTitle(false)
-              }}
-              onBlur={(e) => commitTitle(e.currentTarget.value)}
-            />
-          ) : (
-            <button
-              className={styles.title}
-              title="Click to rename"
-              onClick={(e) => {
-                stop(e)
-                setEditingTitle(true)
-              }}
-            >
-              {titleText}
-            </button>
-          )}
-          <span className={styles.time}>{relativeTime(item.updatedAt)}</span>
-        </div>
+        {editingTitle ? (
+          <input
+            ref={titleRef}
+            className={styles.titleInput}
+            defaultValue={item.title ?? defaultLabel}
+            placeholder={defaultLabel}
+            spellCheck={false}
+            maxLength={120}
+            aria-label="Clip title"
+            onClick={stop}
+            onKeyDown={(e) => {
+              e.stopPropagation()
+              if (e.key === 'Enter') commitTitle(e.currentTarget.value)
+              else if (e.key === 'Escape') setEditingTitle(false)
+            }}
+            onBlur={(e) => commitTitle(e.currentTarget.value)}
+          />
+        ) : (
+          <button
+            className={styles.title}
+            title="Click to rename"
+            onClick={(e) => {
+              stop(e)
+              setEditingTitle(true)
+            }}
+          >
+            {titleText}
+          </button>
+        )}
         {item.isPinned ? (
           <span className={styles.pin} title="Pinned">
-            <Icon name="pin" size={13} filled />
+            <Icon name="pin" size={12} filled />
           </span>
         ) : null}
-      </div>
-
-      <div className={styles.body}>
-        <CardPreview item={item} />
-      </div>
-
-      <div className={styles.footer}>
-        <span>{meta.label}</span>
-        <div className={styles.actions}>
-          <Tooltip label="Copy">
-            <button
-              className={styles.action}
-              aria-label="Copy"
-              onClick={(e) => {
-                stop(e)
-                onCopy(item.id)
-              }}
-            >
-              <Icon name="copy" size={14} />
-            </button>
-          </Tooltip>
-          <Tooltip label="Save to board">
-            <button
-              ref={saveBtnRef}
-              className={styles.action}
-              aria-label="Save to board"
-              aria-haspopup="menu"
-              aria-expanded={menuOpen}
-              onClick={(e) => {
-                stop(e)
-                setOpenMenuId(menuOpen ? null : item.id)
-              }}
-            >
-              <Icon name="pin" size={14} filled={item.isPinned} />
-            </button>
-          </Tooltip>
-          <Tooltip label={queued ? 'Remove from queue' : 'Add to queue'}>
-            <button
-              className={`${styles.action} ${queued ? styles.actionOn : ''}`}
-              aria-label={queued ? 'Remove from queue' : 'Add to queue'}
-              onClick={(e) => {
-                stop(e)
-                onToggleQueue(item.id)
-              }}
-            >
-              <Icon name="queue" size={14} />
-            </button>
-          </Tooltip>
-          {editable ? (
-            <Tooltip label="Edit text">
-              <button
-                className={styles.action}
-                aria-label="Edit text"
-                onClick={(e) => {
-                  stop(e)
-                  onEdit(item.id)
-                }}
-              >
-                <Icon name="edit" size={14} />
-              </button>
-            </Tooltip>
-          ) : null}
-          <Tooltip label="Large preview">
-            <button
-              className={styles.action}
-              aria-label="Large preview"
-              onClick={(e) => {
-                stop(e)
-                onExpand(item.id)
-              }}
-            >
-              <Icon name="expand" size={14} />
-            </button>
-          </Tooltip>
-          <Tooltip label="Delete">
-            <button
-              className={`${styles.action} ${styles.actionDanger}`}
-              aria-label="Delete"
-              onClick={(e) => {
-                stop(e)
-                onDelete(item.id)
-              }}
-            >
-              <Icon name="trash" size={14} />
-            </button>
-          </Tooltip>
-        </div>
+        <span className={styles.time}>{relativeTime(item.updatedAt)}</span>
       </div>
 
       {menuOpen && (

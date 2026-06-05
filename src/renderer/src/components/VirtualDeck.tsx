@@ -13,7 +13,7 @@ const OVERSCAN = 4
 
 // Grid geometry (window mode).
 const GRID_MIN_COL = 250
-const GRID_ROW_H = 212
+const GRID_ROW_H = 196
 const GRID_PAD = 28
 
 export type DeckLayout = 'deck' | 'grid'

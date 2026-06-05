@@ -10,9 +10,9 @@ const isDev = !app.isPackaged
 // Panel geometry. The deck shows a square card (width === height); the panel is
 // sized to fit one square plus the surrounding chrome, and cannot shrink below
 // that (so it can never collapse into a thin line). Keep in sync with the
-// renderer: deck card = 268, topbar 52 + 1 border, statusbar 30 + 1 border, and
+// renderer: deck card = 210, topbar 52 + 1 border, statusbar 30 + 1 border, and
 // the deck's vertical padding (--space-7 = 20) top and bottom.
-const PANEL_CARD = 268
+const PANEL_CARD = 210
 const PANEL_CHROME = 53 + 31 + 40
 const PANEL_HEIGHT = PANEL_CARD + PANEL_CHROME
 const PANEL_MIN_WIDTH = 480
