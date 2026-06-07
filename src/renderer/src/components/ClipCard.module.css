@@ -123,18 +123,26 @@
 .titleInput {
   width: 100%;
   min-width: 0;
-  margin: -2px 0;
-  padding: 1px var(--space-2);
+  margin: -3px 0;
+  padding: 2px var(--space-2);
   font-size: var(--text-sm);
   font-weight: var(--weight-bold);
   letter-spacing: var(--tracking-wide);
-  color: #1a1713;
-  background: rgba(255, 255, 255, 0.94);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  /* Light text on a faint dark inset so the field reads as the title being
+     edited in place, rather than a stark white box over the coloured band. */
+  color: #fdfbf6;
+  caret-color: #fdfbf6;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.45);
   border-radius: var(--radius-xs);
 }
 .titleInput:focus {
   outline: none;
+  border-color: rgba(255, 255, 255, 0.85);
+  background: rgba(0, 0, 0, 0.28);
+}
+.titleInput::selection {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .time {
