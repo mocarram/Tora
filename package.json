@@ -26,6 +26,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "size": "node scripts/check-bundle-size.mjs",
+    "audit:prod": "npm audit --omit=dev",
+    "preflight": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run build && npm run size && npm run audit:prod",
     "test:e2e": "playwright test",
     "dist": "npm run build && electron-builder",
     "dist:mac": "npm run build && electron-builder --mac",
