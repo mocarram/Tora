@@ -98,8 +98,14 @@ export class ClipboardWatcher {
     if (this.isConcealed()) return { concealed: true }
 
     const text = clipboard.readText() || null
-    const html = clipboard.readHTML() || null
-    const rtf = clipboard.readRTF() || null
+    // macOS synthesises an HTML (and sometimes RTF) representation of plain text
+    // on read, so readHTML()/readRTF() return a phantom copy of the text even
+    // when no rich flavour was ever placed on the pasteboard. Trust them only
+    // when the pasteboard actually advertises the format, otherwise every plain
+    // copy would be misclassified as richText and the `text` type never appears.
+    const formats = clipboard.availableFormats()
+    const html = formats.includes('text/html') ? clipboard.readHTML() || null : null
+    const rtf = formats.includes('text/rtf') ? clipboard.readRTF() || null : null
     const filePaths = this.readFilePaths()
 
     let image: CaptureInput['image'] = null
