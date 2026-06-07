@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import type { ClipItem } from '@core/model'
 import type { PasteFormat } from '@shared/ipc'
 import type { Storage } from '../storage'
+import { DIR_MODE, FILE_MODE, secureDir } from '../storage/dataSecurity'
 import type { Pasteboard } from './pasteboard'
 
 /**
@@ -85,9 +86,12 @@ export class ClipboardWriter {
       const buf = await this.storage.blobs.readBuffer(ref, cacheName)
       if (!buf) continue
       const dir = join(this.restoreDir, item.id)
-      await mkdir(dir, { recursive: true })
+      // These restored files hold the same sensitive bytes as the blob store,
+      // so keep them owner-only like the rest of the data dir.
+      await mkdir(dir, { recursive: true, mode: DIR_MODE })
+      await secureDir(dir)
       const file = join(dir, names[i] ?? `file-${i}`)
-      await writeFile(file, buf)
+      await writeFile(file, buf, { mode: FILE_MODE })
       out.push(file)
     }
     return out

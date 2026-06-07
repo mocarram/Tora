@@ -72,7 +72,18 @@ export class WindowManager {
     })
 
     win.webContents.setWindowOpenHandler(({ url }) => {
-      void shell.openExternal(url)
+      // Only ever hand http(s) URLs to the OS. Clipboard content is untrusted,
+      // and shell.openExternal will happily launch file://, smb://, ssh:// and
+      // custom-scheme handlers, so anything else is denied outright.
+      let parsed: URL
+      try {
+        parsed = new URL(url)
+      } catch {
+        return { action: 'deny' }
+      }
+      if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+        void shell.openExternal(url)
+      }
       return { action: 'deny' }
     })
     win.webContents.on('will-navigate', (e) => e.preventDefault())

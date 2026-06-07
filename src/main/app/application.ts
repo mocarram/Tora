@@ -434,7 +434,20 @@ export class Application {
 
   private registerIpc(): void {
     const handlers = this.buildHandlers()
-    ipcMain.handle(IPC.invoke, (_e, method: ToraMethod, args: unknown[]) => {
+    // Only the app's own renderer may invoke handlers. In production the frame
+    // is loaded from file://; in dev from the vite dev-server URL. Anything else
+    // (an injected iframe, a stray BrowserView a future dependency might add) is
+    // rejected before it can reach privileged handlers like clearData/unlock.
+    const rendererUrl = process.env.ELECTRON_RENDERER_URL
+    const isTrustedSender = (url: string | undefined): boolean => {
+      if (!url) return false
+      if (url.startsWith('file://')) return true
+      return rendererUrl !== undefined && url.startsWith(rendererUrl)
+    }
+    ipcMain.handle(IPC.invoke, (e, method: ToraMethod, args: unknown[]) => {
+      if (!isTrustedSender(e.senderFrame?.url)) {
+        throw new Error('IPC rejected: untrusted sender frame')
+      }
       const fn = handlers[method] as ((...a: unknown[]) => unknown) | undefined
       if (!fn) throw new Error(`Unknown IPC method: ${method}`)
       return fn(...args)
@@ -549,7 +562,11 @@ export class Application {
     if (!this.canInjectPaste()) return
     this.dismissForPaste()
     await delay(150)
-    for (const id of req.itemIds) {
+    // Bound the work: each item spawns an osascript paste, so a malformed or
+    // hostile request must not be able to flood the system or hang the loop.
+    const ids = req.itemIds.slice(0, 100)
+    const stepDelay = Math.min(5000, Math.max(40, req.delayMs))
+    for (const id of ids) {
       const item = this.storage.items.getById(id)
       if (!item) continue
       const text = await this.writer.write(item, req.format)
@@ -559,7 +576,7 @@ export class Application {
       } catch {
         // Skip a failed paste; keep the queue going.
       }
-      await delay(Math.max(40, req.delayMs))
+      await delay(stepDelay)
     }
   }
 
