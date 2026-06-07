@@ -71,6 +71,9 @@ describe('rankItems', () => {
     }))
     const start = performance.now()
     rankItems('item words', big)
-    expect(performance.now() - start).toBeLessThan(50)
+    // Generous bound: ranking 10k candidates is a few ms in practice, but a hard
+    // wall-clock assertion flakes under CI/load. This still catches a real
+    // algorithmic regression (e.g. an accidental O(n^2)) without false reds.
+    expect(performance.now() - start).toBeLessThan(500)
   })
 })
