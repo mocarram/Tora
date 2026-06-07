@@ -40,39 +40,49 @@ export class CapturePipeline {
 
     const id = this.storage.newId()
 
-    // Persist blob payloads (text/html/rtf) to disk; reference by item id.
-    let contentRef: string | null = null
-    const blob = classified.blob
-    if (blob.text !== undefined || blob.html !== undefined || blob.rtf !== undefined) {
-      contentRef = id
-      if (blob.text !== undefined) await this.storage.blobs.writeText(id, 'text.txt', blob.text)
-      if (blob.html !== undefined) await this.storage.blobs.writeText(id, 'content.html', blob.html)
-      if (blob.rtf !== undefined) await this.storage.blobs.writeText(id, 'content.rtf', blob.rtf)
+    // If a blob write or the row insert fails partway through we must not leave
+    // orphaned blob files on disk (retention only ever walks live content_refs,
+    // so an orphan would never be reclaimed). Roll back the blob dir on any
+    // failure and let the error surface.
+    try {
+      // Persist blob payloads (text/html/rtf) to disk; reference by item id.
+      let contentRef: string | null = null
+      const blob = classified.blob
+      if (blob.text !== undefined || blob.html !== undefined || blob.rtf !== undefined) {
+        contentRef = id
+        if (blob.text !== undefined) await this.storage.blobs.writeText(id, 'text.txt', blob.text)
+        if (blob.html !== undefined)
+          await this.storage.blobs.writeText(id, 'content.html', blob.html)
+        if (blob.rtf !== undefined) await this.storage.blobs.writeText(id, 'content.rtf', blob.rtf)
+      }
+
+      // Images keep their bytes under the item id (attached by the watcher).
+      if (classified.type === 'image') contentRef = id
+
+      // Cache file bytes so a paste works even after the source is deleted.
+      if (classified.type === 'file' && input.filePaths && input.filePaths.length > 0) {
+        const cached = await this.cacheFiles(id, input.filePaths)
+        if (cached) contentRef = id
+      }
+
+      const item = this.storage.items.insert({
+        id,
+        type: classified.type,
+        createdAt: Date.now(),
+        sourceApp: input.sourceApp ?? null,
+        sourceBundleId: input.sourceBundleId ?? null,
+        previewText: classified.previewText,
+        contentRef,
+        contentHash: classified.contentHash,
+        byteSize: classified.byteSize,
+        metadata: classified.metadata,
+      })
+
+      return { kind: 'added', item }
+    } catch (err) {
+      await this.storage.blobs.remove(id).catch(() => {})
+      throw err
     }
-
-    // Images keep their bytes under the item id (attached by the watcher).
-    if (classified.type === 'image') contentRef = id
-
-    // Cache file bytes so a paste works even after the source is deleted.
-    if (classified.type === 'file' && input.filePaths && input.filePaths.length > 0) {
-      const cached = await this.cacheFiles(id, input.filePaths)
-      if (cached) contentRef = id
-    }
-
-    const item = this.storage.items.insert({
-      id,
-      type: classified.type,
-      createdAt: Date.now(),
-      sourceApp: input.sourceApp ?? null,
-      sourceBundleId: input.sourceBundleId ?? null,
-      previewText: classified.previewText,
-      contentRef,
-      contentHash: classified.contentHash,
-      byteSize: classified.byteSize,
-      metadata: classified.metadata,
-    })
-
-    return { kind: 'added', item }
   }
 
   /**

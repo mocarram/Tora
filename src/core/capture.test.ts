@@ -48,6 +48,14 @@ describe('classifyCapture', () => {
     expect(r?.blob.html).toBe('<b>Hello</b>')
   })
 
+  it('does not dedup rich clips that share plain text but differ in formatting', () => {
+    const a = classifyCapture({ text: 'Hello there friend', html: '<b>Hello there friend</b>' })
+    const b = classifyCapture({ text: 'Hello there friend', html: '<i>Hello there friend</i>' })
+    expect(a?.type).toBe('richText')
+    expect(b?.type).toBe('richText')
+    expect(isDuplicate(a?.contentHash ?? null, b!.contentHash)).toBe(false)
+  })
+
   it('falls back to plain text', () => {
     const r = classifyCapture({ text: 'just a normal note' })
     expect(r?.type).toBe('text')

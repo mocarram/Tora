@@ -150,7 +150,10 @@ export function classifyCapture(input: CaptureInput): ClassifiedClip | null {
       return {
         type: 'richText',
         previewText: toPreviewLine(text),
-        contentHash: hashString(`rich:${text}`),
+        // Hash over the rich payload, not just the plain text: two clips with
+        // the same words but different formatting (e.g. <b>Hi</b> vs <i>Hi</i>)
+        // are distinct clips and must not dedup into one.
+        contentHash: hashString(`rich:${text}:${input.html ?? ''}:${input.rtf ?? ''}`),
         byteSize:
           utf8ByteLength(text) + utf8ByteLength(input.html ?? '') + utf8ByteLength(input.rtf ?? ''),
         metadata: { kind: 'richText', hasHtml: hasText(input.html), hasRtf: hasText(input.rtf) },

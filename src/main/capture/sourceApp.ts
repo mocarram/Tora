@@ -9,7 +9,11 @@ const EMPTY: SourceApp = { name: null, bundleId: null }
 
 let cached: SourceApp = EMPTY
 let cachedAt = 0
-const TTL_MS = 800
+// Kept well below the 500ms clipboard poll interval: a capture happens at most
+// once per poll, so a TTL at/above the interval would misattribute a clip to
+// the previously focused app on a fast copy / switch-app / copy sequence. The
+// cache only exists to coalesce any accidental rapid double-lookup.
+const TTL_MS = 250
 
 /**
  * Best-effort frontmost-application lookup on macOS via AppleScript. Cached
