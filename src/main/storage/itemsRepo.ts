@@ -76,39 +76,63 @@ function mapRow(row: ItemRow): ClipItem {
 }
 
 export class ItemsRepo {
+  // Hot-path statements are prepared once. better-sqlite3 compiles SQL on every
+  // prepare() call, and these run on every capture / dedup / mutation, so an
+  // inline prepare per call is wasted work on the busiest paths.
   private readonly getStmt: Statement
   private readonly hashStmt: Statement
+  private readonly insertStmt: Statement
+  private readonly touchStmt: Statement
+  private readonly pinStmt: Statement
+  private readonly updateTextStmt: Statement
+  private readonly setMetadataStmt: Statement
+  private readonly setContentRefStmt: Statement
+  private readonly softDeleteStmt: Statement
+  private readonly setTitleStmt: Statement
+  private readonly hardDeleteStmt: Statement
+  private readonly deleteBoardItemsStmt: Statement
 
   constructor(private readonly db: Database) {
     this.getStmt = db.prepare('SELECT * FROM items WHERE id = ?')
     this.hashStmt = db.prepare(
       'SELECT * FROM items WHERE content_hash = ? AND deleted_at IS NULL LIMIT 1',
     )
+    this.insertStmt = db.prepare(
+      `INSERT INTO items
+        (id, type, created_at, updated_at, source_app, source_bundle_id,
+         preview_text, content_ref, content_hash, is_pinned, byte_size, metadata, deleted_at)
+       VALUES (@id, @type, @created_at, @updated_at, @source_app, @source_bundle_id,
+         @preview_text, @content_ref, @content_hash, 0, @byte_size, @metadata, NULL)`,
+    )
+    this.touchStmt = db.prepare('UPDATE items SET updated_at = ? WHERE id = ?')
+    this.pinStmt = db.prepare('UPDATE items SET is_pinned = ?, updated_at = ? WHERE id = ?')
+    this.updateTextStmt = db.prepare(
+      `UPDATE items SET type = ?, preview_text = ?, content_hash = ?, byte_size = ?, metadata = ?, updated_at = ?
+       WHERE id = ?`,
+    )
+    this.setMetadataStmt = db.prepare('UPDATE items SET metadata = ? WHERE id = ?')
+    this.setContentRefStmt = db.prepare('UPDATE items SET content_ref = ? WHERE id = ?')
+    this.softDeleteStmt = db.prepare('UPDATE items SET deleted_at = ? WHERE id = ?')
+    this.setTitleStmt = db.prepare('UPDATE items SET title = ? WHERE id = ?')
+    this.hardDeleteStmt = db.prepare('DELETE FROM items WHERE id = ?')
+    this.deleteBoardItemsStmt = db.prepare('DELETE FROM board_items WHERE item_id = ?')
   }
 
   insert(item: NewItem): ClipItem {
     const now = item.createdAt
-    this.db
-      .prepare(
-        `INSERT INTO items
-          (id, type, created_at, updated_at, source_app, source_bundle_id,
-           preview_text, content_ref, content_hash, is_pinned, byte_size, metadata, deleted_at)
-         VALUES (@id, @type, @created_at, @updated_at, @source_app, @source_bundle_id,
-           @preview_text, @content_ref, @content_hash, 0, @byte_size, @metadata, NULL)`,
-      )
-      .run({
-        id: item.id,
-        type: item.type,
-        created_at: now,
-        updated_at: now,
-        source_app: item.sourceApp,
-        source_bundle_id: item.sourceBundleId,
-        preview_text: item.previewText,
-        content_ref: item.contentRef,
-        content_hash: item.contentHash,
-        byte_size: item.byteSize,
-        metadata: JSON.stringify(item.metadata),
-      })
+    this.insertStmt.run({
+      id: item.id,
+      type: item.type,
+      created_at: now,
+      updated_at: now,
+      source_app: item.sourceApp,
+      source_bundle_id: item.sourceBundleId,
+      preview_text: item.previewText,
+      content_ref: item.contentRef,
+      content_hash: item.contentHash,
+      byte_size: item.byteSize,
+      metadata: JSON.stringify(item.metadata),
+    })
     markChange(this.db, 'item', item.id, { at: now })
     return this.getById(item.id) as ClipItem
   }
@@ -126,16 +150,14 @@ export class ItemsRepo {
 
   /** Bump an existing item to "now" (dedup hit). Returns the updated item. */
   touch(id: string, at: number = Date.now()): ClipItem | null {
-    this.db.prepare('UPDATE items SET updated_at = ? WHERE id = ?').run(at, id)
+    this.touchStmt.run(at, id)
     markChange(this.db, 'item', id, { at })
     return this.getById(id)
   }
 
   setPinned(id: string, pinned: boolean): void {
     const at = Date.now()
-    this.db
-      .prepare('UPDATE items SET is_pinned = ?, updated_at = ? WHERE id = ?')
-      .run(pinned ? 1 : 0, at, id)
+    this.pinStmt.run(pinned ? 1 : 0, at, id)
     markChange(this.db, 'item', id, { at })
   }
 
@@ -150,38 +172,33 @@ export class ItemsRepo {
     },
   ): ClipItem | null {
     const at = Date.now()
-    this.db
-      .prepare(
-        `UPDATE items SET type = ?, preview_text = ?, content_hash = ?, byte_size = ?, metadata = ?, updated_at = ?
-         WHERE id = ?`,
-      )
-      .run(
-        fields.type,
-        fields.previewText,
-        fields.contentHash,
-        fields.byteSize,
-        JSON.stringify(fields.metadata),
-        at,
-        id,
-      )
+    this.updateTextStmt.run(
+      fields.type,
+      fields.previewText,
+      fields.contentHash,
+      fields.byteSize,
+      JSON.stringify(fields.metadata),
+      at,
+      id,
+    )
     markChange(this.db, 'item', id, { at })
     return this.getById(id)
   }
 
   /** Replace an item's metadata JSON (used to attach image thumbnail refs). */
   setMetadata(id: string, metadata: ClipItemMetadata): void {
-    this.db.prepare('UPDATE items SET metadata = ? WHERE id = ?').run(JSON.stringify(metadata), id)
+    this.setMetadataStmt.run(JSON.stringify(metadata), id)
   }
 
   /** Set the on-disk blob reference (so blob cleanup on delete works). */
   setContentRef(id: string, ref: string): void {
-    this.db.prepare('UPDATE items SET content_ref = ? WHERE id = ?').run(ref, id)
+    this.setContentRefStmt.run(ref, id)
   }
 
   softDelete(id: string): void {
     const at = Date.now()
-    this.db.prepare('UPDATE items SET deleted_at = ? WHERE id = ?').run(at, id)
-    this.db.prepare('DELETE FROM board_items WHERE item_id = ?').run(id)
+    this.softDeleteStmt.run(at, id)
+    this.deleteBoardItemsStmt.run(id)
     markChange(this.db, 'item', id, { deleted: true, at })
   }
 
@@ -266,7 +283,7 @@ export class ItemsRepo {
 
   /** Set or clear (null) the user's custom title. Does not change ordering. */
   setTitle(id: string, title: string | null): void {
-    this.db.prepare('UPDATE items SET title = ? WHERE id = ?').run(title, id)
+    this.setTitleStmt.run(title, id)
     markChange(this.db, 'item', id)
   }
 
@@ -280,6 +297,31 @@ export class ItemsRepo {
     return ids.map((id) => byId.get(id)).filter((x): x is ClipItem => x !== undefined)
   }
 
+  /**
+   * Minimal projection (id, type, pinned) preserving input order. The search
+   * path filters and counts potentially thousands of ranked candidates; doing
+   * that over this 3-column projection avoids loading full rows and parsing
+   * metadata JSON for every candidate just to keep one page.
+   */
+  getManyLite(ids: string[]): { id: string; type: ClipItemType; isPinned: boolean }[] {
+    if (ids.length === 0) return []
+    const placeholders = ids.map(() => '?').join(',')
+    const rows = this.db
+      .prepare(
+        `SELECT id, type, is_pinned FROM items WHERE id IN (${placeholders}) AND deleted_at IS NULL`,
+      )
+      .all(...ids) as { id: string; type: string; is_pinned: number }[]
+    const byId = new Map(
+      rows.map((r) => [
+        r.id,
+        { id: r.id, type: r.type as ClipItemType, isPinned: r.is_pinned === 1 },
+      ]),
+    )
+    return ids
+      .map((id) => byId.get(id))
+      .filter((x): x is { id: string; type: ClipItemType; isPinned: boolean } => x !== undefined)
+  }
+
   /** Live, non-pinned items older than the cutoff (for retention pruning). */
   expiredRefs(cutoff: number): { id: string; contentRef: string | null }[] {
     return this.db
@@ -291,8 +333,8 @@ export class ItemsRepo {
 
   /** Hard-remove a tombstoned/expired row. Blob removal is the caller's job. */
   hardDelete(id: string): void {
-    this.db.prepare('DELETE FROM items WHERE id = ?').run(id)
-    this.db.prepare('DELETE FROM board_items WHERE item_id = ?').run(id)
+    this.hardDeleteStmt.run(id)
+    this.deleteBoardItemsStmt.run(id)
   }
 
   stats(): { itemCount: number; totalBytes: number; oldestItemAt: number | null } {

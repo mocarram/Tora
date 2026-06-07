@@ -458,20 +458,24 @@ export class Application {
     const item = this.storage.items.getById(itemId)
     if (!item) return null
     const ref = item.contentRef
+    // Stream images via the tora-blob protocol (browser-cached, lazy) rather
+    // than reading the file and shipping a multi-MB base64 data URL over IPC.
     if (item.type === 'image' && ref) {
-      const buf = await this.storage.blobs.readBuffer(ref, 'image.png')
       return {
         type: 'image',
-        ...(buf ? { imageDataUrl: `data:image/png;base64,${buf.toString('base64')}` } : {}),
+        ...(this.storage.blobs.has(ref, 'image.png')
+          ? { imageDataUrl: `tora-blob://media/${ref}/image.png` }
+          : {}),
       }
     }
     if (item.type === 'file' && item.metadata.kind === 'file') {
       // Image files: include the thumbnail so the large preview shows the image.
-      const thumb = ref ? await this.storage.blobs.readBuffer(ref, 'thumb.png') : null
       return {
         type: 'file',
         filePaths: item.metadata.paths,
-        ...(thumb ? { imageDataUrl: `data:image/png;base64,${thumb.toString('base64')}` } : {}),
+        ...(ref && this.storage.blobs.has(ref, 'thumb.png')
+          ? { imageDataUrl: `tora-blob://media/${ref}/thumb.png` }
+          : {}),
       }
     }
     const text = ref ? await this.storage.blobs.readText(ref, 'text.txt') : null
@@ -497,13 +501,17 @@ export class Application {
     }
     const rankedIds = this.search.search(req.query)
     const boardSet = req.boardId ? this.storage.boards.itemIdsInBoard(req.boardId) : null
-    const matched = this.storage.items
-      .getMany(rankedIds)
+    // Filter + count over the lightweight projection, then load full rows only
+    // for the visible page. Avoids materialising thousands of full rows on every
+    // keystroke when the history is large.
+    const matchedIds = this.storage.items
+      .getManyLite(rankedIds)
       .filter((it) => matchesQuickFilter(it.type, req.filter))
       .filter((it) => (req.pinnedOnly ? it.isPinned : true))
       .filter((it) => (boardSet ? boardSet.has(it.id) : true))
-    const page = matched.slice(req.offset, req.offset + req.limit)
-    return { items: page, total: matched.length }
+      .map((it) => it.id)
+    const pageIds = matchedIds.slice(req.offset, req.offset + req.limit)
+    return { items: this.storage.items.getMany(pageIds), total: matchedIds.length }
   }
 
   private async copyItem(itemId: string): Promise<void> {
