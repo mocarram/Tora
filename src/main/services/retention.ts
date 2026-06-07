@@ -33,6 +33,10 @@ export class RetentionService {
     const cutoff = Date.now() - days * DAY_MS
     const expired = this.storage.items.expiredRefs(cutoff)
     for (const { id, contentRef } of expired) {
+      // Tombstone before reclaiming the row: without a sync_state tombstone a
+      // synced peer would just push the pruned item straight back on the next
+      // sync. hardDelete leaves the tombstone (a separate table) in place.
+      this.storage.items.softDelete(id)
       this.storage.items.hardDelete(id)
       if (contentRef) await this.storage.blobs.remove(contentRef)
     }

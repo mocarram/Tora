@@ -41,6 +41,12 @@ describe('RetentionService', () => {
     expect(storage.items.getById(old.id)).toBeNull()
     expect(storage.items.getById(fresh.id)).not.toBeNull()
     expect(storage.blobs.has(old.contentRef!, 'text.txt')).toBe(false)
+
+    // A prune must leave a sync tombstone so a peer does not resurrect the item.
+    const tombstone = storage.db
+      .prepare('SELECT deleted FROM sync_state WHERE record_type = ? AND record_id = ?')
+      .get('item', old.id) as { deleted: number } | undefined
+    expect(tombstone?.deleted).toBe(1)
   })
 
   it('keeps pinned items past the window', async () => {
