@@ -17,6 +17,14 @@ process.on('uncaughtException', (err) => {
 // "Tora" with the Tora icon.
 app.setName('Tora')
 
+// Test/e2e isolation: when TORA_USER_DATA is set, relocate the whole data dir
+// (db, blobs, sync key, single-instance lock) there so a run never reads or
+// mutates the user's real history. Must run before requestSingleInstanceLock,
+// which keys its lock socket off the userData path.
+if (process.env.TORA_USER_DATA) {
+  app.setPath('userData', process.env.TORA_USER_DATA)
+}
+
 // The Dock icon (default + per-accent variants) is set by Application once
 // settings are loaded, in both dev and packaged builds.
 

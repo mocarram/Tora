@@ -27,6 +27,20 @@ test.beforeAll(async () => {
   })
   page = await app.firstWindow()
   await page.waitForLoadState('domcontentloaded')
+  // A fresh (isolated) profile starts on the first-run onboarding overlay, whose
+  // scrim covers the deck. Dismiss it so the rest of the suite can interact.
+  const start = page.getByRole('button', { name: 'Get started' })
+  await start.waitFor({ state: 'visible', timeout: 15_000 })
+  await start.click()
+  await expect(page.getByRole('dialog', { name: 'Welcome to Tora' })).toBeHidden({
+    timeout: 15_000,
+  })
+
+  // Seed one clip through the real clipboard-watcher path so the deck (and the
+  // Links quick filter) have content. The isolated profile starts empty, which
+  // otherwise renders the "nothing here yet" state instead of the listbox.
+  await app.evaluate(({ clipboard }) => clipboard.writeText('https://tora.example/e2e-seed'))
+  await expect(page.getByRole('listbox', { name: 'Clip history' })).toBeVisible({ timeout: 15_000 })
 })
 
 test.afterAll(async () => {
@@ -37,11 +51,8 @@ test('window loads with the Tora wordmark', async () => {
   await expect(page.getByText('Tora').first()).toBeVisible()
 })
 
-test('onboarding can be dismissed', async () => {
-  const start = page.getByRole('button', { name: 'Get started' })
-  if (await start.isVisible().catch(() => false)) {
-    await start.click()
-  }
+test('deck is interactive after onboarding', async () => {
+  // beforeAll dismissed onboarding; the clip-history deck should now be live.
   await expect(page.getByRole('listbox', { name: 'Clip history' })).toBeVisible()
 })
 
