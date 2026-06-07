@@ -166,6 +166,13 @@
 .toggleOn .knob {
   transform: translateX(16px);
 }
+/* The knob still jumps to its new position under reduce-motion; only the slide
+   animation is suppressed. */
+@media (prefers-reduced-motion: reduce) {
+  .knob {
+    transition: none;
+  }
+}
 
 .select,
 .input {

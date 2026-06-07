@@ -192,6 +192,8 @@
 }
 .renameInput:focus {
   outline: none;
+  border-color: var(--color-focus-native);
+  box-shadow: 0 0 0 2px var(--color-focus-glow);
 }
 
 .dropTarget {

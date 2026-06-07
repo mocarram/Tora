@@ -93,6 +93,7 @@ export function LargePreview({
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
+            aria-label={item.title ?? defaultLabel}
           >
             <header className={styles.head}>
               <span className={styles.headIcon}>

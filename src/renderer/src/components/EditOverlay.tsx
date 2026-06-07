@@ -54,6 +54,7 @@ export function EditOverlay({
               className={`${edit.area} selectable mono`}
               value={text}
               autoFocus
+              aria-label="Clip content"
               spellCheck={false}
               onChange={(e) => setText(e.target.value)}
             />

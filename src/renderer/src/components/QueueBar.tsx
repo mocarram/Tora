@@ -48,7 +48,11 @@ export function QueueBar({
               <span className={styles.chipText}>
                 {item ? toPreviewLine(item.previewText, 24) : 'item'}
               </span>
-              <button className={styles.chipX} aria-label="Remove" onClick={() => onRemove(id)}>
+              <button
+                className={styles.chipX}
+                aria-label={`Remove ${item ? toPreviewLine(item.previewText, 24) : 'item'} from queue`}
+                onClick={() => onRemove(id)}
+              >
                 <Icon name="close" size={11} />
               </button>
             </span>
@@ -57,15 +61,17 @@ export function QueueBar({
       </div>
 
       <div className={styles.controls}>
-        <div className={styles.formatToggle}>
+        <div className={styles.formatToggle} role="group" aria-label="Paste format">
           <button
             className={`${styles.fmt} ${format === 'keep' ? styles.fmtOn : ''}`}
+            aria-pressed={format === 'keep'}
             onClick={() => onFormat('keep')}
           >
             Keep
           </button>
           <button
             className={`${styles.fmt} ${format === 'plain' ? styles.fmtOn : ''}`}
+            aria-pressed={format === 'plain'}
             onClick={() => onFormat('plain')}
           >
             Plain

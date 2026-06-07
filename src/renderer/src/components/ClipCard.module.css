@@ -26,6 +26,14 @@
   box-shadow: var(--shadow-raised);
 }
 
+/* Zeroing the durations elsewhere only makes the lift instant; reduce-motion
+   should remove the positional shift entirely. */
+@media (prefers-reduced-motion: reduce) {
+  .card:hover {
+    transform: none;
+  }
+}
+
 /* Selection: a simple accent border all around, plus a raised surface. */
 .selected {
   border-color: var(--color-accent);

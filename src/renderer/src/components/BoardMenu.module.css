@@ -68,6 +68,10 @@
   font-size: var(--text-md);
   outline: none;
 }
+.input:focus {
+  border-color: var(--color-focus-native);
+  box-shadow: 0 0 0 2px var(--color-focus-glow);
+}
 .input::placeholder {
   color: var(--color-text-faint);
 }

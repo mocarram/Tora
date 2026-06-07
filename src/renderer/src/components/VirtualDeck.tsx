@@ -105,21 +105,23 @@ export function VirtualDeck(props: VirtualDeckProps): React.JSX.Element {
     if (!el || !props.selectedId) return
     const index = items.findIndex((i) => i.id === props.selectedId)
     if (index < 0) return
+    // Honour reduce-motion: jump instead of animating the scroll.
+    const behavior: ScrollBehavior = props.reducedMotion ? 'auto' : 'smooth'
     if (props.layout === 'grid') {
       const cols = gridCols(el.clientWidth)
       const top = Math.floor(index / cols) * GRID_ROW_H
       const bottom = top + GRID_ROW_H
-      if (top < el.scrollTop) el.scrollTo({ top, behavior: 'smooth' })
+      if (top < el.scrollTop) el.scrollTo({ top, behavior })
       else if (bottom > el.scrollTop + el.clientHeight)
-        el.scrollTo({ top: bottom - el.clientHeight, behavior: 'smooth' })
+        el.scrollTo({ top: bottom - el.clientHeight, behavior })
     } else {
       const left = index * STRIDE
       const right = left + SLOT_WIDTH
-      if (left < el.scrollLeft) el.scrollTo({ left: left - GAP, behavior: 'smooth' })
+      if (left < el.scrollLeft) el.scrollTo({ left: left - GAP, behavior })
       else if (right > el.scrollLeft + el.clientWidth)
-        el.scrollTo({ left: right - el.clientWidth + GAP, behavior: 'smooth' })
+        el.scrollTo({ left: right - el.clientWidth + GAP, behavior })
     }
-  }, [props.selectedId, items, props.layout])
+  }, [props.selectedId, items, props.layout, props.reducedMotion])
 
   const queuePos = useCallback((id: string): number => props.queue.indexOf(id), [props.queue])
 

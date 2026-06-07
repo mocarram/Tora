@@ -203,12 +203,16 @@ export function App(): React.JSX.Element {
           <div className={styles.spacer} />
           <div className={styles.modeToggle} role="tablist" aria-label="Window mode">
             <button
+              role="tab"
+              aria-selected={store.settings?.windowMode === 'panel'}
               className={`${styles.modeBtn} ${store.settings?.windowMode === 'panel' ? styles.on : ''}`}
               onClick={() => void window.tora.setWindowMode('panel')}
             >
               Panel
             </button>
             <button
+              role="tab"
+              aria-selected={store.settings?.windowMode === 'window'}
               className={`${styles.modeBtn} ${store.settings?.windowMode === 'window' ? styles.on : ''}`}
               onClick={() => void window.tora.setWindowMode('window')}
             >
