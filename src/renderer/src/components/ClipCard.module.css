@@ -20,40 +20,21 @@
     transform var(--dur-fast) var(--ease-standard);
 }
 
-/* The amber "stripe" on the leading edge, shown for selection/queue. */
-.card::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  background: var(--color-accent);
-  opacity: 0;
-  transition: opacity var(--dur-fast) var(--ease-standard);
-  z-index: 1;
-}
-
 .card:hover {
   background: var(--glass-sheen), var(--color-card-hover);
   transform: translateY(-2px);
   box-shadow: var(--shadow-raised);
 }
 
+/* Selection: a simple accent border all around, plus a raised surface. */
 .selected {
   border-color: var(--color-accent);
   background: var(--glass-sheen), var(--color-card-raised);
   box-shadow: var(--shadow-raised);
 }
-.selected::before {
-  opacity: 1;
-}
 
 .queued {
   border-color: var(--color-accent-strong);
-}
-.queued::before {
-  opacity: 1;
 }
 
 /* ---- Header: a prominent, type-coloured band ---- */
@@ -157,27 +138,6 @@
   color: #fdfbf6;
   display: inline-flex;
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
-}
-
-/* The source app, on the side: its real icon, or the type glyph as a fallback. */
-.source {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.18);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
-  color: #fdfbf6;
-  flex-shrink: 0;
-  overflow: hidden;
-}
-.sourceImg {
-  width: 26px;
-  height: 26px;
-  object-fit: contain;
-  border-radius: var(--radius-xs);
 }
 
 .queueBadge {

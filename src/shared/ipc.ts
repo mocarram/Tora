@@ -218,12 +218,6 @@ export interface ToraApi {
   /** The running app version (from package.json), for the About section. */
   getAppVersion(): Promise<string>
 
-  /**
-   * A data-URL PNG icon for the app a clip was copied from, by bundle id, or
-   * null when it cannot be resolved (non-macOS, unknown app). Cached in main.
-   */
-  getAppIcon(bundleId: string): Promise<string | null>
-
   // Events
   onEvent(listener: (event: ToraEvent) => void): () => void
 }

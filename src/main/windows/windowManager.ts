@@ -10,10 +10,10 @@ const isDev = !app.isPackaged
 // Panel geometry. The deck shows one card; the panel is sized to fit that card
 // plus the surrounding chrome, and cannot shrink below that (so it can never
 // collapse into a thin line). Keep in sync with the renderer: deck card = 216,
-// topbar 52 + 1 border, statusbar 30 + 1 border, and the deck's vertical
+// topbar 44 + 1 border, statusbar 30 + 1 border, and the deck's vertical
 // padding (--space-7 = 20) top and bottom.
 const PANEL_CARD = 216
-const PANEL_CHROME = 53 + 31 + 40
+const PANEL_CHROME = 45 + 31 + 40
 const PANEL_HEIGHT = PANEL_CARD + PANEL_CHROME
 const PANEL_MIN_WIDTH = 480
 const PANEL_MARGIN = 12
@@ -151,7 +151,12 @@ export class WindowManager {
   private positionWindow(): void {
     if (!this.win) return
     this.win.setMinimumSize(WINDOW_MIN_WIDTH, WINDOW_MIN_HEIGHT)
-    this.win.setBounds({ width: 1040, height: 680 })
+    // Open large enough to show the full grid (several columns at once), scaled
+    // to the display and capped so it stays sensible on very large monitors.
+    const { width, height } = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea
+    const w = Math.min(1600, Math.round(width * 0.92))
+    const h = Math.min(1000, Math.round(height * 0.9))
+    this.win.setBounds({ width: w, height: h })
     this.win.center()
   }
 

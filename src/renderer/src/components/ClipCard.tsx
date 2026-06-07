@@ -3,7 +3,6 @@ import { motion } from 'framer-motion'
 import type { ClipItem } from '@core/model'
 import { relativeTime } from '@core/format'
 import { useStore } from '../store/useStore'
-import { useAppIcon } from '../lib/appIcon'
 import { Icon } from './Icon'
 import { CardPreview } from './CardPreview'
 import { BoardMenu } from './BoardMenu'
@@ -50,18 +49,14 @@ function ClipCardImpl({
   const editable = EDITABLE.includes(item.type)
   const queued = queueIndex >= 0
 
-  // The icon of the app the clip was copied from (Paste-style "source"). Null
-  // until resolved or when unresolvable; the card falls back to its type glyph.
-  const sourceIcon = useAppIcon(item.sourceBundleId)
-
   const menuOpen = useStore((s) => s.openMenuId === item.id)
   const setOpenMenuId = useStore((s) => s.setOpenMenuId)
   const saveBtnRef = useRef<HTMLButtonElement>(null)
 
-  // Inline, in-place title editing (no popup). The default label is the source
-  // app or the type name; a saved title replaces it. Saving the default or an
-  // empty string clears the custom title.
-  const defaultLabel = item.sourceApp ?? meta.label
+  // Inline, in-place title editing (no popup). The default label is the type
+  // name; a saved title replaces it. Saving the default or an empty string
+  // clears the custom title.
+  const defaultLabel = meta.label
   const titleText = item.title && item.title.length > 0 ? item.title : defaultLabel
   const [editingTitle, setEditingTitle] = useState(false)
   const titleRef = useRef<HTMLInputElement>(null)
@@ -111,8 +106,7 @@ function ClipCardImpl({
       onClick={handleClick}
       onDoubleClick={() => onActivate(item.id)}
     >
-      {/* Prominent, type-coloured header: title + time, with the source app on
-          the side (its icon, or the type glyph as a fallback). */}
+      {/* Prominent, type-coloured header: title + time. */}
       <div className={styles.header} data-type={item.type}>
         <div className={styles.headText}>
           {editingTitle ? (
@@ -156,22 +150,6 @@ function ClipCardImpl({
         {queued ? (
           <span className={styles.queueBadge} title={`Queued #${queueIndex + 1}`}>
             {queueIndex + 1}
-          </span>
-        ) : sourceIcon ? (
-          <span
-            className={styles.source}
-            title={item.sourceApp ? `Copied from ${item.sourceApp}` : undefined}
-          >
-            <img
-              className={styles.sourceImg}
-              src={sourceIcon}
-              alt=""
-              onError={(e) => {
-                // A broken data URL hides the whole chip rather than showing a
-                // broken-image glyph.
-                e.currentTarget.parentElement?.style.setProperty('display', 'none')
-              }}
-            />
           </span>
         ) : null}
       </div>

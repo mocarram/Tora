@@ -15,6 +15,9 @@ const OVERSCAN = 4
 const GRID_MIN_COL = 250
 const GRID_ROW_H = 204
 const GRID_PAD = 28
+// Vertical breathing room above the first row and below the last, kept equal so
+// the top gap matches the bottom (which also leaves room for the scrollbar).
+const GRID_PAD_TOP = 20
 
 export type DeckLayout = 'deck' | 'grid'
 
@@ -185,7 +188,10 @@ export function VirtualDeck(props: VirtualDeckProps): React.JSX.Element {
         tabIndex={0}
         onScroll={onScroll}
       >
-        <div className={styles.gridTrack} style={{ height: rows * GRID_ROW_H }}>
+        <div
+          className={styles.gridTrack}
+          style={{ height: GRID_PAD_TOP * 2 + rows * GRID_ROW_H - GAP }}
+        >
           {visible.map((item, i) => {
             const index = firstRow * cols + i
             const row = Math.floor(index / cols)
@@ -197,7 +203,7 @@ export function VirtualDeck(props: VirtualDeckProps): React.JSX.Element {
                 style={{
                   width: colW,
                   height: GRID_ROW_H - GAP,
-                  transform: `translate(${GRID_PAD + col * (colW + GAP)}px, ${row * GRID_ROW_H}px)`,
+                  transform: `translate(${GRID_PAD + col * (colW + GAP)}px, ${GRID_PAD_TOP + row * GRID_ROW_H}px)`,
                 }}
                 draggable
                 onDragStart={(e) => {
