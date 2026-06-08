@@ -109,6 +109,7 @@ export class Application {
       localDir: this.paths.syncDir,
       key: loadOrCreateSyncKey(this.paths.syncDir),
       deviceId: loadOrCreateDeviceId(this.paths.base),
+      onStatus: (status) => this.emit({ kind: 'sync-status', status }),
     }
     this.sync = createSyncProvider(this.settings.syncProvider, this.syncDeps)
 

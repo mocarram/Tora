@@ -46,6 +46,7 @@ interface StoreState extends ViewState {
   applyEvent: (item?: ClipItem) => void
   setBoards: (boards: Board[]) => void
   setSettings: (s: AppSettings) => void
+  setSyncStatus: (status: SyncStatus | null) => void
   refreshStats: () => Promise<void>
 }
 
@@ -167,6 +168,7 @@ export const useStore = create<StoreState>((set, get) => ({
     }
   },
   setSettings: (settings) => set({ settings }),
+  setSyncStatus: (syncStatus) => set({ syncStatus }),
 
   refreshStats: async () => {
     const [stats, syncStatus] = await Promise.all([api().getStorageStats(), api().getSyncStatus()])

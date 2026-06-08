@@ -35,6 +35,7 @@ export class ICloudDriveController implements SyncController {
     key: Buffer,
     private readonly deviceId: string,
     private readonly getSettings: () => AppSettings,
+    private readonly onStatus: (status: SyncStatus) => void = () => {},
   ) {
     this.repo = new SyncRepo(storage.db)
     this.crypto = new SyncCrypto(key)
@@ -76,6 +77,9 @@ export class ICloudDriveController implements SyncController {
     if (this.running) return
     this.running = true
     this.state = 'syncing'
+    // Surface the transient syncing state so the UI can show progress; the
+    // cycle is usually quick, so without this push the renderer never sees it.
+    this.onStatus(this.status())
     try {
       await this.pull()
       await this.push()
@@ -87,6 +91,7 @@ export class ICloudDriveController implements SyncController {
       this.lastError = err instanceof Error ? err.message : String(err)
     } finally {
       this.running = false
+      this.onStatus(this.status())
     }
   }
 

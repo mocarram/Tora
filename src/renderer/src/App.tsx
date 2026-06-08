@@ -180,6 +180,7 @@ export function App(): React.JSX.Element {
         boards={store.boards}
         activeFilter={store.filter}
         activeBoardId={store.boardId}
+        syncState={store.syncStatus?.state ?? null}
         onFilter={(filter) => store.setView({ filter })}
         onBoard={(boardId) => store.setView({ boardId })}
         onNewBoard={() => setNewBoardOpen(true)}

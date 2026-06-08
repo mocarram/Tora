@@ -27,6 +27,8 @@ export interface SyncDeps {
   /** 32-byte encryption key (resolved from the OS keychain in main). */
   key: Buffer
   deviceId: string
+  /** Fired whenever the provider's sync status changes (e.g. syncing -> idle). */
+  onStatus: (status: SyncStatus) => void
 }
 
 export function createSyncProvider(
@@ -41,6 +43,7 @@ export function createSyncProvider(
         deps.key,
         deps.deviceId,
         deps.getSettings,
+        deps.onStatus,
       )
     case 'cloudkit':
       return new CloudKitController(deps.storage, deps.getSettings)

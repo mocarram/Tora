@@ -51,6 +51,32 @@
   color: var(--color-text);
 }
 
+/* Sync status indicator beside the wordmark. Faint by default (idle / up to
+   date), accent + spinning while syncing, danger on error. */
+.sync {
+  display: inline-flex;
+  align-items: center;
+  margin-left: auto;
+  color: var(--color-text-faint);
+}
+.syncActive {
+  color: var(--color-accent);
+  animation: sync-spin 1.1s linear infinite;
+}
+.syncError {
+  color: var(--color-danger);
+}
+@keyframes sync-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .syncActive {
+    animation: none;
+  }
+}
+
 /* The scrollable middle region: brand stays pinned at the top and Settings at
    the bottom, while Library + Boards scroll when there are more boards than fit.
    min-height: 0 lets this flex child shrink below its content so it can scroll

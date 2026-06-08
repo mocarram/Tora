@@ -45,6 +45,26 @@ afterEach(() => {
 })
 
 describe('ICloudDriveController (two instances, shared folder)', () => {
+  it('reports syncing then idle through onStatus so the UI can show progress', async () => {
+    const dir = mkdtempSync(join(root, 'dev-S-'))
+    const storage = new Storage({ dbFile: join(dir, 'tora.db'), blobDir: join(dir, 'blobs') })
+    await storage.init()
+    const states: string[] = []
+    const sync = new ICloudDriveController(
+      storage,
+      shared,
+      key,
+      'S',
+      () => settings,
+      (s) => states.push(s.state),
+    )
+    // start() creates the sync dirs then runs an initial sync.
+    await sync.start()
+    expect(states[0]).toBe('syncing')
+    expect(states.at(-1)).toBe('idle')
+    storage.close()
+  })
+
   it('propagates a captured item from A to B with its blob', async () => {
     const a = makeInstance('A')
     const b = makeInstance('B')

@@ -14,7 +14,7 @@ export function useToraBridge(): void {
   const setSettings = useStore((s) => s.setSettings)
   const setLocked = useStore((s) => s.setLocked)
   const setSettingsOpen = useStore((s) => s.setSettingsOpen)
-  const refreshStats = useStore((s) => s.refreshStats)
+  const setSyncStatus = useStore((s) => s.setSyncStatus)
   const setUpdateStatus = useStore((s) => s.setUpdateStatus)
   const theme = useStore((s) => s.settings?.theme ?? 'system')
   const accent = useStore((s) => s.settings?.accent ?? 'amber')
@@ -44,7 +44,9 @@ export function useToraBridge(): void {
           if (!event.settings.appLockEnabled) setLocked(false)
           break
         case 'sync-status':
-          void refreshStats()
+          // Use the status carried by the event: a re-fetch could race a quick
+          // sync back to idle and miss the transient syncing state.
+          setSyncStatus(event.status)
           break
         case 'panel-hidden':
           if (useStore.getState().settings?.appLockEnabled) setLocked(true)
@@ -72,7 +74,7 @@ export function useToraBridge(): void {
     setSettings,
     setLocked,
     setSettingsOpen,
-    refreshStats,
+    setSyncStatus,
     setUpdateStatus,
   ])
 }

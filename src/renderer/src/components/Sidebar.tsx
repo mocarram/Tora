@@ -1,11 +1,19 @@
 import { useState } from 'react'
 import type { Board, QuickFilter } from '@core/model'
 import { FAVOURITES_BOARD_ID } from '@core/model'
+import type { SyncState } from '@shared/ipc'
 import { Icon, type IconName } from './Icon'
 import styles from './Sidebar.module.css'
 
 const ITEM_MIME = 'application/x-tora-item'
 const BOARD_MIME = 'application/x-tora-board'
+
+const SYNC_TITLES: Record<SyncState, string> = {
+  idle: 'Sync up to date',
+  syncing: 'Syncing',
+  error: 'Sync error',
+  disabled: 'Sync off',
+}
 
 const FILTERS: { id: QuickFilter; label: string; icon: IconName }[] = [
   { id: 'all', label: 'All', icon: 'layers' },
@@ -19,6 +27,8 @@ interface SidebarProps {
   boards: Board[]
   activeFilter: QuickFilter
   activeBoardId: string | null
+  /** Current sync status; drives the wordmark sync indicator. */
+  syncState: SyncState | null
   onFilter: (filter: QuickFilter) => void
   onBoard: (boardId: string | null) => void
   onNewBoard: () => void
@@ -33,6 +43,7 @@ export function Sidebar({
   boards,
   activeFilter,
   activeBoardId,
+  syncState,
   onFilter,
   onBoard,
   onNewBoard,
@@ -71,6 +82,22 @@ export function Sidebar({
           <span className={styles.stripe} />
         </span>
         <span className={`${styles.wordmark} display`}>Tora</span>
+        {syncState && syncState !== 'disabled' ? (
+          <span
+            className={[
+              styles.sync,
+              syncState === 'syncing' ? styles.syncActive : '',
+              syncState === 'error' ? styles.syncError : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            role="status"
+            aria-label={SYNC_TITLES[syncState]}
+            title={SYNC_TITLES[syncState]}
+          >
+            <Icon name="sync" size={13} />
+          </span>
+        ) : null}
       </div>
 
       <div className={styles.scroll}>

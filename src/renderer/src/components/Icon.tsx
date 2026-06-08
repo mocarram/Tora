@@ -31,6 +31,7 @@ export type IconName =
   | 'check'
   | 'close'
   | 'chevron'
+  | 'sync'
 
 const PATHS: Record<IconName, string> = {
   text: 'M4 6h16M4 12h16M4 18h10',
@@ -60,6 +61,7 @@ const PATHS: Record<IconName, string> = {
   check: 'M5 12l5 5L20 6',
   close: 'M6 6l12 12M18 6L6 18',
   chevron: 'M9 6l6 6-6 6',
+  sync: 'M23 4v6h-6M1 20v-6h6M3.5 9a9 9 0 0 1 14.9-3.4L23 10M1 14l4.6 4.4A9 9 0 0 0 20.5 15',
 }
 
 interface IconProps extends Omit<SVGProps<SVGSVGElement>, 'name'> {
