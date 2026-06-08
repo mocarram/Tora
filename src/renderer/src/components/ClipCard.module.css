@@ -85,7 +85,7 @@
 .headText {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0;
   flex: 1;
   min-width: 0;
 }
@@ -94,6 +94,7 @@
 .title {
   font-size: var(--text-lg);
   font-weight: var(--weight-bold);
+  line-height: 1.2;
   color: #fdfbf6;
   letter-spacing: var(--tracking-normal);
   text-align: left;
