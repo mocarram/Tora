@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import type { PermissionStatus } from '@shared/ipc'
 import { Icon } from './Icon'
 import { panelSpring } from '../lib/motion'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 import styles from './Onboarding.module.css'
 
 interface OnboardingProps {
@@ -21,6 +22,8 @@ export function Onboarding({
   onComplete,
 }: OnboardingProps): React.JSX.Element {
   const [perms, setPerms] = useState<PermissionStatus | null>(null)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(dialogRef, open)
 
   useEffect(() => {
     if (open) void window.tora.getPermissions().then(setPerms)
@@ -37,6 +40,8 @@ export function Onboarding({
           transition={{ duration: reducedMotion ? 0 : 0.18 }}
         >
           <motion.div
+            ref={dialogRef}
+            tabIndex={-1}
             className={styles.card}
             initial={reducedMotion ? false : { opacity: 0, y: 24, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}

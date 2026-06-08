@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import type { ClipItem } from '@core/model'
 import { panelSpring } from '../lib/motion'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 import styles from './LargePreview.module.css'
 import edit from './EditOverlay.module.css'
 
@@ -19,6 +20,8 @@ export function EditOverlay({
   onSave,
 }: EditOverlayProps): React.JSX.Element {
   const [text, setText] = useState('')
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(dialogRef, !!item)
 
   useEffect(() => {
     if (!item) return
@@ -37,6 +40,8 @@ export function EditOverlay({
           onClick={onCancel}
         >
           <motion.div
+            ref={dialogRef}
+            tabIndex={-1}
             className={`${styles.sheet} ${edit.sheet}`}
             initial={reducedMotion ? false : { opacity: 0, y: 20, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}

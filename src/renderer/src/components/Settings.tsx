@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import type { AccentTheme, AppSettings, PermissionStatus } from '@shared/ipc'
 import { formatBytes } from '@core/format'
 import { Icon } from './Icon'
 import { ConfirmDialog } from './ConfirmDialog'
 import { panelSpring } from '../lib/motion'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 import { useStore } from '../store/useStore'
 import styles from './Settings.module.css'
 
@@ -53,6 +54,10 @@ export function Settings({ open, reducedMotion, onClose }: SettingsProps): React
   const [perms, setPerms] = useState<PermissionStatus | null>(null)
   const [version, setVersion] = useState<string | null>(null)
   const [confirm, setConfirm] = useState<'history' | 'reset' | null>(null)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  // A confirm dialog renders inside this sheet and runs its own nested trap; the
+  // trap stops Tab propagation so the innermost one wins, so both can stay live.
+  useFocusTrap(dialogRef, open)
 
   useEffect(() => {
     if (!open) return undefined
@@ -100,6 +105,8 @@ export function Settings({ open, reducedMotion, onClose }: SettingsProps): React
           onClick={onClose}
         >
           <motion.div
+            ref={dialogRef}
+            tabIndex={-1}
             className={styles.sheet}
             initial={reducedMotion ? false : { opacity: 0, scale: 0.97 }}
             animate={{ opacity: 1, scale: 1 }}

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { panelSpring } from '../lib/motion'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 import styles from './ConfirmDialog.module.css'
 
 interface ConfirmDialogProps {
@@ -37,6 +38,8 @@ export function ConfirmDialog({
   onCancel,
 }: ConfirmDialogProps): React.JSX.Element {
   const inputRef = useRef<HTMLInputElement>(null)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(dialogRef, open)
   const [typed, setTyped] = useState('')
 
   // Focus the phrase field once the enter animation paints.
@@ -74,6 +77,8 @@ export function ConfirmDialog({
           }}
         >
           <motion.div
+            ref={dialogRef}
+            tabIndex={-1}
             className={styles.dialog}
             initial={reducedMotion ? false : { opacity: 0, y: 16, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}

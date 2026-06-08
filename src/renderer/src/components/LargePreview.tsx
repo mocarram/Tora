@@ -7,6 +7,7 @@ import { formatBytes, relativeTime } from '@core/format'
 import { Icon } from './Icon'
 import { TYPE_META } from './typeMeta'
 import { panelSpring } from '../lib/motion'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 import styles from './LargePreview.module.css'
 
 interface LargePreviewProps {
@@ -28,6 +29,8 @@ export function LargePreview({
     id: '',
     data: null,
   })
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(dialogRef, !!item)
 
   useEffect(() => {
     if (!item) return
@@ -85,6 +88,8 @@ export function LargePreview({
           onClick={onClose}
         >
           <motion.div
+            ref={dialogRef}
+            tabIndex={-1}
             className={styles.sheet}
             initial={reducedMotion ? false : { opacity: 0, y: 24, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
