@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import type { AppSettings, SyncState, SyncStatus } from '@shared/ipc'
 import { mergeSnapshots, pickWinner, recordKey, type SyncRecord } from '@core/sync'
 import type { Storage } from '../storage'
+import { isSafeBlobSegment } from '../storage/blobStore'
 import { SyncRepo } from '../storage/syncRepo'
 import { SyncCrypto } from './crypto'
 import type { SyncController } from './index'
@@ -144,6 +145,9 @@ export class ICloudDriveController implements SyncController {
   }
 
   private async mirrorBlobs(ref: string): Promise<void> {
+    // refs originate from sync records (a peer); never join a crafted ref that
+    // could escape the blob root.
+    if (!isSafeBlobSegment(ref)) return
     const dest = join(this.blobsDir, ref)
     let made = false
     for (const name of BLOB_FILES) {
@@ -159,6 +163,7 @@ export class ICloudDriveController implements SyncController {
   }
 
   private async restoreBlobs(ref: string): Promise<void> {
+    if (!isSafeBlobSegment(ref)) return
     const src = join(this.blobsDir, ref)
     let names: string[]
     try {

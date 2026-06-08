@@ -4,6 +4,22 @@ import { join } from 'node:path'
 import { secureDir } from './dataSecurity'
 
 /**
+ * A blob ref is a generated nanoid and a name is from a fixed allowlist, so any
+ * value carrying a path separator, "." or ".." is hostile - and a ref can reach
+ * here from a sync peer's records. Validate before it is joined into a path so a
+ * crafted ref cannot escape the blob root (e.g. "../../Library/...").
+ */
+export function isSafeBlobSegment(seg: string): boolean {
+  return seg.length > 0 && seg !== '.' && seg !== '..' && /^[A-Za-z0-9_.-]+$/.test(seg)
+}
+
+function assertSafeSegments(ref: string, name?: string): void {
+  if (!isSafeBlobSegment(ref) || (name !== undefined && !isSafeBlobSegment(name))) {
+    throw new Error('Unsafe blob path segment')
+  }
+}
+
+/**
  * On-disk blob store. Large payloads (full text, HTML, RTF, images, thumbnails)
  * live here and are referenced from SQLite by a relative ref. Blobs are NEVER
  * inlined in the database. Each item owns a subdirectory named by its id.
@@ -18,11 +34,13 @@ export class BlobStore {
   }
 
   private dirFor(ref: string): string {
+    assertSafeSegments(ref)
     return join(this.baseDir, ref)
   }
 
   /** Absolute path of a named file within an item's blob dir. */
   filePath(ref: string, name: string): string {
+    assertSafeSegments(ref, name)
     return join(this.baseDir, ref, name)
   }
 
