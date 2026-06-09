@@ -58,6 +58,23 @@ describe('RetentionService', () => {
     expect(storage.items.getById(pinned.id)).not.toBeNull()
   })
 
+  it('keeps items that belong to a board, then prunes once removed', async () => {
+    storage.settings.update({ retentionDays: 30 })
+    const item = (await pipeline.ingest({ text: 'on a board' })).item!
+    const board = storage.boards.create('Keep')
+    storage.boards.addItem(board.id, item.id)
+    ageItem(item.id, 40)
+
+    // Board membership exempts the item from retention.
+    expect(await new RetentionService(storage).runOnce()).toBe(0)
+    expect(storage.items.getById(item.id)).not.toBeNull()
+
+    // Once removed from all boards it follows the normal retention schedule.
+    storage.boards.removeItem(board.id, item.id)
+    expect(await new RetentionService(storage).runOnce()).toBe(1)
+    expect(storage.items.getById(item.id)).toBeNull()
+  })
+
   it('is a no-op when retention is unlimited', async () => {
     storage.settings.update({ retentionDays: null })
     const item = (await pipeline.ingest({ text: 'forever' })).item!

@@ -322,11 +322,17 @@ export class ItemsRepo {
       .filter((x): x is { id: string; type: ClipItemType; isPinned: boolean } => x !== undefined)
   }
 
-  /** Live, non-pinned items older than the cutoff (for retention pruning). */
+  /**
+   * Live items older than the cutoff (for retention pruning). Pinned items and
+   * items that belong to at least one board are kept regardless of the window;
+   * an item only becomes prunable again once removed from all boards.
+   */
   expiredRefs(cutoff: number): { id: string; contentRef: string | null }[] {
     return this.db
       .prepare(
-        'SELECT id, content_ref AS contentRef FROM items WHERE deleted_at IS NULL AND is_pinned = 0 AND updated_at < ?',
+        `SELECT id, content_ref AS contentRef FROM items
+         WHERE deleted_at IS NULL AND is_pinned = 0 AND updated_at < ?
+           AND id NOT IN (SELECT item_id FROM board_items)`,
       )
       .all(cutoff) as { id: string; contentRef: string | null }[]
   }
