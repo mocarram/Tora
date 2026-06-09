@@ -93,9 +93,12 @@ function ClipCardImpl({
 
   return (
     <motion.div
-      layout={!reducedMotion}
+      // No `layout` animation: cards are positioned by transforms in a virtualized
+      // track, so framer-motion's layout tracking would animate the card sliding
+      // whenever an arrow-key scroll moves it - a horizontal "jump" that fights the
+      // instant scroll. Mount fade-scale is kept, but skipped under reduce-motion.
       variants={cardVariants}
-      initial="initial"
+      initial={reducedMotion ? false : 'initial'}
       animate="animate"
       exit="exit"
       className={`${styles.card} ${selected ? styles.selected : ''} ${queued ? styles.queued : ''}`}
