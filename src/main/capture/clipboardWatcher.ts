@@ -62,12 +62,13 @@ export class ClipboardWatcher {
       const img = clipboard.readImage()
       if (!img.isEmpty()) {
         const { width, height } = img.getSize()
-        // Dimensions alone collide constantly (e.g. consecutive iPhone photos
-        // share the same WxH), so a dimensions-only signature would treat the
-        // next photo as "no change" and drop it. Fold in a hash of a small
-        // downscaled bitmap so different pixels yield a different signature.
-        // Cheap because it only runs on poll ticks where an image is present.
-        const small = img.resize({ width: 32 })
+        // Dimensions alone collide constantly (e.g. consecutive iPhone
+        // screenshots share the same WxH), so a dimensions-only signature treats
+        // the next one as "no change" and drops it. Fold in a hash of a
+        // downscaled bitmap so different pixels yield a different signature. 256px
+        // (not a tiny thumbnail) keeps enough detail that even similar-looking
+        // screenshots differ; only runs on ticks where an image is present.
+        const small = img.resize({ width: 256 })
         imageSig = `img:${width}x${height}:${hashBytes(small.toBitmap())}`
       }
     }
