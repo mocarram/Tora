@@ -127,15 +127,23 @@ export const useStore = create<StoreState>((set, get) => ({
         : res.items.some((i) => i.id === s.selectedId)
           ? s.selectedId
           : (res.items[0]?.id ?? null)
-      return { items: res.items, total: res.total, loading: false, selectedId }
+      return {
+        items: res.items,
+        total: res.total,
+        loading: false,
+        selectedId,
+        // Bump openNonce in the SAME update as items/selectedId so the deck's
+        // scroll-reset effect always sees the fresh selection (atomic, no race
+        // with a fast second summon mid-reload).
+        ...(opts?.selectLatest ? { openNonce: s.openNonce + 1 } : {}),
+      }
     })
   },
 
   onPanelShown: async () => {
-    // Refresh + select the current-clipboard item, then bump openNonce so the
+    // Refresh + select the current-clipboard item; reload bumps openNonce so the
     // deck scrolls back to the front (instead of wherever it was left).
     await get().reload({ selectLatest: true })
-    set((s) => ({ openNonce: s.openNonce + 1 }))
   },
 
   loadMore: async () => {

@@ -214,7 +214,10 @@ export class WindowManager {
     }
     win.show()
     win.focus()
-    this.emit({ kind: 'panel-shown' })
+    // Only the panel "summon" should reset the deck to the latest clip. In window
+    // mode the window persists like a normal app window, so focusing/activating it
+    // must not reset the user's selection mid-task.
+    if (this.mode === 'panel') this.emit({ kind: 'panel-shown' })
   }
 
   hide(): void {
