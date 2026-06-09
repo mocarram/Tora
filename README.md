@@ -9,14 +9,22 @@ with a pure core designed to power a React Native iOS app later.
 
 macOS 11 or later (Apple Silicon or Intel).
 
+> **Testing Tora right now?** The current builds are pre-release and not yet
+> notarized, so macOS needs a one-time approval on first launch. Follow
+> **[TESTING.md](TESTING.md)** for the exact steps.
+
+The notarized public release (below) installs with no warning and updates itself:
+
 1. Download the latest `Tora-<version>.dmg` from the
-   [Releases](https://github.com/mocarram/Tora/releases) page.
+   [Releases](https://github.com/mocarram/Tora/releases) page (pick the
+   `-arm64` build on Apple Silicon, the unsuffixed build on Intel).
 2. Open the dmg and drag **Tora** into Applications.
 3. On first launch, grant **Accessibility** when prompted - it lets Tora paste
    straight back into the app you were using.
 
-Tora keeps itself up to date: it checks for new releases on launch and in the
-background, downloads them quietly, and shows a Restart pill when one is ready.
+Once notarized and published, Tora keeps itself up to date: it checks for new
+releases on launch and in the background, downloads them quietly, and shows a
+Restart pill when one is ready. (Auto-update is inert in unsigned/test builds.)
 
 ## Features
 
