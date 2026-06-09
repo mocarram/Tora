@@ -14,6 +14,10 @@ const OVERSCAN = 4
 // Grid geometry (window mode).
 const GRID_MIN_COL = 250
 const GRID_ROW_H = 204
+// A container at least this tall has room for more than one row, so the deck
+// switches from a single horizontal row to a multi-row grid - this is what makes
+// a resized-taller panel reflow into a grid instead of staying one row.
+const GRID_MIN_HEIGHT = Math.round(GRID_ROW_H * 1.6)
 const GRID_PAD = 28
 // Vertical breathing room above the first row and below the last, kept equal so
 // the top gap matches the bottom (which also leaves room for the scrollbar).
@@ -53,10 +57,17 @@ export function VirtualDeck(props: VirtualDeckProps): React.JSX.Element {
   const { items } = props
   const containerRef = useRef<HTMLDivElement>(null)
   const [scroll, setScroll] = useState(0)
-  const [size, setSize] = useState({ w: 1200, h: 600 })
+  // Seed the height to match the incoming mode until the ResizeObserver measures:
+  // window mode (prop 'grid') starts tall so the grid renders enough rows on the
+  // first paint; the panel starts short so it renders as a single-row deck.
+  const [size, setSize] = useState({ w: 1200, h: props.layout === 'grid' ? 1000 : 240 })
   // The empty state renders a different element than the scroll container, so
   // this toggles the container's existence (used as a wheel-listener dep).
   const isEmpty = items.length === 0
+
+  // Effective layout: window mode always grids; the panel grids too once it is
+  // tall enough for more than one row, so making it bigger reflows into a grid.
+  const layout: DeckLayout = props.layout === 'grid' || size.h >= GRID_MIN_HEIGHT ? 'grid' : 'deck'
 
   // Latest-value refs so the scroll effects can read current items/selection/
   // layout WITHOUT depending on them - that keeps a new capture (items change)
@@ -65,11 +76,11 @@ export function VirtualDeck(props: VirtualDeckProps): React.JSX.Element {
   // and they see fresh values) rather than mutated during render.
   const itemsRef = useRef(items)
   const selectedIdRef = useRef(props.selectedId)
-  const layoutRef = useRef(props.layout)
+  const layoutRef = useRef<DeckLayout>(layout)
   useEffect(() => {
     itemsRef.current = items
     selectedIdRef.current = props.selectedId
-    layoutRef.current = props.layout
+    layoutRef.current = layout
   })
 
   useEffect(() => {
@@ -84,7 +95,7 @@ export function VirtualDeck(props: VirtualDeckProps): React.JSX.Element {
     // swaps the deck/grid node, and the empty state renders a different element.
     // Without this the grid measures a stale width and lays out too few columns,
     // leaving a gap on the right.
-  }, [props.layout, isEmpty])
+  }, [layout, isEmpty])
 
   useEffect(() => {
     // Reset scroll position when switching layouts (deferred so it is not a
@@ -92,7 +103,7 @@ export function VirtualDeck(props: VirtualDeckProps): React.JSX.Element {
     containerRef.current?.scrollTo({ top: 0, left: 0 })
     const r = requestAnimationFrame(() => setScroll(0))
     return () => cancelAnimationFrame(r)
-  }, [props.layout])
+  }, [layout])
 
   // Map a vertical mouse wheel to horizontal movement in the deck (panel) layout
   // so a plain wheel can scroll the single horizontal row. Attached natively and
@@ -101,7 +112,7 @@ export function VirtualDeck(props: VirtualDeckProps): React.JSX.Element {
   // scrollLeft drives the existing onScroll handler (virtualization + load-more).
   useEffect(() => {
     const el = containerRef.current
-    if (!el || props.layout !== 'deck') return
+    if (!el || layout !== 'deck') return
     const onWheel = (e: WheelEvent): void => {
       const result = computeHorizontalScroll({
         deltaX: e.deltaX,
@@ -117,7 +128,7 @@ export function VirtualDeck(props: VirtualDeckProps): React.JSX.Element {
     el.addEventListener('wheel', onWheel, { passive: false })
     return () => el.removeEventListener('wheel', onWheel)
     // Re-run when the container appears/disappears (isEmpty) to (re)attach.
-  }, [props.layout, isEmpty])
+  }, [layout, isEmpty])
 
   // Bring the selected card into view when the SELECTION changes (keyboard nav
   // or open). Deliberately does not depend on `items`, so a new capture never
@@ -128,7 +139,7 @@ export function VirtualDeck(props: VirtualDeckProps): React.JSX.Element {
     if (!el || !props.selectedId) return
     const index = itemsRef.current.findIndex((i) => i.id === props.selectedId)
     if (index < 0) return
-    if (props.layout === 'grid') {
+    if (layout === 'grid') {
       const cols = gridCols(el.clientWidth)
       const top = Math.floor(index / cols) * GRID_ROW_H
       const bottom = top + GRID_ROW_H
@@ -142,7 +153,7 @@ export function VirtualDeck(props: VirtualDeckProps): React.JSX.Element {
       else if (right > el.scrollLeft + el.clientWidth)
         el.scrollTo({ left: right - el.clientWidth + GAP, behavior: 'auto' })
     }
-  }, [props.selectedId, props.layout])
+  }, [props.selectedId, layout])
 
   // On panel summon (scrollResetKey bumped) jump the deck back to the selected
   // current-clipboard item at the front, rather than leaving it wherever it was
@@ -199,7 +210,7 @@ export function VirtualDeck(props: VirtualDeckProps): React.JSX.Element {
 
   const onScroll = (e: React.UIEvent<HTMLDivElement>): void => {
     const el = e.currentTarget
-    if (props.layout === 'grid') {
+    if (layout === 'grid') {
       setScroll(el.scrollTop)
       const cols = gridCols(size.w)
       const loadedH = Math.ceil(items.length / cols) * GRID_ROW_H
@@ -215,7 +226,7 @@ export function VirtualDeck(props: VirtualDeckProps): React.JSX.Element {
     }
   }
 
-  if (props.layout === 'grid') {
+  if (layout === 'grid') {
     const cols = gridCols(size.w)
     const colW = (size.w - GRID_PAD * 2 - GAP * (cols - 1)) / cols
     const rows = Math.ceil(items.length / cols)

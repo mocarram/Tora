@@ -33,7 +33,15 @@ export async function launchApp(
   const userData = opts.userData ?? mkdtempSync(join(tmpdir(), 'tora-e2e-'))
   const errors: string[] = []
   const app = await electron.launch({
-    args: ['out/main/index.js'],
+    // Disable background throttling so a non-foreground test window still runs
+    // timers / ResizeObserver promptly (otherwise resize-driven relayout stalls
+    // and timing-sensitive assertions flake). Test-only; not a product change.
+    args: [
+      'out/main/index.js',
+      '--disable-renderer-backgrounding',
+      '--disable-backgrounding-occluded-windows',
+      '--disable-background-timer-throttling',
+    ],
     env: { ...process.env, TORA_USER_DATA: userData },
   })
   const page = await app.firstWindow()

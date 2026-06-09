@@ -42,6 +42,8 @@ export class WindowManager {
   private quitting = false
   /** When true, panel auto-hide on blur is suppressed (a modal/overlay is open). */
   private hideSuppressed = false
+  /** Remembered panel height so a user-resized (taller, grid) panel persists. */
+  private panelHeight = PANEL_HEIGHT
 
   /** Allow the window to actually close (called when the app is quitting). */
   markQuitting(): void {
@@ -155,11 +157,13 @@ export class WindowManager {
     const cursor = screen.getCursorScreenPoint()
     const display = screen.getDisplayNearestPoint(cursor)
     const { x, y, width, height } = display.workArea
-    // Fit one square card plus chrome, clamped to the display on small screens.
-    const panelHeight = Math.min(PANEL_HEIGHT, height - PANEL_MARGIN * 2)
-    // Prevent the panel from being resized down into a thin line; the minimum is
-    // the height actually shown, so the full square card always stays visible.
-    this.win.setMinimumSize(PANEL_MIN_WIDTH, panelHeight)
+    const maxH = height - PANEL_MARGIN * 2
+    // One square card + chrome by default, but honour a taller height the user
+    // dragged to (remembered on hide) - a taller panel reflows into a grid. Never
+    // below one row, never taller than the display.
+    const panelHeight = Math.min(Math.max(this.panelHeight, PANEL_HEIGHT), maxH)
+    // Minimum is one row so the user can always shrink back to the single-row deck.
+    this.win.setMinimumSize(PANEL_MIN_WIDTH, Math.min(PANEL_HEIGHT, maxH))
     this.win.setBounds({
       x: x + PANEL_MARGIN,
       y: y + height - panelHeight - PANEL_MARGIN,
@@ -194,8 +198,13 @@ export class WindowManager {
   }
 
   setMode(mode: AppSettings['windowMode']): void {
-    this.mode = mode
     const win = this.live
+    // Leaving panel mode via the toggle (no hide) still remembers its height, so
+    // a resized/gridded panel persists when the user switches back.
+    if (win && this.mode === 'panel' && mode !== 'panel') {
+      this.panelHeight = Math.max(PANEL_HEIGHT, win.getBounds().height)
+    }
+    this.mode = mode
     if (!win) return
     win.setAlwaysOnTop(mode === 'panel', 'floating')
     this.applyWorkspaceBehavior()
@@ -223,6 +232,10 @@ export class WindowManager {
   hide(): void {
     const win = this.live
     if (!win) return
+    // Remember how tall the user left the panel so the next summon restores it
+    // (a taller panel reflows into a grid). Captured before hiding, never below
+    // one row.
+    if (this.mode === 'panel') this.panelHeight = Math.max(PANEL_HEIGHT, win.getBounds().height)
     win.hide()
     this.emit({ kind: 'panel-hidden' })
   }
