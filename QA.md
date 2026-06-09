@@ -1,13 +1,13 @@
 # Tora QA Workflow
 
-A repeatable, full-coverage test pass before any merge to `staging`/`main` or a
-release. Two layers: an **automated gate** that runs anywhere, and a **live
-macOS pass** that must run on a Mac (clipboard, paste injection, Touch ID, and
-vibrancy cannot be exercised headless).
+A repeatable, production-grade test pass before any merge to `staging`/`main` or a
+release. Three layers, in order of how much they can be automated:
 
-> Tip: a local Claude Code session on your Mac can drive most of the live pass
-> using the `run` and `verify` skills. From the cloud, only the automated gate
-> runs (no Electron binary / GUI).
+1. **Automated gate** (`npm run preflight`) - runs anywhere, must be green.
+2. **Live e2e suite** (`npm run test:e2e`) - drives the REAL app on macOS,
+   isolated from your real history. This is the bulk of the live testing.
+3. **Manual macOS pass** - only the handful of things automation cannot reach
+   (vibrancy, Touch ID, signed-build behaviours, true 60fps / multi-hour memory).
 
 ---
 
@@ -19,135 +19,86 @@ One command, must be fully green:
 npm run preflight
 ```
 
-Runs, in order, and fails fast:
-
 | Step           | Covers                                              |
 | -------------- | --------------------------------------------------- |
-| `typecheck`    | Code quality: strict TS (node + web projects)       |
-| `lint`         | Code quality: ESLint (no-any, import guards, style) |
-| `format:check` | Consistency: Prettier                               |
-| `test`         | Correctness: 156 unit/integration tests (vitest)    |
-| `build`        | Stability: production bundle builds clean            |
-| `size`         | Performance: every artifact within byte budget      |
-| `audit:prod`   | Security: 0 known vulns in production deps           |
+| `typecheck`    | Strict TS across node + web + tests                 |
+| `lint`         | ESLint (no-any, import guards, style)               |
+| `format:check` | Prettier                                            |
+| `test`         | 170+ unit/integration tests (vitest)                |
+| `build`        | Production bundle builds clean                      |
+| `size`         | Every artifact within byte budget                   |
+| `audit:prod`   | 0 known vulnerabilities in production deps          |
 
-Then, on a Mac with the Electron binary installed:
+---
+
+## Layer 2: Live e2e suite (macOS)
+
+Drives the built Electron app through Playwright's Electron support, against an
+isolated `TORA_USER_DATA` dir so a run never reads or mutates your real history.
+Running it IS the live test - it exercises the real capture pipeline, IPC bridge,
+renderer, navigation, and persistence.
 
 ```bash
-npm run rebuild      # better-sqlite3 against the Electron ABI (once per setup)
-npm run test:e2e     # Playwright launches the real app: critical smoke flows
+npm run rebuild      # better-sqlite3 vs the Electron ABI (after any `npm test`,
+                     # which rebuilds it for Node)
+npm run build        # produce out/ that the suite launches
+npm run test:e2e     # the full suite (tests/e2e/*.spec.ts)
 ```
 
----
+> Note: seeding clips writes the real system clipboard, so a run transiently
+> overwrites whatever you had copied.
 
-## Layer 2: Live macOS pass
+What the suite covers (`tests/e2e/`):
 
-Run `npm run dev`, then walk every box. Anything unchecked blocks the merge.
+| Spec                       | Coverage                                                                              |
+| -------------------------- | ------------------------------------------------------------------------------------- |
+| `capture.spec`             | text / url / colour / code classification; dedup of identical copies                  |
+| `navigation.spec`          | `/` search focus + query narrowing, quick filters, arrow-key selection                |
+| `card-actions.spec`        | edit, inline rename, large preview, queue, pin (P), delete                            |
+| `boards.spec`              | create, add-via-save-menu + filter, rename, delete                                    |
+| `window-and-settings.spec` | Panel/Window toggle, every settings section, reduce-motion, clear-data                |
+| `security.spec`            | renderer has no Node (`require`/`module`/`process` undefined); data dir 0700, db 0600 |
+| `stability.spec`           | a full session logs zero renderer errors; quit/relaunch preserves history             |
+| `performance.spec`         | capture-to-render latency budget; `queryItems` round-trip budget                      |
+| `critical.spec`            | smoke: window loads, onboarding dismiss, search, settings, filters                    |
 
-### Capture (every type)
-
-- [ ] Plain text copied from any app appears instantly as a `text` card.
-- [ ] Rich text (styled) captures as `richText`; preview readable.
-- [ ] An image (screenshot) captures as `image` with a thumbnail + dimensions.
-- [ ] A file copied in Finder captures as `file`; image files show a thumbnail.
-- [ ] A URL captures as `url` (host shown; favicon only if link previews on).
-- [ ] A hex/rgb color captures as `color` with a swatch.
-- [ ] A code snippet captures as `code` with syntax highlight + language.
-- [ ] Duplicate copy does not create a second card (dedup by hash).
-- [ ] Copying from a password manager / a concealed clip is NOT captured.
-- [ ] An app in the excluded-bundle list is never captured.
-
-### Browse, search, filter
-
-- [ ] `/` focuses search; fuzzy query matches text and source app.
-- [ ] Quick filters (All / Text / Images / Links / Files) narrow correctly.
-- [ ] Boards in the sidebar filter to their items; Favourites works.
-- [ ] Large history scrolls smoothly (see Performance).
-
-### Card actions
-
-- [ ] Copy returns the clip to the clipboard.
-- [ ] Paste (Enter) injects into the front app; Shift+Enter pastes plain.
-- [ ] Queue (Q / Cmd-click multi-select) then sequential paste in order.
-- [ ] Pin keeps a clip; pinned clips survive retention.
-- [ ] Edit text updates the clip and preview.
-- [ ] Rename title inline; clearing the title restores the type label.
-- [ ] Save-to-board menu adds/removes from boards.
-- [ ] Space / expand shows the large preview; Esc closes.
-- [ ] Delete removes the card (and its blob).
-
-### Boards
-
-- [ ] Create, rename, reorder boards; order persists across relaunch.
-- [ ] Add/remove items; reorder within a board.
-
-### Window, panel, hotkey
-
-- [ ] Global hotkey summons/dismisses the panel.
-- [ ] Panel appears on the active Space and over fullscreen apps.
-- [ ] Clicking outside the panel dismisses it; an open modal does not.
-- [ ] Toggle to Window mode opens large enough to show the full grid; grid has
-      equal top/bottom spacing and the first row clears the top bar.
-- [ ] Toggle back to Panel mode restores the strip.
-
-### Settings
-
-- [ ] Theme (system/light/dark) and accent vibe apply live, incl. window vibrancy.
-- [ ] Reduce motion respected.
-- [ ] Retention + storage cap enforce; storage meter accurate.
-- [ ] Global hotkey change takes effect; invalid accelerator handled.
-- [ ] Launch-at-login toggles (signed build).
-- [ ] App lock + Touch ID: locks on hide, unlocks with biometrics.
-- [ ] Sync provider switch; status reflects syncing/idle/error.
-- [ ] Link previews OFF by default; ON fetches title/favicon only.
-- [ ] Clear data wipes clips/blobs/boards; factory reset restores defaults.
-
-### Updates
-
-- [ ] Update banner reflects state (signed build only; no-op in dev).
+The harness lives in `tests/e2e/helpers.ts` (`launchApp`, `seedClip`, `cardWith`,
+`itemCount`, `getSetting`, `measureQuery`). Add new flows there.
 
 ---
 
-## Cross-cutting dimensions
+## Layer 3: Manual macOS pass (only what automation can't reach)
 
-### Security
+Run `npm run dev` and verify, since these need a human eye, real hardware, or a
+signed build:
 
-- [ ] `npm run audit:prod` is clean (in the gate).
-- [ ] Renderer has no Node access: `window.require`/`process` undefined in DevTools.
-- [ ] Data dir is owner-only: `ls -ld ~/Library/Application\ Support/Tora` shows
-      `drwx------`; db/blobs/key files are `-rw-------`.
-- [ ] No secrets in the repo; `.env`/certs gitignored.
-- [ ] Concealed/sensitive clips never written to disk or synced.
-
-### Performance
-
-- [ ] 10k+ items: deck and grid scroll at ~60fps (only the visible window mounts).
-- [ ] Capture-to-card latency feels instant (<150ms).
-- [ ] Memory stays flat over a long session (no growth on repeated capture/scroll).
-- [ ] Bundle within budget (`npm run size`).
-
-### Stability
-
-- [ ] Run for a few hours with active copying: no crash, no leak, no "Electron
-      quit unexpectedly".
-- [ ] Quit/relaunch preserves history, boards, settings.
-- [ ] No unhandled errors in the main terminal or the DevTools console.
-
-### UI / UX
-
-- [ ] Full keyboard nav: arrows move, Enter pastes, all shortcuts (Settings list) work.
-- [ ] Focus rings visible; tab order sane.
-- [ ] Light and dark both legible; type-coloured headers read well in both.
-- [ ] Empty states and long content (truncation/ellipsis) look intentional.
-- [ ] Animations smooth; honour reduce-motion.
+- [ ] **Vibrancy / theme**: light + dark and each accent vibe read well; window
+      vibrancy looks right; type-coloured headers legible in both themes.
+- [ ] **Reduce motion**: with macOS Reduce Motion on, the panel/overlays and the
+      sync spinner do not animate.
+- [ ] **Paste injection**: Enter pastes into the previously focused app;
+      Shift+Enter pastes plain; the paste queue pastes in order. (e2e cannot
+      assert injection into a third-party app.)
+- [ ] **Global hotkey / panel**: the hotkey summons/dismisses; the panel appears
+      on the active Space and over fullscreen apps; click-outside dismisses but an
+      open modal does not.
+- [ ] **Concealed clips**: copy from a password manager (or a concealed clip) -
+      it is NOT captured. (Covered at the unit level; verify once on device.)
+- [ ] **Touch ID app-lock**: locks on hide, unlocks with biometrics.
+- [ ] **Launch at login**: toggles in a signed build.
+- [ ] **Sync**: switch to iCloud; the wordmark sync indicator spins while syncing
+      and settles; a second device converges.
+- [ ] **Performance at scale**: with ~10k items the deck/grid scroll at ~60fps and
+      memory stays flat over a long session. (Ranking is unit-tested at 10k.)
+- [ ] **Update banner**: reflects state in a signed build.
 
 ---
 
 ## Sign-off
 
 - [ ] Layer 1 (`npm run preflight`) green.
-- [ ] `npm run test:e2e` green on macOS.
-- [ ] Layer 2 live checklist fully checked.
-- [ ] Note any known gaps (see `GAPS.md`) and confirm none are regressions.
+- [ ] Layer 2 (`npm run test:e2e`) green on macOS.
+- [ ] Layer 3 manual checklist walked; note any known gaps (see `GAPS.md`) and
+      confirm none are regressions.
 
 Only then merge to `staging`.
