@@ -43,6 +43,9 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
+          # Gate the release on the unit suite so a tag can never publish a build
+          # that fails tests. (e2e runs on the PR into main/staging before the tag.)
+          npm test
           npm run build
           # notarize is off in electron-builder.yml for unsigned local builds; turn
           # it on here. electron-builder creates a DRAFT release by default, so the
