@@ -1,5 +1,4 @@
 import { memo, useEffect, useRef, useState } from 'react'
-import { motion } from 'framer-motion'
 import type { ClipItem } from '@core/model'
 import { relativeTime } from '@core/format'
 import { useStore } from '../store/useStore'
@@ -8,7 +7,6 @@ import { CardPreview } from './CardPreview'
 import { BoardMenu } from './BoardMenu'
 import { Tooltip } from './Tooltip'
 import { TYPE_META } from './typeMeta'
-import { cardVariants } from '../lib/motion'
 import styles from './ClipCard.module.css'
 
 export interface ClipCardProps {
@@ -16,7 +14,6 @@ export interface ClipCardProps {
   selected: boolean
   /** Position in the paste queue, or -1 when not queued. */
   queueIndex: number
-  reducedMotion: boolean
   onSelect: (id: string) => void
   onActivate: (id: string) => void
   onCopy: (id: string) => void
@@ -35,7 +32,6 @@ function ClipCardImpl({
   item,
   selected,
   queueIndex,
-  reducedMotion,
   onSelect,
   onActivate,
   onCopy,
@@ -92,15 +88,12 @@ function ClipCardImpl({
   }
 
   return (
-    <motion.div
-      // No `layout` animation: cards are positioned by transforms in a virtualized
-      // track, so framer-motion's layout tracking would animate the card sliding
-      // whenever an arrow-key scroll moves it - a horizontal "jump" that fights the
-      // instant scroll. Mount fade-scale is kept, but skipped under reduce-motion.
-      variants={cardVariants}
-      initial={reducedMotion ? false : 'initial'}
-      animate="animate"
-      exit="exit"
+    // A plain div, not motion.div: cards are virtualized (mounted/unmounted as
+    // they scroll into view and remounted when the deck reflows to a grid), so a
+    // per-card mount/layout animation made every newly-visible row spring in,
+    // which stuttered while scrolling and expanding the panel. Entrance is
+    // instant; the card's own CSS handles hover/selection transitions.
+    <div
       className={`${styles.card} ${selected ? styles.selected : ''} ${queued ? styles.queued : ''}`}
       role="option"
       aria-selected={selected}
@@ -248,7 +241,7 @@ function ClipCardImpl({
       {menuOpen && (
         <BoardMenu item={item} anchorRef={saveBtnRef} onClose={() => setOpenMenuId(null)} />
       )}
-    </motion.div>
+    </div>
   )
 }
 

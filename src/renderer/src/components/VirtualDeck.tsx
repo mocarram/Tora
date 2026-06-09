@@ -31,7 +31,6 @@ interface VirtualDeckProps {
   selectedId: string | null
   queue: string[]
   layout: DeckLayout
-  reducedMotion: boolean
   /** Bumped on panel summon: resets the deck to the front and shows the selection. */
   scrollResetKey: number
   onSelect: (id: string) => void
@@ -183,7 +182,6 @@ export function VirtualDeck(props: VirtualDeckProps): React.JSX.Element {
       item={item}
       selected={item.id === props.selectedId}
       queueIndex={queuePos(item.id)}
-      reducedMotion={props.reducedMotion}
       onSelect={props.onSelect}
       onActivate={props.onActivate}
       onCopy={props.onCopy}

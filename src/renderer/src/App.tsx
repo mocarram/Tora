@@ -87,6 +87,11 @@ export function App(): React.JSX.Element {
     [],
   )
   const remove = useCallback((id: string) => void window.tora.deleteItem(id), [])
+  // Stable so memoized ClipCards do not re-render on every deck re-render (resize).
+  const setTitle = useCallback(
+    (id: string, title: string | null) => void window.tora.setItemTitle(id, title),
+    [],
+  )
 
   // Global keyboard navigation. Ignored while typing or an overlay is open.
   useEffect(() => {
@@ -228,17 +233,16 @@ export function App(): React.JSX.Element {
           selectedId={store.selectedId}
           queue={store.queue}
           layout={store.settings?.windowMode === 'window' ? 'grid' : 'deck'}
-          reducedMotion={reducedMotion}
           scrollResetKey={store.openNonce}
           onSelect={store.select}
-          onActivate={(id) => paste(id)}
+          onActivate={paste}
           onCopy={copy}
           onTogglePin={togglePin}
           onDelete={remove}
           onExpand={store.expand}
           onEdit={store.edit}
           onToggleQueue={store.toggleQueue}
-          onSetTitle={(id, title) => void window.tora.setItemTitle(id, title)}
+          onSetTitle={setTitle}
           onNeedMore={() => void store.loadMore()}
         />
 
