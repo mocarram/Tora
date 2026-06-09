@@ -64,7 +64,11 @@ export function VirtualDeck(props: VirtualDeckProps): React.JSX.Element {
     const ro = new ResizeObserver(measure)
     ro.observe(el)
     return () => ro.disconnect()
-  }, [])
+    // Re-attach when the container element itself changes: switching panel<->window
+    // swaps the deck/grid node, and the empty state renders a different element.
+    // Without this the grid measures a stale width and lays out too few columns,
+    // leaving a gap on the right.
+  }, [props.layout, isEmpty])
 
   useEffect(() => {
     // Reset scroll position when switching layouts (deferred so it is not a

@@ -20,6 +20,36 @@ test('Panel/Window mode toggle switches mode', async () => {
   await expect.poll(() => getSetting(h.page, 'windowMode')).toBe('panel')
 })
 
+test('window mode fills the grid width with no large right gap', async () => {
+  for (let i = 0; i < 8; i++) await seedClip(h, `grid fill ${i} ${Date.now()}`)
+  await h.page.getByRole('tab', { name: 'Window' }).click()
+  await expect.poll(() => getSetting(h.page, 'windowMode')).toBe('window')
+
+  const listbox = deck(h.page)
+  await expect(listbox).toBeVisible()
+  // The rightmost card's right edge should sit within a column's padding of the
+  // listbox right edge - i.e. the columns fill the window, no ragged gap.
+  await expect
+    .poll(
+      async () => {
+        const lb = await listbox.boundingBox()
+        if (!lb) return 9999
+        const options = await listbox.getByRole('option').all()
+        let maxRight = 0
+        for (const o of options) {
+          const b = await o.boundingBox()
+          if (b) maxRight = Math.max(maxRight, b.x + b.width)
+        }
+        if (maxRight === 0) return 9999
+        return lb.x + lb.width - maxRight
+      },
+      { timeout: 5000 },
+    )
+    .toBeLessThan(60)
+
+  await h.page.getByRole('tab', { name: 'Panel' }).click()
+})
+
 test('settings opens, exposes every section, and closes', async () => {
   await h.page.getByRole('button', { name: 'Settings' }).first().click()
   const dialog = h.page.getByRole('dialog', { name: 'Settings' })

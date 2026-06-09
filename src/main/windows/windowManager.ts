@@ -20,6 +20,15 @@ const PANEL_MARGIN = 12
 // Window-mode (grid) minimums.
 const WINDOW_MIN_WIDTH = 640
 const WINDOW_MIN_HEIGHT = 420
+// Grid layout constants mirrored from VirtualDeck.tsx so window mode opens at a
+// width that fits a whole number of columns - the content fills edge to edge
+// instead of leaving a ragged gap on the right. Keep in sync with the renderer.
+const SIDEBAR_W = 212 // .rail width in Sidebar.module.css
+const GRID_PAD = 28 // GRID_PAD
+const GRID_GAP = 16 // GAP
+const GRID_COL_W = 280 // comfortable column width (>= GRID_MIN_COL of 250)
+const GRID_MIN_COLS = 3
+const GRID_MAX_COLS = 6
 
 /**
  * Owns the single morphing BrowserWindow. "panel" mode is a frameless,
@@ -162,10 +171,18 @@ export class WindowManager {
   private positionWindow(): void {
     if (!this.win) return
     this.win.setMinimumSize(WINDOW_MIN_WIDTH, WINDOW_MIN_HEIGHT)
-    // Open large enough to show the full grid (several columns at once), scaled
-    // to the display and capped so it stays sensible on very large monitors.
+    // Size the window to fit a whole number of grid columns so the deck fills it
+    // edge to edge. Pick the most columns that fit ~92% of the display (clamped),
+    // then derive the exact width from the grid metrics - no ragged right gap.
     const { width, height } = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea
-    const w = Math.min(1600, Math.round(width * 0.92))
+    const budget = Math.min(1600, Math.round(width * 0.92))
+    const usable = budget - SIDEBAR_W - GRID_PAD * 2
+    const cols = Math.max(
+      GRID_MIN_COLS,
+      Math.min(GRID_MAX_COLS, Math.floor((usable + GRID_GAP) / (GRID_COL_W + GRID_GAP))),
+    )
+    const gridW = GRID_PAD * 2 + cols * GRID_COL_W + (cols - 1) * GRID_GAP
+    const w = SIDEBAR_W + gridW
     const h = Math.min(1000, Math.round(height * 0.9))
     this.win.setBounds({ width: w, height: h })
     this.win.center()
