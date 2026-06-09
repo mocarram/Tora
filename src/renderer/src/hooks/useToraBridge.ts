@@ -16,6 +16,7 @@ export function useToraBridge(): void {
   const setSettingsOpen = useStore((s) => s.setSettingsOpen)
   const setSyncStatus = useStore((s) => s.setSyncStatus)
   const setUpdateStatus = useStore((s) => s.setUpdateStatus)
+  const onPanelShown = useStore((s) => s.onPanelShown)
   const theme = useStore((s) => s.settings?.theme ?? 'system')
   const accent = useStore((s) => s.settings?.accent ?? 'amber')
 
@@ -48,6 +49,11 @@ export function useToraBridge(): void {
           // sync back to idle and miss the transient syncing state.
           setSyncStatus(event.status)
           break
+        case 'panel-shown':
+          // Reset to the front and select the current-clipboard item on summon,
+          // rather than leaving the user wherever they last scrolled.
+          void onPanelShown()
+          break
         case 'panel-hidden':
           if (useStore.getState().settings?.appLockEnabled) setLocked(true)
           break
@@ -76,5 +82,6 @@ export function useToraBridge(): void {
     setSettingsOpen,
     setSyncStatus,
     setUpdateStatus,
+    onPanelShown,
   ])
 }

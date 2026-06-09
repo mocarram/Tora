@@ -229,6 +229,7 @@ export function App(): React.JSX.Element {
           queue={store.queue}
           layout={store.settings?.windowMode === 'window' ? 'grid' : 'deck'}
           reducedMotion={reducedMotion}
+          scrollResetKey={store.openNonce}
           onSelect={store.select}
           onActivate={(id) => paste(id)}
           onCopy={copy}

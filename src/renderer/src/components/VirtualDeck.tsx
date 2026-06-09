@@ -28,6 +28,8 @@ interface VirtualDeckProps {
   queue: string[]
   layout: DeckLayout
   reducedMotion: boolean
+  /** Bumped on panel summon: resets the deck to the front and shows the selection. */
+  scrollResetKey: number
   onSelect: (id: string) => void
   onActivate: (id: string) => void
   onCopy: (id: string) => void
@@ -55,6 +57,20 @@ export function VirtualDeck(props: VirtualDeckProps): React.JSX.Element {
   // The empty state renders a different element than the scroll container, so
   // this toggles the container's existence (used as a wheel-listener dep).
   const isEmpty = items.length === 0
+
+  // Latest-value refs so the scroll effects can read current items/selection/
+  // layout WITHOUT depending on them - that keeps a new capture (items change)
+  // from yanking the viewport, and the open-reset from re-firing on every nav.
+  // Synced in an effect (declared before the scroll effects, so it runs first
+  // and they see fresh values) rather than mutated during render.
+  const itemsRef = useRef(items)
+  const selectedIdRef = useRef(props.selectedId)
+  const layoutRef = useRef(props.layout)
+  useEffect(() => {
+    itemsRef.current = items
+    selectedIdRef.current = props.selectedId
+    layoutRef.current = props.layout
+  })
 
   useEffect(() => {
     const el = containerRef.current
@@ -103,29 +119,51 @@ export function VirtualDeck(props: VirtualDeckProps): React.JSX.Element {
     // Re-run when the container appears/disappears (isEmpty) to (re)attach.
   }, [props.layout, isEmpty])
 
-  // Keep the keyboard-selected card within the viewport (both layouts).
+  // Bring the selected card into view when the SELECTION changes (keyboard nav
+  // or open). Deliberately does not depend on `items`, so a new capture never
+  // yanks the viewport, and uses an instant jump (no smooth) so holding an arrow
+  // key to navigate fast stays snappy instead of queueing smooth-scroll lag.
   useEffect(() => {
     const el = containerRef.current
     if (!el || !props.selectedId) return
-    const index = items.findIndex((i) => i.id === props.selectedId)
+    const index = itemsRef.current.findIndex((i) => i.id === props.selectedId)
     if (index < 0) return
-    // Honour reduce-motion: jump instead of animating the scroll.
-    const behavior: ScrollBehavior = props.reducedMotion ? 'auto' : 'smooth'
     if (props.layout === 'grid') {
       const cols = gridCols(el.clientWidth)
       const top = Math.floor(index / cols) * GRID_ROW_H
       const bottom = top + GRID_ROW_H
-      if (top < el.scrollTop) el.scrollTo({ top, behavior })
+      if (top < el.scrollTop) el.scrollTo({ top, behavior: 'auto' })
       else if (bottom > el.scrollTop + el.clientHeight)
-        el.scrollTo({ top: bottom - el.clientHeight, behavior })
+        el.scrollTo({ top: bottom - el.clientHeight, behavior: 'auto' })
     } else {
       const left = index * STRIDE
       const right = left + SLOT_WIDTH
-      if (left < el.scrollLeft) el.scrollTo({ left: left - GAP, behavior })
+      if (left < el.scrollLeft) el.scrollTo({ left: left - GAP, behavior: 'auto' })
       else if (right > el.scrollLeft + el.clientWidth)
-        el.scrollTo({ left: right - el.clientWidth + GAP, behavior })
+        el.scrollTo({ left: right - el.clientWidth + GAP, behavior: 'auto' })
     }
-  }, [props.selectedId, items, props.layout, props.reducedMotion])
+  }, [props.selectedId, props.layout])
+
+  // On panel summon (scrollResetKey bumped) jump the deck back to the selected
+  // current-clipboard item at the front, rather than leaving it wherever it was
+  // last scrolled. Reads refs so it only fires on summon, never on nav/capture.
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const idx = selectedIdRef.current
+      ? itemsRef.current.findIndex((i) => i.id === selectedIdRef.current)
+      : 0
+    const i = idx < 0 ? 0 : idx
+    if (layoutRef.current === 'grid') {
+      const top = Math.floor(i / gridCols(el.clientWidth)) * GRID_ROW_H
+      el.scrollTo({ top, behavior: 'auto' })
+      setScroll(top)
+    } else {
+      const left = Math.max(0, i * STRIDE - GAP)
+      el.scrollTo({ left, behavior: 'auto' })
+      setScroll(left)
+    }
+  }, [props.scrollResetKey])
 
   const queuePos = useCallback((id: string): number => props.queue.indexOf(id), [props.queue])
 
