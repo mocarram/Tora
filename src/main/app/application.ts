@@ -1,7 +1,7 @@
 import { app, globalShortcut, ipcMain, nativeImage, nativeTheme, protocol, session } from 'electron'
 import { readFile } from 'node:fs/promises'
 import { dirname, join, normalize, sep } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import type { ClipItem, FileMetadata } from '@core/model'
 import { FAVOURITES_BOARD_ID } from '@core/model'
 import { isPreviewableImage } from '@core/fileType'
@@ -45,6 +45,7 @@ import { getPermissions, requestAccessibility, biometricUnlock } from '../servic
 import { createSyncProvider, type SyncController, type SyncDeps } from '../sync'
 import { loadOrCreateSyncKey } from '../sync/keyStore'
 import { resolveSharedSyncDir, loadOrCreateDeviceId } from '../sync/environment'
+import { sanitizeSettingsPatch } from './settingsGuard'
 import { WindowManager } from '../windows/windowManager'
 import { TrayController } from '../windows/tray'
 
@@ -359,7 +360,11 @@ export class Application {
 
   // ---- Settings ----------------------------------------------------------
 
-  private async applySettings(patch: Partial<AppSettings>): Promise<AppSettings> {
+  private async applySettings(rawPatch: Partial<AppSettings>): Promise<AppSettings> {
+    // The patch arrives over IPC: validate every field before it can reach the
+    // hotkey registrar, the capture exclusion list, or the sync switch. A
+    // malformed excludedBundleIds, for example, would crash the capture tick.
+    const patch = sanitizeSettingsPatch(rawPatch)
     const prev = this.settings
     this.settings = this.storage.settings.update(patch)
 
@@ -440,9 +445,15 @@ export class Application {
     // (an injected iframe, a stray BrowserView a future dependency might add) is
     // rejected before it can reach privileged handlers like clearData/unlock.
     const rendererUrl = process.env.ELECTRON_RENDERER_URL
+    // Pin the EXACT packaged renderer entry, not any file:// URL - a future
+    // window/BrowserView loading some other local file must not inherit access
+    // to privileged handlers (clearData, unlock, relaunchApp).
+    const rendererFileUrl = pathToFileURL(
+      join(dirname(fileURLToPath(import.meta.url)), '../renderer/index.html'),
+    ).href
     const isTrustedSender = (url: string | undefined): boolean => {
       if (!url) return false
-      if (url.startsWith('file://')) return true
+      if (url === rendererFileUrl || url.startsWith(`${rendererFileUrl}?`)) return true
       return rendererUrl !== undefined && url.startsWith(rendererUrl)
     }
     ipcMain.handle(IPC.invoke, (e, method: ToraMethod, args: unknown[]) => {

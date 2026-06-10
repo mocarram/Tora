@@ -1,7 +1,7 @@
 import { mkdir, readFile, readdir, rename, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { AppSettings, SyncState, SyncStatus } from '@shared/ipc'
-import { mergeSnapshots, pickWinner, recordKey, type SyncRecord } from '@core/sync'
+import { isSyncRecord, mergeSnapshots, pickWinner, recordKey, type SyncRecord } from '@core/sync'
 import type { Storage } from '../storage'
 import { isSafeBlobSegment } from '../storage/blobStore'
 import { SyncRepo } from '../storage/syncRepo'
@@ -120,8 +120,13 @@ export class ICloudDriveController implements SyncController {
       if (!file.endsWith('.enc') || file === `${this.deviceId}.enc`) continue
       try {
         const buf = await readFile(join(this.recordsDir, file))
-        const records = JSON.parse(this.crypto.decrypt(buf)) as SyncRecord[]
-        for (const rec of records) {
+        const parsed: unknown = JSON.parse(this.crypto.decrypt(buf))
+        if (!Array.isArray(parsed)) continue
+        for (const rec of parsed) {
+          // Shape-check every record: the GCM tag authenticates the writer, not the
+          // schema - a peer on a different app version must not feed malformed
+          // rows into the merge (and from there into SQLite).
+          if (!isSyncRecord(rec)) continue
           const key = recordKey(rec)
           const winner = pickWinner(merged.get(key) ?? null, rec)
           if (winner) merged.set(key, winner)

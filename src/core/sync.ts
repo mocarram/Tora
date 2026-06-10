@@ -26,6 +26,28 @@ export function recordKey(r: Pick<SyncRecord, 'type' | 'id'>): string {
 }
 
 /**
+ * Structural validation for records decoded from a peer's snapshot. The GCM
+ * tag proves the file was written by a holder of the key, not that the payload
+ * matches THIS app version's shape - an older/newer peer (or a corrupted
+ * serializer) must not push malformed rows straight into local SQLite.
+ */
+export function isSyncRecord(v: unknown): v is SyncRecord {
+  if (typeof v !== 'object' || v === null) return false
+  const r = v as Record<string, unknown>
+  return (
+    (r.type === 'item' || r.type === 'board' || r.type === 'board_item') &&
+    typeof r.id === 'string' &&
+    r.id.length > 0 &&
+    typeof r.rev === 'number' &&
+    Number.isFinite(r.rev) &&
+    typeof r.updatedAt === 'number' &&
+    Number.isFinite(r.updatedAt) &&
+    typeof r.deleted === 'boolean' &&
+    (r.data === null || (typeof r.data === 'object' && !Array.isArray(r.data)))
+  )
+}
+
+/**
  * Choose the winning version of a record. Deterministic: newer updatedAt wins;
  * ties break by higher rev; remaining ties prefer a tombstone (so a delete is
  * not resurrected), then fall back to the lexicographically larger id-stable

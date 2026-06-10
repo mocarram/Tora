@@ -154,17 +154,10 @@ export function Settings({ open, reducedMotion, onClose }: SettingsProps): React
                       update({ pasteFormatDefault: v as AppSettings['pasteFormatDefault'] })
                     }
                   />
-                  <ToggleRow
-                    label="Visual feedback"
-                    hint="Flash a confirmation when you paste."
-                    checked={settings.visualFeedback}
-                    onChange={(v) => update({ visualFeedback: v })}
-                  />
-                  <ToggleRow
-                    label="Sound feedback"
-                    checked={settings.soundFeedback}
-                    onChange={(v) => update({ soundFeedback: v })}
-                  />
+                  {/* visualFeedback / soundFeedback settings exist in the
+                      schema but the behaviours are not implemented yet, so the
+                      toggles are hidden - a switch that does nothing erodes
+                      trust in every other switch. Restore when built. */}
                 </Group>
               )}
 

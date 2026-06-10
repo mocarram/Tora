@@ -65,18 +65,26 @@ by types, lint, build, and unit/integration tests only - not by running the app.
 
 ## Partially implemented features
 
-- **Link previews not fetched.** The `fetchLinkPreviews` setting and the
-  `UrlMetadata.title/faviconRef` fields exist, but no fetcher is implemented;
-  URL cards show the host + link only. Off by default anyway for privacy. (Stub:
-  toggle present, behaviour absent.)
+- **Link previews ARE implemented** (`linkPreview.ts`, `linkPreviewParse.ts`,
+  `enrichLinkPreview` + `backfillLinkPreviews` in `application.ts`, with the
+  SSRF guard in `ssrfGuard.ts` applied per redirect hop). Off by default for
+  privacy. Residual known limitation: DNS rebinding between the guard's lookup
+  and the actual connect cannot be fully closed with fetch() (documented in
+  `ssrfGuard.ts`); acceptable for an opt-in, off-by-default feature.
 - **Image thumbnails implemented but not GUI-verified.** Captured images store
   full `image.png` + `thumb.png` blobs; `thumbnailRef` is set on capture and the
   deck renders thumbnails via a sandboxed `tora-blob://` custom protocol
   (`registerBlobProtocol`, with a path-traversal guard); the large preview uses a
   full-image data URL. Not exercised in a running GUI on this host.
-- **Visual/sound feedback toggles are inert.** `visualFeedback` and
-  `soundFeedback` settings exist and persist, but the paste confirmation flash
-  and sound are not implemented.
+- **Visual/sound feedback settings exist but the behaviours do not.**
+  `visualFeedback` and `soundFeedback` persist (and sync), but the paste
+  confirmation flash and sound are not implemented, so the Settings toggles are
+  HIDDEN until they are (failed actions do show an error toast). The keys stay
+  in the schema for compatibility.
+- **Synced binary blobs inflate ~1.5x on the wire.** `SyncCrypto` encrypts
+  strings (UTF-8), so `mirrorBlobs` round-trips image bytes through a latin1
+  string. Verified lossless, but a Buffer-native encrypt path would cut iCloud
+  payload size; needs a compatibility dance with already-mirrored blobs.
 - **Smart boards are schema-only.** `boards.is_smart` / `smart_query` exist in
   the schema and model but there is no UI to create or evaluate smart boards.
 - **Within-board manual item reorder** has a repo method and IPC

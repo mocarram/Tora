@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { mergeSnapshots, pickWinner, recordKey, type SyncRecord } from './sync'
+import { isSyncRecord, mergeSnapshots, pickWinner, recordKey, type SyncRecord } from './sync'
 
 const rec = (over: Partial<SyncRecord>): SyncRecord => ({
   type: 'item',
@@ -48,5 +48,32 @@ describe('mergeSnapshots', () => {
     ])
     const toApply = mergeSnapshots(local, remote)
     expect(toApply.map((r) => r.id).sort()).toEqual(['a', 'c'])
+  })
+})
+
+describe('isSyncRecord', () => {
+  const valid = {
+    type: 'item',
+    id: 'abc',
+    rev: 1,
+    updatedAt: 1000,
+    deleted: false,
+    data: { preview_text: 'hi' },
+  }
+  it('accepts a well-formed record (and a null-data tombstone)', () => {
+    expect(isSyncRecord(valid)).toBe(true)
+    expect(isSyncRecord({ ...valid, deleted: true, data: null })).toBe(true)
+  })
+  it('rejects malformed records from older/corrupt peers', () => {
+    expect(isSyncRecord(null)).toBe(false)
+    expect(isSyncRecord('item')).toBe(false)
+    expect(isSyncRecord({ ...valid, type: 'wat' })).toBe(false)
+    expect(isSyncRecord({ ...valid, id: '' })).toBe(false)
+    expect(isSyncRecord({ ...valid, rev: 'one' })).toBe(false)
+    expect(isSyncRecord({ ...valid, updatedAt: Number.NaN })).toBe(false)
+    expect(isSyncRecord({ ...valid, deleted: 'yes' })).toBe(false)
+    expect(isSyncRecord({ ...valid, data: ['array'] })).toBe(false)
+    const { data: _data, ...missingData } = valid
+    expect(isSyncRecord(missingData)).toBe(false)
   })
 })

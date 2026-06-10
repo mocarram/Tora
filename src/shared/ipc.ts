@@ -230,3 +230,57 @@ export const IPC = {
 
 /** Method names callable over the single invoke channel. */
 export type ToraMethod = keyof Omit<ToraApi, 'onEvent'>
+
+/**
+ * Every invokable method, as a value: preload builds the bridge surface from
+ * this list. Lives next to ToraApi so the two cannot drift - `satisfies` keeps
+ * each entry a real method, and the exhaustiveness check below errors at
+ * compile time if a ToraApi method is missing here (previously preload kept
+ * its own copy, and a forgotten entry surfaced only as `undefined` at runtime).
+ */
+export const TORA_METHODS = [
+  'queryItems',
+  'getFullContent',
+  'copyItem',
+  'pasteItem',
+  'queuePaste',
+  'pinItem',
+  'deleteItem',
+  'editItem',
+  'setItemTitle',
+  'clearData',
+  'listBoards',
+  'createBoard',
+  'renameBoard',
+  'deleteBoard',
+  'reorderBoards',
+  'addItemToBoard',
+  'removeItemFromBoard',
+  'reorderBoardItems',
+  'getItemBoards',
+  'getSettings',
+  'updateSettings',
+  'getStorageStats',
+  'setCaptureEnabled',
+  'getPermissions',
+  'requestAccessibility',
+  'relaunchApp',
+  'unlock',
+  'getSyncStatus',
+  'triggerSync',
+  'hidePanel',
+  'setWindowMode',
+  'setHideSuppressed',
+  'getUpdateStatus',
+  'checkForUpdates',
+  'installUpdate',
+  'getAppVersion',
+] as const satisfies readonly ToraMethod[]
+
+// Compile-time exhaustiveness: `true` stops typechecking the moment ToraApi
+// gains a method that TORA_METHODS does not list.
+export const TORA_METHODS_EXHAUSTIVE: [Exclude<ToraMethod, (typeof TORA_METHODS)[number]>] extends [
+  never,
+]
+  ? true
+  : never = true
