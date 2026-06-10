@@ -1,4 +1,4 @@
-import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, readdir, rename, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { AppSettings, SyncState, SyncStatus } from '@shared/ipc'
 import { mergeSnapshots, pickWinner, recordKey, type SyncRecord } from '@core/sync'
@@ -138,7 +138,14 @@ export class ICloudDriveController implements SyncController {
   private async push(): Promise<void> {
     const snapshot = [...this.repo.localSnapshot().values()]
     const payload = this.crypto.encrypt(JSON.stringify(snapshot))
-    await writeFile(join(this.recordsDir, `${this.deviceId}.enc`), payload)
+    // Write-then-rename so the snapshot lands atomically: iCloud Drive uploads
+    // on file-system events, and a peer reading a half-written file would skip
+    // this device's whole snapshot for the cycle (truncated ciphertext fails
+    // the GCM tag). The temp name has no .enc suffix, so readers ignore it.
+    const dest = join(this.recordsDir, `${this.deviceId}.enc`)
+    const tmp = join(this.recordsDir, `${this.deviceId}.tmp`)
+    await writeFile(tmp, payload)
+    await rename(tmp, dest)
 
     for (const rec of snapshot) {
       const ref = rec.data?.content_ref
@@ -177,6 +184,10 @@ export class ICloudDriveController implements SyncController {
       return
     }
     for (const encName of names) {
+      // encName comes from a directory peers can write into; only exact
+      // `<known-blob-name>.enc` entries are ever opened (belt and braces with
+      // the BLOB_FILES check - also rejects any path-like or crafted name).
+      if (!isSafeBlobSegment(encName)) continue
       const name = encName.replace(/\.enc$/, '')
       if (!BLOB_FILES.includes(name) || this.storage.blobs.has(ref, name)) continue
       try {

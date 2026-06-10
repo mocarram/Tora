@@ -589,7 +589,7 @@ export class Application {
     }
   }
 
-  private editItem(req: EditItemRequest): ClipItem | null {
+  private async editItem(req: EditItemRequest): Promise<ClipItem | null> {
     const item = this.storage.items.getById(req.itemId)
     if (!item) return null
     // Re-classify the edited text so a URL stays a URL, code stays code, etc.
@@ -599,6 +599,13 @@ export class Application {
       charCount: req.text.length,
       wordCount: countWords(req.text),
     }
+    // Write the payload blob BEFORE the row update (same order as capture):
+    // if the disk write fails, the edit fails whole and the row still matches
+    // the old blob. The reverse order could leave a row describing new content
+    // while a paste silently serves the stale bytes.
+    if (item.contentRef) {
+      await this.storage.blobs.writeText(item.contentRef, 'text.txt', req.text)
+    }
     const updated = this.storage.items.updateText(req.itemId, {
       type: classified?.type ?? 'text',
       previewText: classified?.previewText ?? toPreviewLine(req.text),
@@ -606,9 +613,6 @@ export class Application {
       byteSize: Buffer.byteLength(req.text, 'utf8'),
       metadata: classified?.metadata ?? fallback,
     })
-    if (updated?.contentRef) {
-      void this.storage.blobs.writeText(updated.contentRef, 'text.txt', req.text)
-    }
     this.search.markStale()
     if (updated) this.emit({ kind: 'item-updated', item: updated })
     this.sync.notifyLocalChange()
@@ -645,21 +649,31 @@ export class Application {
       pasteItem: (req: PasteRequest) => this.pasteItem(req),
       queuePaste: (req: QueuePasteRequest) => this.queuePaste(req),
       pinItem: (id: string, pinned: boolean) => {
-        s.items.setPinned(id, pinned)
-        // Pinning mirrors into the default Favourites board.
-        if (pinned) s.boards.addItem(FAVOURITES_BOARD_ID, id)
-        else s.boards.removeItem(FAVOURITES_BOARD_ID, id)
+        // Pin flag + Favourites mirror move together or not at all: a crash
+        // between them would desync the flag from the board (and an unpinned
+        // item still on a board is exempt from retention forever).
+        s.db.transaction(() => {
+          s.items.setPinned(id, pinned)
+          if (pinned) s.boards.addItem(FAVOURITES_BOARD_ID, id)
+          else s.boards.removeItem(FAVOURITES_BOARD_ID, id)
+        })()
         const item = s.items.getById(id)
         if (item) this.emit({ kind: 'item-updated', item })
         this.sync.notifyLocalChange()
         refreshBoards()
       },
-      deleteItem: (id: string) => {
+      deleteItem: async (id: string) => {
         const item = s.items.getById(id)
-        s.items.softDelete(id)
-        if (item?.contentRef) void s.blobs.remove(item.contentRef)
+        s.items.softDelete(id) // tombstone first so sync peers cannot resurrect
         s.items.hardDelete(id)
         removed(id)
+        // Blob cleanup last and awaited: the rows are already consistent, and a
+        // failure here must be visible (an orphaned blob leaks disk forever).
+        if (item?.contentRef) {
+          await s.blobs.remove(item.contentRef).catch((err: unknown) => {
+            console.error('[tora] blob cleanup failed for', item.contentRef, err)
+          })
+        }
       },
       editItem: (req: EditItemRequest) => this.editItem(req),
       setItemTitle: (id: string, title: string | null) => {

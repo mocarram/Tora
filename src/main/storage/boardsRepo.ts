@@ -95,10 +95,15 @@ export class BoardsRepo {
 
   remove(id: string): void {
     if (id === FAVOURITES_BOARD_ID) return // the default board is permanent
+    // One transaction: orphaned board_items rows from a crash mid-delete would
+    // permanently exempt their items from retention (the expiry query skips
+    // anything with a board membership).
     const at = Date.now()
-    this.db.prepare('UPDATE boards SET deleted_at = ? WHERE id = ?').run(at, id)
-    this.db.prepare('DELETE FROM board_items WHERE board_id = ?').run(id)
-    markChange(this.db, 'board', id, { deleted: true, at })
+    this.db.transaction(() => {
+      this.db.prepare('UPDATE boards SET deleted_at = ? WHERE id = ?').run(at, id)
+      this.db.prepare('DELETE FROM board_items WHERE board_id = ?').run(id)
+      markChange(this.db, 'board', id, { deleted: true, at })
+    })()
   }
 
   reorder(orderedIds: string[]): void {

@@ -55,7 +55,10 @@ function persistKey(path: string, key: Buffer, available: boolean): void {
       writeFileSync(path, key, { mode: FILE_MODE }) // unwrapped fallback for non-macOS dev hosts
     }
     secureFileSync(path) // enforce mode even if the file already existed
-  } catch {
-    // If we cannot persist (rare), the in-memory key still works for this run.
+  } catch (err) {
+    // The in-memory key still works for this run, but next launch will generate
+    // a DIFFERENT key, silently orphaning anything peers encrypted with this
+    // one - so the failure must at least be visible in the log.
+    console.error('[tora] failed to persist sync key; sync will re-key on next launch', err)
   }
 }

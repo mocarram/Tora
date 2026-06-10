@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Storage } from '../storage'
 import { CapturePipeline } from '../capture/capturePipeline'
 import { RetentionService } from './retention'
@@ -73,6 +73,35 @@ describe('RetentionService', () => {
     storage.boards.removeItem(board.id, item.id)
     expect(await new RetentionService(storage).runOnce()).toBe(1)
     expect(storage.items.getById(item.id)).toBeNull()
+  })
+
+  it('re-checks each candidate before pruning (pin landed mid-loop survives)', async () => {
+    storage.settings.update({ retentionDays: 30 })
+    const a = (await pipeline.ingest({ text: 'expired A' })).item!
+    const b = (await pipeline.ingest({ text: 'expired B' })).item!
+    ageItem(a.id, 40)
+    ageItem(b.id, 40)
+
+    // The loop awaits blob removal between deletes; simulate the user pinning
+    // the OTHER item during that window. Without the stillExpirable re-check
+    // the stale snapshot would delete it anyway.
+    const byRef = new Map([
+      [a.contentRef!, b.id],
+      [b.contentRef!, a.id],
+    ])
+    const realRemove = storage.blobs.remove.bind(storage.blobs)
+    vi.spyOn(storage.blobs, 'remove').mockImplementation(async (ref: string) => {
+      const other = byRef.get(ref)
+      if (other && storage.items.getById(other)) storage.items.setPinned(other, true)
+      return realRemove(ref)
+    })
+
+    const pruned = await new RetentionService(storage).runOnce()
+    expect(pruned).toBe(1)
+    // Exactly one survived: the one pinned while the loop was running.
+    const survivors = [a.id, b.id].filter((id) => storage.items.getById(id) !== null)
+    expect(survivors).toHaveLength(1)
+    expect(storage.items.getById(survivors[0]!)?.isPinned).toBe(true)
   })
 
   it('is a no-op when retention is unlimited', async () => {

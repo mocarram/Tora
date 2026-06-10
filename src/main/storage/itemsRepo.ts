@@ -196,22 +196,15 @@ export class ItemsRepo {
   }
 
   softDelete(id: string): void {
+    // One transaction: a crash between the row update and the sync tombstone
+    // would otherwise leave a deleted-looking item with no tombstone, which a
+    // sync peer would happily push right back (deleted items resurrecting).
     const at = Date.now()
-    this.softDeleteStmt.run(at, id)
-    this.deleteBoardItemsStmt.run(id)
-    markChange(this.db, 'item', id, { deleted: true, at })
-  }
-
-  softDeleteAll(): void {
-    const at = Date.now()
-    const ids = this.db
-      .prepare('SELECT id FROM items WHERE deleted_at IS NULL AND is_pinned = 0')
-      .all() as { id: string }[]
-    const tx = this.db.transaction(() => {
-      for (const { id } of ids) this.softDelete(id)
-    })
-    tx()
-    void at
+    this.db.transaction(() => {
+      this.softDeleteStmt.run(at, id)
+      this.deleteBoardItemsStmt.run(id)
+      markChange(this.db, 'item', id, { deleted: true, at })
+    })()
   }
 
   /**
@@ -335,6 +328,24 @@ export class ItemsRepo {
            AND id NOT IN (SELECT item_id FROM board_items)`,
       )
       .all(cutoff) as { id: string; contentRef: string | null }[]
+  }
+
+  /**
+   * Re-check a single expiredRefs candidate just before pruning it. The
+   * retention loop awaits blob I/O between deletes, so the user can pin an item
+   * (or add it to a board) after the snapshot was taken - without this check
+   * that item would still be deleted.
+   */
+  stillExpirable(id: string, cutoff: number): boolean {
+    return (
+      this.db
+        .prepare(
+          `SELECT 1 FROM items
+           WHERE id = ? AND deleted_at IS NULL AND is_pinned = 0 AND updated_at < ?
+             AND id NOT IN (SELECT item_id FROM board_items)`,
+        )
+        .get(id, cutoff) !== undefined
+    )
   }
 
   /** Hard-remove a tombstoned/expired row. Blob removal is the caller's job. */
