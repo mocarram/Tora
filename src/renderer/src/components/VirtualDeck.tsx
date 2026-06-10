@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import type { ClipItem } from '@core/model'
 import { ClipCard } from './ClipCard'
 import { Icon } from './Icon'
@@ -50,9 +50,10 @@ interface VirtualDeckProps {
  * - "deck": a single horizontal row (the panel's signature look).
  * - "grid": a multi-column grid that fills the window (window mode).
  * Only the visible window (plus overscan) is mounted, so both stay at 60fps
- * with 10k+ items.
+ * with 10k+ items. Memoized (with stable App callbacks) so unrelated App
+ * re-renders - stats ticks, menu opens - skip the whole deck subtree.
  */
-export function VirtualDeck(props: VirtualDeckProps): React.JSX.Element {
+function VirtualDeckImpl(props: VirtualDeckProps): React.JSX.Element {
   const { items } = props
   const containerRef = useRef<HTMLDivElement>(null)
   const [scroll, setScroll] = useState(0)
@@ -314,3 +315,5 @@ export function VirtualDeck(props: VirtualDeckProps): React.JSX.Element {
 function gridCols(width: number): number {
   return Math.max(1, Math.floor((width - GRID_PAD * 2 + GAP) / (GRID_MIN_COL + GAP)))
 }
+
+export const VirtualDeck = memo(VirtualDeckImpl)

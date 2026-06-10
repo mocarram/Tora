@@ -56,6 +56,17 @@ interface StoreState extends ViewState {
 
 const api = (): Window['tora'] => window.tora
 
+// Monotonic ticket for list loads: events, typing, and panel summons can put
+// several queryItems calls in flight at once, and IPC does not guarantee the
+// first-issued resolves first - only the newest ticket may write the list,
+// otherwise a slow stale response overwrites a fresher one.
+let reloadSeq = 0
+
+// Search keystrokes debounce their reload (the input itself updates instantly);
+// every keystroke would otherwise fire a full IPC query round-trip.
+let searchDebounce: ReturnType<typeof setTimeout> | null = null
+const SEARCH_DEBOUNCE_MS = 150
+
 export const useStore = create<StoreState>((set, get) => ({
   query: '',
   filter: 'all',
@@ -105,6 +116,7 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   reload: async (opts) => {
+    const seq = ++reloadSeq
     const { query, filter, boardId, pinnedOnly } = get()
     set({ loading: true })
     const res = await api().queryItems({
@@ -115,6 +127,7 @@ export const useStore = create<StoreState>((set, get) => ({
       limit: PAGE_SIZE,
       offset: 0,
     })
+    if (seq !== reloadSeq) return // superseded while in flight; drop stale rows
     set((s) => {
       // The newest item (max updatedAt) is what the system clipboard holds, so
       // it is what Enter / Cmd+V should paste when the panel is summoned.
@@ -149,6 +162,9 @@ export const useStore = create<StoreState>((set, get) => ({
   loadMore: async () => {
     const { items, total, query, filter, boardId, pinnedOnly, loading } = get()
     if (loading || items.length >= total) return
+    // Take the ticket only after the guards: bumping earlier would invalidate
+    // an in-flight reload and strand its loading flag.
+    const seq = ++reloadSeq
     set({ loading: true })
     const res = await api().queryItems({
       query,
@@ -158,12 +174,23 @@ export const useStore = create<StoreState>((set, get) => ({
       limit: PAGE_SIZE,
       offset: items.length,
     })
+    if (seq !== reloadSeq) return // a reload reset the list while this page loaded
     set((s) => ({ items: [...s.items, ...res.items], total: res.total, loading: false }))
   },
 
   setView: (patch) => {
     set(patch)
-    void get().reload()
+    if (searchDebounce) clearTimeout(searchDebounce)
+    searchDebounce = null
+    const typingOnly = 'query' in patch && Object.keys(patch).length === 1
+    if (typingOnly) {
+      searchDebounce = setTimeout(() => {
+        searchDebounce = null
+        void get().reload()
+      }, SEARCH_DEBOUNCE_MS)
+    } else {
+      void get().reload()
+    }
   },
 
   select: (id) => set({ selectedId: id }),

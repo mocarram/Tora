@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import type { Board, QuickFilter } from '@core/model'
 import { FAVOURITES_BOARD_ID } from '@core/model'
 import type { SyncState } from '@shared/ipc'
@@ -39,7 +39,7 @@ interface SidebarProps {
   onDeleteBoard: (board: Board) => void
 }
 
-export function Sidebar({
+function SidebarImpl({
   boards,
   activeFilter,
   activeBoardId,
@@ -230,3 +230,7 @@ export function Sidebar({
     </nav>
   )
 }
+
+// Memoized: App re-renders on every store change (captures, stats ticks), but
+// the rail only depends on boards/filter/board/sync + stable handlers.
+export const Sidebar = memo(SidebarImpl)

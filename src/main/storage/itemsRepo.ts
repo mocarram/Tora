@@ -239,18 +239,31 @@ export class ItemsRepo {
 
     const whereSql = where.join(' AND ')
     const total = (
-      this.db
-        .prepare(`SELECT COUNT(*) AS c FROM items i ${join} WHERE ${whereSql}`)
-        .get(params) as { c: number }
+      this.prepared(`SELECT COUNT(*) AS c FROM items i ${join} WHERE ${whereSql}`).get(params) as {
+        c: number
+      }
     ).c
 
-    const rows = this.db
-      .prepare(
-        `SELECT i.* FROM items i ${join} WHERE ${whereSql} ${order} LIMIT @limit OFFSET @offset`,
-      )
-      .all({ ...params, limit: opts.limit, offset: opts.offset }) as ItemRow[]
+    const rows = this.prepared(
+      `SELECT i.* FROM items i ${join} WHERE ${whereSql} ${order} LIMIT @limit OFFSET @offset`,
+    ).all({ ...params, limit: opts.limit, offset: opts.offset }) as ItemRow[]
 
     return { items: rows.map(mapRow), total }
+  }
+
+  /**
+   * Cache for the query() statements: their SQL varies only by filter shape
+   * (a handful of variants), but this method runs on every list load and every
+   * search keystroke, and better-sqlite3 re-compiles on every prepare().
+   */
+  private readonly stmtCache = new Map<string, ReturnType<Database['prepare']>>()
+  private prepared(sql: string): ReturnType<Database['prepare']> {
+    let stmt = this.stmtCache.get(sql)
+    if (!stmt) {
+      stmt = this.db.prepare(sql)
+      this.stmtCache.set(sql, stmt)
+    }
+    return stmt
   }
 
   /** All live rows projected for the search index. */

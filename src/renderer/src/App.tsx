@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { PasteFormat } from '@shared/ipc'
-import type { Board } from '@core/model'
+import type { Board, QuickFilter } from '@core/model'
 import { formatBytes } from '@core/format'
 import { Sidebar } from './components/Sidebar'
 import { ConfirmDialog } from './components/ConfirmDialog'
@@ -32,7 +32,9 @@ export function App(): React.JSX.Element {
   const [deleteBoardTarget, setDeleteBoardTarget] = useState<Board | null>(null)
   const [queueFormat, setQueueFormat] = useState<PasteFormat>('keep')
 
-  const reducedMotion = prefersReducedMotion() || (store.settings?.reduceMotion ?? false)
+  // matchMedia is a DOM query - resolve it once, not on every render.
+  const systemReducedMotion = useMemo(() => prefersReducedMotion(), [])
+  const reducedMotion = systemReducedMotion || (store.settings?.reduceMotion ?? false)
   const windowMode = store.settings?.windowMode ?? 'panel'
   const onboardingOpen =
     store.ready && !!store.settings && !store.settings.onboardingComplete && !store.locked
@@ -92,6 +94,33 @@ export function App(): React.JSX.Element {
     (id: string, title: string | null) => void window.tora.setItemTitle(id, title),
     [],
   )
+  // Stable handlers (via getState, not the subscribed store object) so the
+  // memoized VirtualDeck and Sidebar skip re-renders when unrelated state
+  // changes - App subscribes to the whole store, so it re-renders often.
+  const needMore = useCallback(() => void useStore.getState().loadMore(), [])
+  const setFilter = useCallback(
+    (filter: QuickFilter) => useStore.getState().setView({ filter }),
+    [],
+  )
+  const setBoard = useCallback(
+    (boardId: string | null) => useStore.getState().setView({ boardId }),
+    [],
+  )
+  const openNewBoard = useCallback(() => setNewBoardOpen(true), [])
+  const openSettings = useCallback(() => setSettingsOpen(true), [setSettingsOpen])
+  const addToBoard = useCallback(
+    (boardId: string, itemId: string) => void window.tora.addItemToBoard({ boardId, itemId }),
+    [],
+  )
+  const reorderBoards = useCallback(
+    (orderedIds: string[]) => void window.tora.reorderBoards({ orderedIds }),
+    [],
+  )
+  const renameBoard = useCallback(
+    (boardId: string, name: string) => void window.tora.renameBoard(boardId, name),
+    [],
+  )
+  const deleteBoard = useCallback((board: Board) => setDeleteBoardTarget(board), [])
 
   // Global keyboard navigation. Ignored while typing or an overlay is open.
   useEffect(() => {
@@ -186,14 +215,14 @@ export function App(): React.JSX.Element {
         activeFilter={store.filter}
         activeBoardId={store.boardId}
         syncState={store.syncStatus?.state ?? null}
-        onFilter={(filter) => store.setView({ filter })}
-        onBoard={(boardId) => store.setView({ boardId })}
-        onNewBoard={() => setNewBoardOpen(true)}
-        onOpenSettings={() => setSettingsOpen(true)}
-        onAddToBoard={(boardId, itemId) => void window.tora.addItemToBoard({ boardId, itemId })}
-        onReorderBoards={(orderedIds) => void window.tora.reorderBoards({ orderedIds })}
-        onRenameBoard={(boardId, name) => void window.tora.renameBoard(boardId, name)}
-        onDeleteBoard={(board) => setDeleteBoardTarget(board)}
+        onFilter={setFilter}
+        onBoard={setBoard}
+        onNewBoard={openNewBoard}
+        onOpenSettings={openSettings}
+        onAddToBoard={addToBoard}
+        onReorderBoards={reorderBoards}
+        onRenameBoard={renameBoard}
+        onDeleteBoard={deleteBoard}
       />
 
       <div className={styles.main}>
@@ -243,7 +272,7 @@ export function App(): React.JSX.Element {
           onEdit={store.edit}
           onToggleQueue={store.toggleQueue}
           onSetTitle={setTitle}
-          onNeedMore={() => void store.loadMore()}
+          onNeedMore={needMore}
         />
 
         <QueueBar
