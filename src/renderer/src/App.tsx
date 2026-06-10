@@ -18,6 +18,7 @@ import { Icon } from './components/Icon'
 import { useStore } from './store/useStore'
 import { useToraBridge } from './hooks/useToraBridge'
 import { prefersReducedMotion } from './lib/motion'
+import { isTypeToSearchKey } from './lib/typeToSearch'
 import styles from './App.module.css'
 import './styles/highlight.css'
 
@@ -173,9 +174,67 @@ export function App(): React.JSX.Element {
         return
       }
       if (overlay) return
-      if (typing && e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
 
       const id = store.selectedId
+
+      // Card actions live behind Cmd (type-to-search owns the bare letters).
+      // Checked before the typing guard so they keep working while the search
+      // field is focused mid-query - but NOT from other inputs (board rename,
+      // title edit), where Cmd combos must keep their native text behaviour.
+      const inOtherInput = typing && document.activeElement !== searchRef.current
+      if (e.metaKey && !e.ctrlKey && !e.altKey && !inOtherInput) {
+        switch (e.key.toLowerCase()) {
+          case 'c': {
+            // Native copy wins when text is actually selected in the search
+            // field; otherwise Cmd+C means "copy the selected card".
+            const el = document.activeElement
+            if (
+              el instanceof HTMLInputElement &&
+              el === searchRef.current &&
+              el.selectionStart !== el.selectionEnd
+            ) {
+              return
+            }
+            if (id) {
+              e.preventDefault()
+              copy(id)
+            }
+            return
+          }
+          case 'e': // browser default: use-selection-for-find
+            if (id) {
+              e.preventDefault()
+              store.edit(id)
+            }
+            return
+          case 'p': // browser default: print
+            if (id && selectedItem) {
+              e.preventDefault()
+              togglePin(id, !selectedItem.isPinned)
+            }
+            return
+          case 'd': // browser default: bookmark
+            if (id) {
+              e.preventDefault()
+              store.toggleQueue(id)
+            }
+            return
+          default:
+            return // other Cmd combos (V, A, W...) keep their native meaning
+        }
+      }
+
+      if (typing && e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
+
+      // Type-to-search: any printable key starts typing into the search field.
+      // Focus it and DON'T preventDefault - the keystroke's default action
+      // inserts the character into the newly focused input, and the existing
+      // debounce turns it into a query.
+      if (isTypeToSearchKey(e)) {
+        searchRef.current?.focus()
+        return
+      }
+
       switch (e.key) {
         case 'ArrowRight':
         case 'ArrowDown':
@@ -195,22 +254,6 @@ export function App(): React.JSX.Element {
             e.preventDefault()
             store.expand(id)
           }
-          break
-        case 'c':
-        case 'C':
-          if (id) copy(id)
-          break
-        case 'e':
-        case 'E':
-          if (id) store.edit(id)
-          break
-        case 'q':
-        case 'Q':
-          if (id) store.toggleQueue(id)
-          break
-        case 'p':
-        case 'P':
-          if (id && selectedItem) togglePin(id, !selectedItem.isPinned)
           break
         case 'Delete':
         case 'Backspace':
@@ -342,7 +385,7 @@ export function App(): React.JSX.Element {
               </span>
             )}
             <span className={`${styles.statusItem} ${styles.statusRight}`}>
-              Cmd-click or Q to queue
+              Type to search · ⌘D to queue
             </span>
             <button
               className={styles.statusItem}

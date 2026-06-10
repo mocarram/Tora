@@ -448,15 +448,15 @@ function Group({
  * may itself be a chord of keys pressed together, joined with "+".
  */
 const IN_APP_SHORTCUTS: { keys: string[][]; label: string }[] = [
-  { keys: [['/']], label: 'Search your history' },
+  { keys: [['A', '…', 'Z']], label: 'Just type to search' },
   { keys: [['↑'], ['↓'], ['←'], ['→']], label: 'Move between clips' },
   { keys: [['Space']], label: 'Open the large preview' },
   { keys: [['↵']], label: 'Paste the selected clip' },
   { keys: [['⇧', '↵']], label: 'Paste as plain text' },
-  { keys: [['C']], label: 'Copy to the clipboard' },
-  { keys: [['E']], label: 'Edit the clip' },
-  { keys: [['Q']], label: 'Add to the paste queue' },
-  { keys: [['P']], label: 'Pin or unpin' },
+  { keys: [['⌘', 'C']], label: 'Copy to the clipboard' },
+  { keys: [['⌘', 'E']], label: 'Edit the clip' },
+  { keys: [['⌘', 'D']], label: 'Add to the paste queue' },
+  { keys: [['⌘', 'P']], label: 'Pin or unpin' },
   { keys: [['⌫']], label: 'Remove the clip' },
   { keys: [['Esc']], label: 'Dismiss Tora' },
 ]

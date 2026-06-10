@@ -159,8 +159,12 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   onPanelShown: async () => {
-    // Refresh + select the current-clipboard item; reload bumps openNonce so the
-    // deck scrolls back to the front (instead of wherever it was left).
+    // Every summon starts fresh: clear the previous query (a stale filter
+    // surprises - "where are my items?" - and type-to-search makes re-typing a
+    // query instant), then refresh + select the current-clipboard item; reload
+    // bumps openNonce so the deck scrolls back to the front. Window mode is
+    // untouched: panel-shown only fires for the panel.
+    if (get().query) set({ query: '' })
     await get().reload({ selectLatest: true })
   },
 

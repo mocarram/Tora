@@ -63,12 +63,12 @@ test('queue adds the card to the paste queue', async () => {
   await cardWith(h.page, body).getByRole('button', { name: 'Remove from queue' }).click()
 })
 
-test('pin (P) marks the card and persists it as a favourite', async () => {
+test('pin (Cmd+P) marks the card and persists it as a favourite', async () => {
   const body = `pin target ${stamp()}`
   await seedClip(h, body)
   const card = cardWith(h.page, body)
   await card.click()
-  await h.page.keyboard.press('p')
+  await h.page.keyboard.press('Meta+p')
   await expect(card.locator('[title="Pinned"]')).toBeVisible()
 })
 

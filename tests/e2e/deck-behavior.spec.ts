@@ -34,6 +34,10 @@ test('on open, the newest (current-clipboard) item is selected at the front', as
 })
 
 test('capturing a new clip does not autoscroll the deck', async () => {
+  // Seeds 14 clips at one watcher-poll each: tight against the default 30s
+  // when the whole suite is loading the machine (same allowance as the grid
+  // reflow test below).
+  test.setTimeout(60_000)
   const h = await launchApp()
   try {
     for (let i = 0; i < 14; i++) await seedClip(h, `autoscroll guard item ${i} ${Date.now()}`)
