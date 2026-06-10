@@ -182,7 +182,7 @@ export class Application {
       // Persist the image blob for image items (watcher holds the buffers) and
       // record the thumbnail ref so the deck can render it via tora-blob://.
       if (result.item.type === 'image' && result.item.metadata.kind === 'image') {
-        const blobs = ClipboardWatcher.imageBlobs()
+        const blobs = this.watcher.imageBlobs()
         if (blobs) {
           await this.pipeline.attachImage(result.item.id, blobs)
           this.storage.items.setMetadata(result.item.id, {

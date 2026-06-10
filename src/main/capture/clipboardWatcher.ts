@@ -1,7 +1,7 @@
-import { clipboard } from 'electron'
+import { clipboard, type NativeImage } from 'electron'
 import { fileURLToPath } from 'node:url'
 import { realpathSync, statSync } from 'node:fs'
-import { hashBytes, hashString } from '@core/hash'
+import { hashBytes, hashBytes32, hashString } from '@core/hash'
 import type { CaptureInput } from '@core/capture'
 import { parseFilenamesPlist } from '../services/filenamesPlist'
 
@@ -23,6 +23,12 @@ export class ClipboardWatcher {
   private lastSignature = ''
   private selfWriteSignature: string | null = null
   private enabled = true
+  /**
+   * Image + encoded PNG carried over from the snapshot that just captured, so
+   * imageBlobs() does not re-read the clipboard and re-encode the same image
+   * (readImage is an IPC round-trip; toPNG on a 4K screenshot is slow).
+   */
+  private pendingImage: { img: NativeImage; png: Buffer } | null = null
 
   constructor(
     private readonly onCapture: CaptureHandler,
@@ -57,8 +63,12 @@ export class ClipboardWatcher {
 
   private signature(textOverride?: string): string {
     const text = textOverride ?? clipboard.readText()
+    const formats = clipboard.availableFormats()
     let imageSig = ''
-    if (!textOverride) {
+    // Only touch the image pipeline when the pasteboard actually advertises an
+    // image: readImage() is an IPC round-trip plus a native bitmap copy, far
+    // too heavy for every 500ms tick of a text-only clipboard.
+    if (!textOverride && formats.some((f) => f.startsWith('image/'))) {
       const img = clipboard.readImage()
       if (!img.isEmpty()) {
         const { width, height } = img.getSize()
@@ -67,13 +77,14 @@ export class ClipboardWatcher {
         // the next one as "no change" and drops it. Fold in a hash of a
         // downscaled bitmap so different pixels yield a different signature. 256px
         // (not a tiny thumbnail) keeps enough detail that even similar-looking
-        // screenshots differ; only runs on ticks where an image is present.
+        // screenshots differ. hashBytes32 (Math.imul, no per-byte BigInt) keeps
+        // the tick sub-millisecond while an image sits on the clipboard; the
+        // signature is ephemeral so the narrower hash is fine.
         const small = img.resize({ width: 256 })
-        imageSig = `img:${width}x${height}:${hashBytes(small.toBitmap())}`
+        imageSig = `img:${width}x${height}:${hashBytes32(small.toBitmap())}`
       }
     }
-    const formats = clipboard.availableFormats().join(',')
-    return hashString(`${text}|${imageSig}|${formats}`)
+    return hashString(`${text}|${imageSig}|${formats.join(',')}`)
   }
 
   private isConcealed(): boolean {
@@ -98,6 +109,9 @@ export class ClipboardWatcher {
 
     const input = this.readSnapshot()
     if (input) await this.onCapture(input)
+    // Whatever the handler did (consumed it, deduped, errored), do not pin a
+    // multi-megabyte PNG in memory past the tick that produced it.
+    this.pendingImage = null
   }
 
   /** Build a CaptureInput from the current pasteboard. */
@@ -116,6 +130,7 @@ export class ClipboardWatcher {
     const filePaths = this.readFilePaths()
 
     let image: CaptureInput['image'] = null
+    this.pendingImage = null
     if (!text && (!filePaths || filePaths.length === 0)) {
       const img = clipboard.readImage()
       if (!img.isEmpty()) {
@@ -128,6 +143,9 @@ export class ClipboardWatcher {
           byteLength: png.byteLength,
           hash: hashBytes(png),
         }
+        // Keep the decoded image + PNG for imageBlobs() so persisting the blob
+        // does not read and encode the same clipboard image a second time.
+        this.pendingImage = { img, png }
       }
     }
 
@@ -193,14 +211,21 @@ export class ClipboardWatcher {
     })
   }
 
-  /** Capture a NativeImage's buffers for blob persistence (full + thumbnail). */
-  static imageBlobs(): { ext: string; full: Uint8Array; thumbnail: Uint8Array } | null {
-    const img = clipboard.readImage()
+  /**
+   * Capture the just-snapshotted image's buffers for blob persistence (full +
+   * thumbnail). Prefers the image carried over from readSnapshot (no second
+   * clipboard read / PNG encode); falls back to a fresh read if none is pending.
+   */
+  imageBlobs(): { ext: string; full: Uint8Array; thumbnail: Uint8Array } | null {
+    const pending = this.pendingImage
+    this.pendingImage = null
+    const img = pending?.img ?? clipboard.readImage()
     if (img.isEmpty()) return null
+    const full = pending?.png ?? img.toPNG()
     // Only downscale (never upscale, which would blur small images). A 1024px
     // cap keeps card thumbnails sharp on retina without storing the full asset.
     const { width } = img.getSize()
-    const thumb = width > 1024 ? img.resize({ width: 1024, quality: 'best' }) : img
-    return { ext: 'png', full: img.toPNG(), thumbnail: thumb.toPNG() }
+    const thumbnail = width > 1024 ? img.resize({ width: 1024, quality: 'best' }).toPNG() : full
+    return { ext: 'png', full, thumbnail }
   }
 }
