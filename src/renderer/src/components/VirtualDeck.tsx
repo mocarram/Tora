@@ -25,12 +25,26 @@ const GRID_PAD_TOP = 20
 
 export type DeckLayout = 'deck' | 'grid'
 
+/** What the user is looking at, so the empty state can say the right thing. */
+export type DeckEmptyContext = 'library' | 'board' | 'search'
+
+const EMPTY_COPY: Record<DeckEmptyContext, { title: string; hint: string }> = {
+  library: { title: 'Nothing here yet', hint: 'Copy something and it lands on the deck.' },
+  board: {
+    title: 'This board is empty',
+    hint: 'Drag a clip here (or use its bookmark) to save it.',
+  },
+  search: { title: 'No matches', hint: 'Try fewer or different keywords.' },
+}
+
 interface VirtualDeckProps {
   items: ClipItem[]
   total: number
   selectedId: string | null
   queue: string[]
   layout: DeckLayout
+  /** Drives the empty-state copy: library vs board vs search results. */
+  emptyContext: DeckEmptyContext
   /** Bumped on panel summon: resets the deck to the front and shows the selection. */
   scrollResetKey: number
   onSelect: (id: string) => void
@@ -178,10 +192,13 @@ function VirtualDeckImpl(props: VirtualDeckProps): React.JSX.Element {
 
   const queuePos = useCallback((id: string): number => props.queue.indexOf(id), [props.queue])
 
-  const renderCard = (item: ClipItem): React.JSX.Element => (
+  const renderCard = (item: ClipItem, index: number): React.JSX.Element => (
     <ClipCard
       item={item}
       selected={item.id === props.selectedId}
+      domId={`clip-${item.id}`}
+      posInSet={index + 1}
+      setSize={props.total}
       queueIndex={queuePos(item.id)}
       onSelect={props.onSelect}
       onActivate={props.onActivate}
@@ -196,13 +213,14 @@ function VirtualDeckImpl(props: VirtualDeckProps): React.JSX.Element {
   )
 
   if (isEmpty) {
+    const copy = EMPTY_COPY[props.emptyContext]
     return (
       <div className={styles.empty}>
         <span className={styles.emptyMark} aria-hidden="true">
-          <Icon name="layers" size={28} />
+          <Icon name={props.emptyContext === 'search' ? 'search' : 'layers'} size={28} />
         </span>
-        <p className={styles.emptyTitle}>Nothing here yet</p>
-        <p className={styles.emptyHint}>Copy something and it lands on the deck.</p>
+        <p className={styles.emptyTitle}>{copy.title}</p>
+        <p className={styles.emptyHint}>{copy.hint}</p>
       </div>
     )
   }
@@ -239,6 +257,7 @@ function VirtualDeckImpl(props: VirtualDeckProps): React.JSX.Element {
         className={styles.grid}
         role="listbox"
         aria-label="Clip history"
+        aria-activedescendant={props.selectedId ? `clip-${props.selectedId}` : undefined}
         tabIndex={0}
         onScroll={onScroll}
       >
@@ -265,7 +284,7 @@ function VirtualDeckImpl(props: VirtualDeckProps): React.JSX.Element {
                   e.dataTransfer.effectAllowed = 'copy'
                 }}
               >
-                {renderCard(item)}
+                {renderCard(item, index)}
               </div>
             )
           })}
@@ -286,6 +305,7 @@ function VirtualDeckImpl(props: VirtualDeckProps): React.JSX.Element {
       className={styles.deck}
       role="listbox"
       aria-label="Clip history"
+      aria-activedescendant={props.selectedId ? `clip-${props.selectedId}` : undefined}
       tabIndex={0}
       onScroll={onScroll}
     >
@@ -303,7 +323,7 @@ function VirtualDeckImpl(props: VirtualDeckProps): React.JSX.Element {
                 e.dataTransfer.effectAllowed = 'copy'
               }}
             >
-              {renderCard(item)}
+              {renderCard(item, index)}
             </div>
           )
         })}

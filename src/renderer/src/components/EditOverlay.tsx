@@ -28,6 +28,21 @@ export function EditOverlay({
     void window.tora.getFullContent(item.id).then((c) => setText(c?.text ?? item.previewText))
   }, [item])
 
+  // Escape closes the editor. The textarea keeps focus while typing, and the
+  // global App handler deliberately ignores keys while an overlay is open, so
+  // without this the only way out was clicking Cancel.
+  useEffect(() => {
+    if (!item) return
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') {
+        e.stopPropagation()
+        onCancel()
+      }
+    }
+    window.addEventListener('keydown', onKey, { capture: true })
+    return () => window.removeEventListener('keydown', onKey, { capture: true })
+  }, [item, onCancel])
+
   return (
     <AnimatePresence>
       {item ? (

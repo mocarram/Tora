@@ -21,6 +21,16 @@ import { prefersReducedMotion } from './lib/motion'
 import styles from './App.module.css'
 import './styles/highlight.css'
 
+// Core actions surface failures as a toast instead of failing silently: a
+// paste that cannot inject (Accessibility revoked) or a delete that errors
+// must tell the user SOMETHING happened.
+const notify =
+  (message: string) =>
+  (err: unknown): void => {
+    console.error('[tora]', message, err)
+    useStore.getState().setNotice(message)
+  }
+
 export function App(): React.JSX.Element {
   useToraBridge()
 
@@ -54,6 +64,14 @@ export function App(): React.JSX.Element {
     void window.tora.setHideSuppressed(modalOpen)
   }, [modalOpen])
 
+  // Failure toast auto-dismisses; any newer notice restarts the clock.
+  const notice = store.notice
+  useEffect(() => {
+    if (!notice) return
+    const t = setTimeout(() => useStore.getState().setNotice(null), 4000)
+    return () => clearTimeout(t)
+  }, [notice])
+
   const selectedItem = useMemo(
     () => store.items.find((i) => i.id === store.selectedId) ?? null,
     [store.items, store.selectedId],
@@ -78,17 +96,24 @@ export function App(): React.JSX.Element {
     [store],
   )
 
-  const copy = useCallback((id: string) => void window.tora.copyItem(id), [])
+  const copy = useCallback(
+    (id: string) => void window.tora.copyItem(id).catch(notify('Copy failed')),
+    [],
+  )
   const paste = useCallback(
     (id: string, format: PasteFormat = store.settings?.pasteFormatDefault ?? 'keep') =>
-      void window.tora.pasteItem({ itemId: id, format }),
+      void window.tora.pasteItem({ itemId: id, format }).catch(notify('Paste failed')),
     [store.settings],
   )
   const togglePin = useCallback(
-    (id: string, pinned: boolean) => void window.tora.pinItem(id, pinned),
+    (id: string, pinned: boolean) =>
+      void window.tora.pinItem(id, pinned).catch(notify('Pin failed')),
     [],
   )
-  const remove = useCallback((id: string) => void window.tora.deleteItem(id), [])
+  const remove = useCallback(
+    (id: string) => void window.tora.deleteItem(id).catch(notify('Delete failed')),
+    [],
+  )
   // Stable so memoized ClipCards do not re-render on every deck re-render (resize).
   const setTitle = useCallback(
     (id: string, title: string | null) => void window.tora.setItemTitle(id, title),
@@ -262,6 +287,7 @@ export function App(): React.JSX.Element {
           selectedId={store.selectedId}
           queue={store.queue}
           layout={store.settings?.windowMode === 'window' ? 'grid' : 'deck'}
+          emptyContext={store.query ? 'search' : store.boardId ? 'board' : 'library'}
           scrollResetKey={store.openNonce}
           onSelect={store.select}
           onActivate={paste}
@@ -390,6 +416,12 @@ export function App(): React.JSX.Element {
       />
 
       <UpdateBanner />
+
+      {notice && (
+        <div className={styles.noticeToast} role="alert">
+          {notice}
+        </div>
+      )}
 
       {store.locked && (
         <LockScreen reducedMotion={reducedMotion} onUnlock={() => store.setLocked(false)} />

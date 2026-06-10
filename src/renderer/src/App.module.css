@@ -57,6 +57,10 @@
   font-weight: var(--weight-medium);
   color: var(--color-text-muted);
 }
+.modeBtn:hover:not(.on) {
+  color: var(--color-text);
+  background: var(--color-card-hover);
+}
 .modeBtn.on {
   background: var(--color-card);
   color: var(--color-text);
@@ -101,4 +105,21 @@
 }
 .statusRight {
   margin-left: auto;
+}
+
+/* Transient failure notice (failed paste/copy/delete). Mirrors the update
+   banner's placement; sits above the status bar and never blocks clicks long. */
+.noticeToast {
+  position: fixed;
+  left: 50%;
+  bottom: 44px;
+  transform: translateX(-50%);
+  z-index: var(--z-toast);
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-danger);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  box-shadow: var(--shadow-overlay);
 }

@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Icon } from './Icon'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 import styles from './LockScreen.module.css'
 
 interface LockScreenProps {
@@ -16,6 +17,10 @@ interface LockScreenProps {
 export function LockScreen({ reducedMotion, onUnlock }: LockScreenProps): React.JSX.Element {
   const [error, setError] = useState(false)
   const [busy, setBusy] = useState(false)
+  // The gate must hold focus: without a trap, Tab walks into the (rendered but
+  // covered) deck behind it and a screen reader could read locked content.
+  const gateRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(gateRef, true)
 
   const tryUnlock = async (): Promise<void> => {
     setBusy(true)
@@ -36,9 +41,15 @@ export function LockScreen({ reducedMotion, onUnlock }: LockScreenProps): React.
 
   return (
     <motion.div
+      ref={gateRef}
       className={styles.lock}
       initial={reducedMotion ? false : { opacity: 0 }}
       animate={{ opacity: 1 }}
+      transition={{ duration: reducedMotion ? 0 : 0.15 }}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Tora is locked"
+      tabIndex={-1}
     >
       <span className={styles.mark} aria-hidden="true">
         <Icon name="lock" size={30} />

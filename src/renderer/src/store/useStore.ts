@@ -31,7 +31,10 @@ interface StoreState extends ViewState {
   openMenuId: string | null
   /** Bumped each time the panel is summoned, so the deck resets to the front. */
   openNonce: number
+  /** Transient user-facing notice (e.g. a failed paste); cleared by the toast. */
+  notice: string | null
 
+  setNotice: (notice: string | null) => void
   setLocked: (locked: boolean) => void
   setSettingsOpen: (open: boolean) => void
   setUpdateStatus: (status: UpdateStatus) => void
@@ -89,7 +92,9 @@ export const useStore = create<StoreState>((set, get) => ({
   updateStatus: null,
   openMenuId: null,
   openNonce: 0,
+  notice: null,
 
+  setNotice: (notice) => set({ notice }),
   setLocked: (locked) => set({ locked }),
   setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
   setUpdateStatus: (updateStatus) => set({ updateStatus }),

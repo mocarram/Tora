@@ -12,6 +12,13 @@ import styles from './ClipCard.module.css'
 export interface ClipCardProps {
   item: ClipItem
   selected: boolean
+  /** DOM id so the listbox can point aria-activedescendant at this option. */
+  domId: string
+  /** 1-based position in the FULL result set (not just the mounted window). */
+  posInSet: number
+  /** Total result count - virtualization mounts only a window, so the option
+   *  must spell out the real set size for assistive tech. */
+  setSize: number
   /** Position in the paste queue, or -1 when not queued. */
   queueIndex: number
   onSelect: (id: string) => void
@@ -31,6 +38,9 @@ const EDITABLE: ClipItem['type'][] = ['text', 'richText', 'code', 'url', 'color'
 function ClipCardImpl({
   item,
   selected,
+  domId,
+  posInSet,
+  setSize,
   queueIndex,
   onSelect,
   onActivate,
@@ -94,9 +104,12 @@ function ClipCardImpl({
     // which stuttered while scrolling and expanding the panel. Entrance is
     // instant; the card's own CSS handles hover/selection transitions.
     <div
+      id={domId}
       className={`${styles.card} ${selected ? styles.selected : ''} ${queued ? styles.queued : ''}`}
       role="option"
       aria-selected={selected}
+      aria-posinset={posInSet}
+      aria-setsize={setSize}
       tabIndex={-1}
       data-item-id={item.id}
       onClick={handleClick}

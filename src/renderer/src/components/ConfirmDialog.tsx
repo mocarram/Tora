@@ -89,7 +89,7 @@ export function ConfirmDialog({
             aria-modal="true"
             aria-label={title}
           >
-            <span className={styles.title}>{title}</span>
+            <h2 className={styles.title}>{title}</h2>
             <p className={styles.message}>{message}</p>
             {confirmPhrase ? (
               <input

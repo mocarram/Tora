@@ -177,7 +177,10 @@
   pointer-events: none;
   transition: opacity var(--dur-fast) var(--ease-standard);
 }
-.boardRow:hover .boardActions {
+.boardRow:hover .boardActions,
+.boardRow:focus-within .boardActions {
+  /* :focus-within keeps the hover-revealed actions reachable for keyboard
+     users - Tab lands on an invisible button otherwise. */
   opacity: 1;
   pointer-events: auto;
 }
