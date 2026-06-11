@@ -45,7 +45,11 @@ Restart pill when one is ready. (Auto-update is inert in unsigned/test builds.)
   plus a resizable full window; menu-bar icon with pause/resume; launch at login.
 - Privacy: local by default; concealed/transient content (passwords) is never
   stored; password managers excluded out of the box; optional Touch ID app lock.
-- Optional end-to-end encrypted sync over iCloud Drive (see `SYNC.md`).
+  The local store itself is plain SQLite + files, protected by owner-only file
+  permissions and (on a standard Mac) FileVault - not app-level encryption.
+- Optional end-to-end encrypted sync over iCloud Drive (see `SYNC.md`): synced
+  data is AES-256-GCM encrypted on-device before it leaves; the key lives in
+  the macOS Keychain.
 
 ## Architecture
 

@@ -101,6 +101,16 @@ named by its id under `<userData>/blobs/`:
 Retention (`src/main/services/retention.ts`) hard-deletes expired, non-pinned
 rows and removes their blob directory. Unlimited retention is a no-op.
 
+## At rest
+
+The local database and blob files are **not** app-level encrypted. Protection
+comes from owner-only modes (`0700` dirs / `0600` files, enforced by
+`src/main/storage/dataSecurity.ts`) and macOS FileVault on a typical install.
+The Touch ID app lock gates the UI only; it does not encrypt data. Anything
+that leaves the device through sync IS encrypted on-device first (AES-256-GCM,
+Keychain-wrapped key - see `SYNC.md`). This matches the posture of mainstream
+clipboard managers; revisit with SQLCipher if the threat model tightens.
+
 ## iOS mapping
 
 Every field maps cleanly to a Core Data / SQLite model on iOS. `metadata` stays
