@@ -226,10 +226,16 @@ export const useStore = create<StoreState>((set, get) => ({
   setBoards: (boards) => {
     // If the currently-viewed board was deleted (or wiped), fall back to the
     // full library so the deck does not show an empty, dangling board view.
-    const { boardId } = get()
+    // Likewise drop a dangling pill context menu: its board can vanish under
+    // it (sync, clear data), and a stale boardMenuId would otherwise keep
+    // App's modalOpen true and suppress panel auto-hide forever.
+    const { boardId, boardMenuId } = get()
+    const menuGone = boardMenuId !== null && !boards.some((b) => b.id === boardMenuId)
     if (boardId && !boards.some((b) => b.id === boardId)) {
-      set({ boards, boardId: null })
+      set({ boards, boardId: null, ...(menuGone ? { boardMenuId: null } : {}) })
       void get().reload()
+    } else if (menuGone) {
+      set({ boards, boardMenuId: null })
     } else {
       set({ boards })
     }

@@ -45,7 +45,8 @@ interface BoardPillsProps {
 /**
  * Board strip above the deck: History (the whole library) first,
  * then Favourites, then user boards, then the + button. Pills accept clip
- * drops, drag to reorder, and carry a right-click Rename/Delete menu.
+ * drops, drag to reorder, and carry a Rename/Delete menu opened by
+ * right-click or keyboard (Shift+F10 / the ContextMenu key).
  */
 function BoardPillsImpl({
   boards,
@@ -63,10 +64,27 @@ function BoardPillsImpl({
   const [dragBoard, setDragBoard] = useState<string | null>(null)
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
+  // The pill that opened the menu, so Escape can hand focus back to it.
+  const triggerRef = useRef<HTMLButtonElement | null>(null)
 
   const menuBoard = menuBoardId ? (boards.find((b) => b.id === menuBoardId) ?? null) : null
 
-  // Dismiss the context menu on outside click or Escape.
+  const openMenu = (board: Board, x: number, y: number, trigger: HTMLButtonElement): void => {
+    triggerRef.current = trigger
+    setMenuPos({
+      x: Math.min(x, window.innerWidth - MENU_WIDTH - 8),
+      y: Math.min(y, window.innerHeight - 96),
+    })
+    onMenuBoard(board.id)
+  }
+
+  // Focus the first menu item when the menu opens, so keyboard users land in it.
+  useEffect(() => {
+    if (menuBoard && menuPos) menuRef.current?.querySelector('button')?.focus()
+  }, [menuBoard, menuPos])
+
+  // Dismiss the context menu on outside click or Escape (Escape returns focus
+  // to the pill that opened it; an outside click keeps the click's own target).
   useEffect(() => {
     if (!menuBoard) return
     const onDown = (e: MouseEvent): void => {
@@ -76,6 +94,7 @@ function BoardPillsImpl({
       if (e.key === 'Escape') {
         e.stopPropagation()
         onMenuBoard(null)
+        triggerRef.current?.focus()
       }
     }
     document.addEventListener('mousedown', onDown)
@@ -97,10 +116,9 @@ function BoardPillsImpl({
   }
 
   return (
-    <div className={styles.strip} role="tablist" aria-label="Boards">
+    <div className={styles.strip} role="group" aria-label="Boards">
       <button
-        role="tab"
-        aria-selected={activeBoardId === null}
+        aria-pressed={activeBoardId === null}
         className={`${styles.pill} ${activeBoardId === null ? styles.active : ''}`}
         onClick={() => onBoard(null)}
       >
@@ -113,8 +131,7 @@ function BoardPillsImpl({
         return (
           <button
             key={b.id}
-            role="tab"
-            aria-selected={activeBoardId === b.id}
+            aria-pressed={activeBoardId === b.id}
             className={`${styles.pill} ${activeBoardId === b.id ? styles.active : ''} ${
               dropBoard === b.id ? styles.dropTarget : ''
             }`}
@@ -123,11 +140,16 @@ function BoardPillsImpl({
             onContextMenu={(e) => {
               if (isFav) return
               e.preventDefault()
-              setMenuPos({
-                x: Math.min(e.clientX, window.innerWidth - MENU_WIDTH - 8),
-                y: Math.min(e.clientY, window.innerHeight - 96),
-              })
-              onMenuBoard(b.id)
+              openMenu(b, e.clientX, e.clientY, e.currentTarget)
+            }}
+            onKeyDown={(e) => {
+              // Keyboard path to the same menu: Shift+F10 or the ContextMenu key.
+              if (isFav) return
+              if (e.key === 'ContextMenu' || (e.shiftKey && e.key === 'F10')) {
+                e.preventDefault()
+                const r = e.currentTarget.getBoundingClientRect()
+                openMenu(b, r.left, r.bottom + 4, e.currentTarget)
+              }
             }}
             onDragStart={(e) => {
               e.dataTransfer.setData(BOARD_MIME, b.id)

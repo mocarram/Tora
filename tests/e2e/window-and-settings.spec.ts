@@ -12,17 +12,20 @@ test.afterAll(async () => {
 })
 
 test('Panel/Window mode toggle switches mode', async () => {
-  await h.page.getByRole('tab', { name: 'Window' }).click()
+  await h.page.getByRole('button', { name: 'Window', exact: true }).click()
   await expect.poll(() => getSetting(h.page, 'windowMode')).toBe('window')
-  await expect(h.page.getByRole('tab', { name: 'Window' })).toHaveAttribute('aria-selected', 'true')
+  await expect(h.page.getByRole('button', { name: 'Window', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
 
-  await h.page.getByRole('tab', { name: 'Panel' }).click()
+  await h.page.getByRole('button', { name: 'Panel', exact: true }).click()
   await expect.poll(() => getSetting(h.page, 'windowMode')).toBe('panel')
 })
 
 test('window mode fills the grid width with no large right gap', async () => {
   for (let i = 0; i < 8; i++) await seedClip(h, `grid fill ${i} ${Date.now()}`)
-  await h.page.getByRole('tab', { name: 'Window' }).click()
+  await h.page.getByRole('button', { name: 'Window', exact: true }).click()
   await expect.poll(() => getSetting(h.page, 'windowMode')).toBe('window')
 
   const listbox = deck(h.page)
@@ -47,7 +50,7 @@ test('window mode fills the grid width with no large right gap', async () => {
     )
     .toBeLessThan(60)
 
-  await h.page.getByRole('tab', { name: 'Panel' }).click()
+  await h.page.getByRole('button', { name: 'Panel', exact: true }).click()
 })
 
 test('settings opens, exposes every section, and closes', async () => {

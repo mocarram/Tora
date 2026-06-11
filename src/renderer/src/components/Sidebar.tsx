@@ -85,6 +85,8 @@ function SidebarImpl({
                 .join(' ')}
               role="status"
               aria-label={SYNC_TITLES[syncState]}
+              // Focusable so keyboard users can reach the tooltip detail.
+              tabIndex={0}
             >
               <Icon
                 name={syncState === 'syncing' ? 'sync' : syncState === 'error' ? 'close' : 'check'}

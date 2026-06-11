@@ -324,18 +324,16 @@ export function App(): React.JSX.Element {
           <button className={styles.iconBtn} aria-label="Settings" onClick={openSettings}>
             <Icon name="settings" size={15} />
           </button>
-          <div className={styles.modeToggle} role="tablist" aria-label="Window mode">
+          <div className={styles.modeToggle} role="group" aria-label="Window mode">
             <button
-              role="tab"
-              aria-selected={store.settings?.windowMode === 'panel'}
+              aria-pressed={store.settings?.windowMode === 'panel'}
               className={`${styles.modeBtn} ${store.settings?.windowMode === 'panel' ? styles.on : ''}`}
               onClick={() => void window.tora.setWindowMode('panel')}
             >
               Panel
             </button>
             <button
-              role="tab"
-              aria-selected={store.settings?.windowMode === 'window'}
+              aria-pressed={store.settings?.windowMode === 'window'}
               className={`${styles.modeBtn} ${store.settings?.windowMode === 'window' ? styles.on : ''}`}
               onClick={() => void window.tora.setWindowMode('window')}
             >
