@@ -7,6 +7,10 @@ import { launchApp, closeApp, seedClip, cardWith, itemCount } from './helpers'
 /** Stability: no renderer errors across a real session, and data survives relaunch. */
 
 test('a representative session logs no renderer errors', async () => {
+  // Launch + capture polls + a long interaction chain: fine in isolation but
+  // tight against the default 30s under full-suite load (same allowance as
+  // the deck-behavior tests).
+  test.setTimeout(60_000)
   const h = await launchApp()
   try {
     await seedClip(h, 'stability note one')
@@ -34,6 +38,10 @@ test('a representative session logs no renderer errors', async () => {
 })
 
 test('quit and relaunch preserves history', async () => {
+  // Two full app launches: comfortably fast in isolation (~8s) but tight
+  // against the default 30s when the whole suite is loading the machine (same
+  // allowance as the deck-behavior tests).
+  test.setTimeout(60_000)
   const userData = mkdtempSync(join(tmpdir(), 'tora-e2e-persist-'))
   const first = await launchApp({ userData })
   await seedClip(first, 'persist me across relaunch')

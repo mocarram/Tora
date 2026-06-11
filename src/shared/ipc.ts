@@ -35,6 +35,8 @@ export interface AppSettings {
   syncProvider: 'local' | 'icloud' | 'cloudkit'
   reduceMotion: boolean
   windowMode: 'panel' | 'window'
+  /** Sidebar collapsed to an icon-only rail (it never fully hides). */
+  sidebarCollapsed: boolean
 }
 
 export interface StorageStats {

@@ -23,3 +23,20 @@
   /* Never intercept the pointer, so moving onto it cannot cause flicker. */
   pointer-events: none;
 }
+
+/* Opens below the trigger (for triggers near the window's top edge). */
+.below {
+  transform: translate(-50%, 8px);
+}
+
+/* Two-line tooltip: the label stays bold, the detail wraps underneath. */
+.rich {
+  white-space: normal;
+  max-width: 260px;
+}
+.detail {
+  margin-top: 3px;
+  font-weight: var(--weight-regular);
+  color: var(--color-text-muted);
+  line-height: var(--leading-snug);
+}

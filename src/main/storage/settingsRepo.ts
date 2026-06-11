@@ -28,6 +28,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   syncProvider: 'local',
   reduceMotion: false,
   windowMode: 'panel',
+  sidebarCollapsed: false,
 }
 
 const KEY = 'app'

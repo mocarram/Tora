@@ -2,19 +2,26 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-7);
-  width: 212px;
+  width: 196px;
   flex-shrink: 0;
   height: 100%;
   padding: var(--space-6) var(--space-4);
-  background: var(--color-rail);
-  backdrop-filter: blur(var(--glass-blur)) saturate(140%);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  /* One unified app surface: the rail shares the shell background and keeps
+     only a hairline edge toward the content. */
   border-right: 1px solid var(--color-border);
+  transition: width var(--dur-base) var(--ease-standard);
   /* Leaves room for the macOS traffic lights in frameless mode. */
   -webkit-app-region: drag;
 }
 .rail button {
   -webkit-app-region: no-drag;
+}
+/* Collapsed: an icon-only rail. Wide enough that the traffic lights (ending
+   at x = 62, see windowManager's trafficLightPosition) keep comfortable space
+   from the rail's right border. Labels and the wordmark hide; rows centre
+   their icons. */
+.rail.collapsed {
+  width: 84px;
 }
 
 .brand {
@@ -22,14 +29,22 @@
   align-items: center;
   gap: var(--space-4);
   padding: var(--space-2) var(--space-3) 0;
-  margin-top: 18px;
+  /* Clears the traffic lights, which sit at y 18-30 (see windowManager's
+     trafficLightPosition) over the rail's top-left corner. */
+  margin-top: 26px;
   flex-shrink: 0;
+  min-height: 24px;
+}
+.collapsed .brand {
+  justify-content: center;
+  padding: var(--space-2) 0 0;
 }
 .mark {
   display: inline-flex;
   flex-direction: column;
   gap: 3px;
   width: 20px;
+  flex-shrink: 0;
 }
 .stripe {
   height: 3px;
@@ -50,20 +65,46 @@
   font-weight: var(--weight-bold);
   color: var(--color-text);
 }
+.collapsed .wordmark {
+  display: none;
+}
 
-/* Sync status indicator beside the wordmark. Faint by default (idle / up to
-   date), accent + spinning while syncing, danger on error. */
+/* Sync status badge beside the wordmark: a small tinted box - green tick when
+   up to date, accent spinner while syncing, red cross on error. Hidden when
+   sync is off (not rendered) and in the collapsed rail (no room). */
+/* The tooltip wrapper is the flex item; it carries the push-right margin.
+   no-drag is load-bearing: the rail is a window-drag region, and macOS
+   swallows mouse events over drag areas - without this the badge can never
+   see hover and the tooltip cannot open. */
+.syncSlot {
+  margin-left: auto;
+  -webkit-app-region: no-drag;
+}
+.collapsed .syncSlot {
+  display: none;
+}
 .sync {
   display: inline-flex;
   align-items: center;
-  margin-left: auto;
-  color: var(--color-text-faint);
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-xs);
+  flex-shrink: 0;
+}
+.syncOk {
+  background: color-mix(in srgb, var(--color-positive) 16%, transparent);
+  color: var(--color-positive);
 }
 .syncActive {
+  background: var(--color-accent-quiet);
   color: var(--color-accent);
+}
+.syncActive svg {
   animation: sync-spin 1.1s linear infinite;
 }
 .syncError {
+  background: color-mix(in srgb, var(--color-danger) 16%, transparent);
   color: var(--color-danger);
 }
 @keyframes sync-spin {
@@ -72,36 +113,24 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .syncActive {
+  .syncActive svg {
     animation: none;
   }
 }
 
-/* The scrollable middle region: brand stays pinned at the top and Settings at
-   the bottom, while Library + Boards scroll when there are more boards than fit.
-   min-height: 0 lets this flex child shrink below its content so it can scroll
-   instead of overflowing the rail. */
+/* The scrollable middle region: brand pinned at the top, the collapse toggle
+   at the bottom. min-height: 0 lets this flex child shrink below its content
+   so it can scroll instead of overflowing the rail. */
 .scroll {
   display: flex;
   flex-direction: column;
-  gap: var(--space-7);
+  gap: var(--space-1);
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
 }
 
-.group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-.groupHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-right: var(--space-2);
-}
 .groupLabel {
   font-size: var(--text-2xs);
   font-weight: var(--weight-semibold);
@@ -109,6 +138,12 @@
   text-transform: uppercase;
   color: var(--color-text-faint);
   padding: var(--space-3) var(--space-3) var(--space-2);
+  white-space: nowrap;
+}
+/* No box at all when collapsed: keeping it (visibility: hidden) doubles the
+   gap between the brand and the first icon (rail gap + dead label height). */
+.collapsed .groupLabel {
+  display: none;
 }
 
 .row {
@@ -144,119 +179,22 @@
 .row.active:focus-visible {
   outline: none;
 }
-.boardName {
+.rowLabel {
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
-
-/* Wraps the board's select button plus its hover-revealed rename/delete actions
-   so the actions can overlay the row's right edge without nesting buttons. */
-.boardRow {
-  position: relative;
-}
-.boardRow .row {
-  width: 100%;
-}
-.boardRow:hover .row {
-  background: var(--color-card);
-  color: var(--color-text);
-}
-
-.boardActions {
-  position: absolute;
-  right: var(--space-2);
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  padding-left: var(--space-6);
-  background: linear-gradient(to right, transparent, var(--color-card) var(--space-6));
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity var(--dur-fast) var(--ease-standard);
-}
-.boardRow:hover .boardActions,
-.boardRow:focus-within .boardActions {
-  /* :focus-within keeps the hover-revealed actions reachable for keyboard
-     users - Tab lands on an invisible button otherwise. */
-  opacity: 1;
-  pointer-events: auto;
-}
-.boardActionBtn {
-  display: inline-flex;
-  align-items: center;
+.collapsed .row {
   justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: var(--radius-sm);
-  color: var(--color-text-faint);
+  padding: 0;
+  gap: 0;
 }
-.boardActionBtn:hover {
-  background: var(--color-card-active);
-  color: var(--color-text);
+.collapsed .rowLabel {
+  display: none;
 }
 
-.renameRow {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  height: 32px;
-  padding: 0 var(--space-3);
-  border-radius: var(--radius-sm);
-  color: var(--color-text);
-}
-.renameInput {
-  flex: 1;
-  min-width: 0;
-  height: 24px;
-  padding: 0 var(--space-2);
-  background: var(--color-input);
-  border: 1px solid var(--color-accent);
-  border-radius: var(--radius-sm);
-  color: var(--color-text);
-  font-size: var(--text-md);
-  font-weight: var(--weight-medium);
-}
-.renameInput:focus {
-  outline: none;
-  border-color: var(--color-focus-native);
-  box-shadow: 0 0 0 2px var(--color-focus-glow);
-}
-
-.dropTarget {
-  background: var(--color-accent-quiet);
-  box-shadow: inset 0 0 0 1px var(--color-accent);
-}
-.reorderHint {
-  position: absolute;
-  right: var(--space-3);
-  top: 50%;
-  transform: translateY(-50%);
-  width: 6px;
-  height: 6px;
-  border-radius: var(--radius-round);
-  background: var(--color-border-strong);
-}
-
-.iconBtn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: var(--radius-sm);
-  color: var(--color-text-faint);
-}
-.iconBtn:hover {
-  background: var(--color-card);
-  color: var(--color-text);
-}
-
-/* Pinned at the bottom of the rail, outside the scroll region. The scroll area
-   (flex: 1) fills the space above, so no margin-top auto is needed and Settings
-   stays visible regardless of how many boards there are. */
-.settings {
+/* Pinned at the bottom of the rail, outside the scroll region. */
+.railToggle {
   flex-shrink: 0;
+  color: var(--color-text-faint);
 }

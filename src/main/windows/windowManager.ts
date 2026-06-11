@@ -10,10 +10,10 @@ const isDev = !app.isPackaged
 // Panel geometry. The deck shows one card; the panel is sized to fit that card
 // plus the surrounding chrome, and cannot shrink below that (so it can never
 // collapse into a thin line). Keep in sync with the renderer: deck card = 216,
-// topbar 44 + 1 border, statusbar 30 + 1 border, and the deck's vertical
-// padding (--space-7 = 20) top and bottom.
+// borderless topbar 48, statusbar 30, and the deck's vertical padding
+// (--space-5 = 12) top and bottom.
 const PANEL_CARD = 216
-const PANEL_CHROME = 45 + 31 + 40
+const PANEL_CHROME = 48 + 30 + 24
 const PANEL_HEIGHT = PANEL_CARD + PANEL_CHROME
 const PANEL_MIN_WIDTH = 480
 const PANEL_MARGIN = 12
@@ -23,7 +23,7 @@ const WINDOW_MIN_HEIGHT = 420
 // Grid layout constants mirrored from VirtualDeck.tsx so window mode opens at a
 // width that fits a whole number of columns - the content fills edge to edge
 // instead of leaving a ragged gap on the right. Keep in sync with the renderer.
-const SIDEBAR_W = 212 // .rail width in Sidebar.module.css
+const SIDEBAR_W = 196 // expanded .rail width in Sidebar.module.css
 const GRID_PAD = 28 // GRID_PAD
 const GRID_GAP = 16 // GAP
 const GRID_COL_W = 280 // comfortable column width (>= GRID_MIN_COL of 250)
@@ -64,7 +64,11 @@ export class WindowManager {
       resizable: true,
       fullscreenable: false,
       skipTaskbar: true,
-      titleBarStyle: 'hiddenInset',
+      titleBarStyle: 'hidden',
+      // Centre the traffic lights on the topbar row (height 48 -> centre 24,
+      // buttons are 12px tall) so they align with the board pills instead of
+      // floating loose above the collapsed rail's icons.
+      trafficLightPosition: { x: 10, y: 18 },
       // macOS frosted glass: transparent window + vibrancy material. (Without
       // transparent:true the alpha in backgroundColor is ignored and the window
       // paints opaque black, hiding the vibrancy.)

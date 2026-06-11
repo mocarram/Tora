@@ -1,18 +1,25 @@
-import { memo, useState } from 'react'
-import type { Board, QuickFilter } from '@core/model'
-import { FAVOURITES_BOARD_ID } from '@core/model'
+import { memo } from 'react'
+import type { QuickFilter } from '@core/model'
 import type { SyncState } from '@shared/ipc'
 import { Icon, type IconName } from './Icon'
+import { Tooltip } from './Tooltip'
 import styles from './Sidebar.module.css'
-
-const ITEM_MIME = 'application/x-tora-item'
-const BOARD_MIME = 'application/x-tora-board'
 
 const SYNC_TITLES: Record<SyncState, string> = {
   idle: 'Sync up to date',
   syncing: 'Syncing',
   error: 'Sync error',
   disabled: 'Sync off',
+}
+
+/* What each state actually means, shown in the badge tooltip. Deliberately
+   blunt: ONLY synced copies are encrypted (the local store is not), and the
+   tick only promises a healthy handoff - macOS owns the actual upload. */
+const SYNC_DETAILS: Record<SyncState, string> = {
+  idle: 'Only synced copies are encrypted. Uploads when online.',
+  syncing: 'Sending encrypted copies to iCloud Drive.',
+  error: 'Can’t access the iCloud Drive sync folder.',
+  disabled: '',
 }
 
 const FILTERS: { id: QuickFilter; label: string; icon: IconName }[] = [
@@ -24,57 +31,33 @@ const FILTERS: { id: QuickFilter; label: string; icon: IconName }[] = [
 ]
 
 interface SidebarProps {
-  boards: Board[]
   activeFilter: QuickFilter
-  activeBoardId: string | null
-  /** Current sync status; drives the wordmark sync indicator. */
+  /** Current sync status; drives the wordmark sync badge. */
   syncState: SyncState | null
+  /** Last sync error message, shown in the badge tooltip when state is error. */
+  syncError: string | null
+  /** Icon-only rail when true; the sidebar never fully hides. */
+  collapsed: boolean
   onFilter: (filter: QuickFilter) => void
-  onBoard: (boardId: string | null) => void
-  onNewBoard: () => void
-  onOpenSettings: () => void
-  onAddToBoard: (boardId: string, itemId: string) => void
-  onReorderBoards: (orderedIds: string[]) => void
-  onRenameBoard: (boardId: string, name: string) => void
-  onDeleteBoard: (board: Board) => void
+  onToggleCollapse: () => void
 }
 
+/**
+ * The category rail: brand + Library type filters. Boards live in the topbar
+ * pill strip and Settings next to the mode switcher, so the rail stays a thin,
+ * collapsible list of content categories (filters compose with the active
+ * board: they narrow whatever collection is selected).
+ */
 function SidebarImpl({
-  boards,
   activeFilter,
-  activeBoardId,
   syncState,
+  syncError,
+  collapsed,
   onFilter,
-  onBoard,
-  onNewBoard,
-  onOpenSettings,
-  onAddToBoard,
-  onReorderBoards,
-  onRenameBoard,
-  onDeleteBoard,
+  onToggleCollapse,
 }: SidebarProps): React.JSX.Element {
-  const [dropBoard, setDropBoard] = useState<string | null>(null)
-  const [dragBoard, setDragBoard] = useState<string | null>(null)
-  const [renamingId, setRenamingId] = useState<string | null>(null)
-
-  const commitRename = (board: Board, value: string): void => {
-    const next = value.trim()
-    if (next && next !== board.name) onRenameBoard(board.id, next)
-    setRenamingId(null)
-  }
-
-  const reorder = (fromId: string, toId: string): void => {
-    if (fromId === toId) return
-    const ids = boards.map((b) => b.id)
-    const from = ids.indexOf(fromId)
-    const to = ids.indexOf(toId)
-    if (from < 0 || to < 0) return
-    ids.splice(to, 0, ids.splice(from, 1)[0] as string)
-    onReorderBoards(ids)
-  }
-
   return (
-    <nav className={styles.rail} aria-label="Filters and boards">
+    <nav className={`${styles.rail} ${collapsed ? styles.collapsed : ''}`} aria-label="Library">
       <div className={styles.brand}>
         <span className={styles.mark} aria-hidden="true">
           <span className={styles.stripe} />
@@ -83,154 +66,64 @@ function SidebarImpl({
         </span>
         <span className={`${styles.wordmark} display`}>Tora</span>
         {syncState && syncState !== 'disabled' ? (
-          <span
-            className={[
-              styles.sync,
-              syncState === 'syncing' ? styles.syncActive : '',
-              syncState === 'error' ? styles.syncError : '',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-            role="status"
-            aria-label={SYNC_TITLES[syncState]}
-            title={SYNC_TITLES[syncState]}
+          <Tooltip
+            label={SYNC_TITLES[syncState]}
+            detail={
+              syncState === 'error' ? (syncError ?? SYNC_DETAILS.error) : SYNC_DETAILS[syncState]
+            }
+            side="bottom"
+            className={styles.syncSlot}
           >
-            <Icon name="sync" size={13} />
-          </span>
+            <span
+              className={[
+                styles.sync,
+                syncState === 'idle' ? styles.syncOk : '',
+                syncState === 'syncing' ? styles.syncActive : '',
+                syncState === 'error' ? styles.syncError : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              role="status"
+              aria-label={SYNC_TITLES[syncState]}
+            >
+              <Icon
+                name={syncState === 'syncing' ? 'sync' : syncState === 'error' ? 'close' : 'check'}
+                size={11}
+              />
+            </span>
+          </Tooltip>
         ) : null}
       </div>
 
       <div className={styles.scroll}>
-        <div className={styles.group}>
-          <span className={styles.groupLabel}>Library</span>
-          {FILTERS.map((f) => (
-            <button
-              key={f.id}
-              className={`${styles.row} ${
-                activeBoardId === null && activeFilter === f.id ? styles.active : ''
-              }`}
-              onClick={() => {
-                onBoard(null)
-                onFilter(f.id)
-              }}
-            >
-              <Icon name={f.icon} size={15} />
-              <span>{f.label}</span>
-            </button>
-          ))}
-        </div>
-
-        <div className={styles.group}>
-          <div className={styles.groupHead}>
-            <span className={styles.groupLabel}>Boards</span>
-            <button className={styles.iconBtn} aria-label="New board" onClick={onNewBoard}>
-              <Icon name="plus" size={14} />
-            </button>
-          </div>
-          {boards.map((b) => {
-            const isFav = b.id === FAVOURITES_BOARD_ID
-            if (renamingId === b.id) {
-              return (
-                <div key={b.id} className={styles.boardRow}>
-                  <span className={styles.renameRow}>
-                    <Icon name="layers" size={15} />
-                    <input
-                      className={styles.renameInput}
-                      defaultValue={b.name}
-                      autoFocus
-                      spellCheck={false}
-                      aria-label={`Rename ${b.name}`}
-                      onKeyDown={(e) => {
-                        e.stopPropagation()
-                        if (e.key === 'Enter') commitRename(b, e.currentTarget.value)
-                        if (e.key === 'Escape') setRenamingId(null)
-                      }}
-                      onBlur={(e) => commitRename(b, e.currentTarget.value)}
-                    />
-                  </span>
-                </div>
-              )
-            }
-            return (
-              <div key={b.id} className={styles.boardRow}>
-                <button
-                  className={`${styles.row} ${activeBoardId === b.id ? styles.active : ''} ${
-                    dropBoard === b.id ? styles.dropTarget : ''
-                  }`}
-                  draggable={!isFav}
-                  onClick={() => onBoard(b.id)}
-                  onDragStart={(e) => {
-                    e.dataTransfer.setData(BOARD_MIME, b.id)
-                    e.dataTransfer.effectAllowed = 'move'
-                    setDragBoard(b.id)
-                  }}
-                  onDragEnd={() => setDragBoard(null)}
-                  onDragOver={(e) => {
-                    if (
-                      e.dataTransfer.types.includes(ITEM_MIME) ||
-                      e.dataTransfer.types.includes(BOARD_MIME)
-                    ) {
-                      e.preventDefault()
-                      setDropBoard(b.id)
-                    }
-                  }}
-                  onDragLeave={() => setDropBoard((cur) => (cur === b.id ? null : cur))}
-                  onDrop={(e) => {
-                    e.preventDefault()
-                    setDropBoard(null)
-                    const itemId = e.dataTransfer.getData(ITEM_MIME)
-                    if (itemId) {
-                      onAddToBoard(b.id, itemId)
-                      return
-                    }
-                    const boardId = e.dataTransfer.getData(BOARD_MIME)
-                    if (boardId) reorder(boardId, b.id)
-                  }}
-                >
-                  <Icon name={isFav ? 'star' : 'layers'} size={15} />
-                  <span className={styles.boardName}>{b.name}</span>
-                </button>
-                {dragBoard && dragBoard !== b.id ? <span className={styles.reorderHint} /> : null}
-                {!isFav && !dragBoard ? (
-                  <span className={styles.boardActions}>
-                    <button
-                      className={styles.boardActionBtn}
-                      aria-label={`Rename ${b.name}`}
-                      title="Rename"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setRenamingId(b.id)
-                      }}
-                    >
-                      <Icon name="edit" size={13} />
-                    </button>
-                    <button
-                      className={styles.boardActionBtn}
-                      aria-label={`Delete ${b.name}`}
-                      title="Delete"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onDeleteBoard(b)
-                      }}
-                    >
-                      <Icon name="trash" size={13} />
-                    </button>
-                  </span>
-                ) : null}
-              </div>
-            )
-          })}
-        </div>
+        <span className={styles.groupLabel}>Library</span>
+        {FILTERS.map((f) => (
+          <button
+            key={f.id}
+            className={`${styles.row} ${activeFilter === f.id ? styles.active : ''}`}
+            title={collapsed ? f.label : undefined}
+            onClick={() => onFilter(f.id)}
+          >
+            <Icon name={f.icon} size={15} />
+            <span className={styles.rowLabel}>{f.label}</span>
+          </button>
+        ))}
       </div>
 
-      <button className={`${styles.row} ${styles.settings}`} onClick={onOpenSettings}>
-        <Icon name="settings" size={15} />
-        <span>Settings</span>
+      <button
+        className={`${styles.row} ${styles.railToggle}`}
+        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        aria-expanded={!collapsed}
+        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        onClick={onToggleCollapse}
+      >
+        <Icon name="sidebar" size={15} />
+        <span className={styles.rowLabel}>Collapse</span>
       </button>
     </nav>
   )
 }
 
 // Memoized: App re-renders on every store change (captures, stats ticks), but
-// the rail only depends on boards/filter/board/sync + stable handlers.
+// the rail only depends on filter/sync/collapsed + stable handlers.
 export const Sidebar = memo(SidebarImpl)

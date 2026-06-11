@@ -66,13 +66,22 @@ test('a tall panel reflows the deck into a multi-row grid', async () => {
     for (let i = 0; i < 6; i++) await seedClip(h, `grid reflow ${i} ${Date.now()}`)
 
     // The panel defaults to a short single-row strip; cards share one row.
+    // Rows are counted by clustering card tops with a generous tolerance: the
+    // hover lift (translateY(-2px), applied when the user's idle cursor happens
+    // to rest on a card) must not split a row, while real grid rows sit a full
+    // GRID_ROW_H (204px) apart.
     const rowCount = async (): Promise<number> => {
-      const tops = new Set<number>()
+      const ys: number[] = []
       for (const o of (await deck(h.page).getByRole('option').all()).slice(0, 8)) {
         const b = await o.boundingBox()
-        if (b) tops.add(Math.round(b.y / 12))
+        if (b) ys.push(b.y)
       }
-      return tops.size
+      ys.sort((a, b) => a - b)
+      let rows = ys.length > 0 ? 1 : 0
+      for (let i = 1; i < ys.length; i++) {
+        if ((ys[i] as number) - (ys[i - 1] as number) > 50) rows++
+      }
+      return rows
     }
     await expect.poll(rowCount, { timeout: 6000 }).toBe(1)
 

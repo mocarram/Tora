@@ -30,6 +30,7 @@ const BOOLEAN_KEYS = [
   'onboardingComplete',
   'captureEnabled',
   'reduceMotion',
+  'sidebarCollapsed',
 ] as const
 
 function isEnum(set: Set<string>, v: unknown): boolean {

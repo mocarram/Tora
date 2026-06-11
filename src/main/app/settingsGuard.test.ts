@@ -18,6 +18,7 @@ describe('sanitizeSettingsPatch', () => {
       captureEnabled: false,
       syncProvider: 'icloud',
       windowMode: 'window',
+      sidebarCollapsed: true,
     }
     expect(sanitizeSettingsPatch(patch)).toEqual(patch)
   })

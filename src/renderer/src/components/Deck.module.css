@@ -4,7 +4,10 @@
   overflow-x: auto;
   overflow-y: hidden;
   outline: none;
-  padding: var(--space-7) var(--space-8);
+  /* Tight, symmetric vertical breathing room: the topbar above and statusbar
+     below already space the cards from the panel edges (one shared surface).
+     Mirrored in windowManager's PANEL_CHROME - keep the two in sync. */
+  padding: var(--space-5) var(--space-8);
   scroll-padding: var(--space-8);
 }
 

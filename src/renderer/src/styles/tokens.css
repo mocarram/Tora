@@ -45,7 +45,7 @@
 
   /* ---- Primitive: per-type card-header tints ----
    * One muted jewel tone per clip type so a card is identifiable at a glance
-   * (like Paste's coloured headers). Deliberately desaturated and shared across
+   * (coloured headers). Deliberately desaturated and shared across
    * light and dark, since the header always carries light text over them. */
   --type-text: #6f7280;
   --type-richText: #a9743a;

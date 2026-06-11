@@ -3,6 +3,7 @@ import type { PasteFormat } from '@shared/ipc'
 import type { Board, QuickFilter } from '@core/model'
 import { formatBytes } from '@core/format'
 import { Sidebar } from './components/Sidebar'
+import { BoardPills } from './components/BoardPills'
 import { ConfirmDialog } from './components/ConfirmDialog'
 import { SearchBar } from './components/SearchBar'
 import { VirtualDeck } from './components/VirtualDeck'
@@ -40,6 +41,7 @@ export function App(): React.JSX.Element {
   const settingsOpen = store.settingsOpen
   const setSettingsOpen = store.setSettingsOpen
   const [newBoardOpen, setNewBoardOpen] = useState(false)
+  const [renameBoardTarget, setRenameBoardTarget] = useState<Board | null>(null)
   const [deleteBoardTarget, setDeleteBoardTarget] = useState<Board | null>(null)
   const [queueFormat, setQueueFormat] = useState<PasteFormat>('keep')
 
@@ -57,10 +59,12 @@ export function App(): React.JSX.Element {
     !!store.expandedId ||
     !!store.editingId ||
     newBoardOpen ||
+    !!renameBoardTarget ||
     !!deleteBoardTarget ||
     store.locked ||
     onboardingOpen ||
-    !!store.openMenuId
+    !!store.openMenuId ||
+    !!store.boardMenuId
   useEffect(() => {
     void window.tora.setHideSuppressed(modalOpen)
   }, [modalOpen])
@@ -134,6 +138,15 @@ export function App(): React.JSX.Element {
   )
   const openNewBoard = useCallback(() => setNewBoardOpen(true), [])
   const openSettings = useCallback(() => setSettingsOpen(true), [setSettingsOpen])
+  const toggleSidebar = useCallback(() => {
+    const collapsed = useStore.getState().settings?.sidebarCollapsed ?? false
+    void window.tora.updateSettings({ sidebarCollapsed: !collapsed })
+  }, [])
+  const setBoardMenu = useCallback(
+    (id: string | null) => useStore.getState().setBoardMenuId(id),
+    [],
+  )
+  const openRenameBoard = useCallback((board: Board) => setRenameBoardTarget(board), [])
   const addToBoard = useCallback(
     (boardId: string, itemId: string) => void window.tora.addItemToBoard({ boardId, itemId }),
     [],
@@ -279,31 +292,38 @@ export function App(): React.JSX.Element {
   return (
     <div className={styles.shell}>
       <Sidebar
-        boards={store.boards}
         activeFilter={store.filter}
-        activeBoardId={store.boardId}
         syncState={store.syncStatus?.state ?? null}
+        syncError={store.syncStatus?.lastError ?? null}
+        collapsed={store.settings?.sidebarCollapsed ?? false}
         onFilter={setFilter}
-        onBoard={setBoard}
-        onNewBoard={openNewBoard}
-        onOpenSettings={openSettings}
-        onAddToBoard={addToBoard}
-        onReorderBoards={reorderBoards}
-        onRenameBoard={renameBoard}
-        onDeleteBoard={deleteBoard}
+        onToggleCollapse={toggleSidebar}
       />
 
       <div className={styles.main}>
         <div className={styles.topbar}>
-          <div className={styles.search}>
-            <SearchBar
-              ref={searchRef}
-              value={store.query}
-              onChange={(query) => store.setView({ query })}
-              resultCount={store.total}
-            />
-          </div>
+          <SearchBar
+            ref={searchRef}
+            value={store.query}
+            onChange={(query) => store.setView({ query })}
+            resultCount={store.total}
+          />
+          <BoardPills
+            boards={store.boards}
+            activeBoardId={store.boardId}
+            menuBoardId={store.boardMenuId}
+            onMenuBoard={setBoardMenu}
+            onBoard={setBoard}
+            onNewBoard={openNewBoard}
+            onAddToBoard={addToBoard}
+            onReorderBoards={reorderBoards}
+            onRenameBoard={openRenameBoard}
+            onDeleteBoard={deleteBoard}
+          />
           <div className={styles.spacer} />
+          <button className={styles.iconBtn} aria-label="Settings" onClick={openSettings}>
+            <Icon name="settings" size={15} />
+          </button>
           <div className={styles.modeToggle} role="tablist" aria-label="Window mode">
             <button
               role="tab"
@@ -441,6 +461,21 @@ export function App(): React.JSX.Element {
         onConfirm={(name) => {
           void window.tora.createBoard({ name })
           setNewBoardOpen(false)
+        }}
+      />
+
+      <TextPrompt
+        key={renameBoardTarget?.id ?? 'rename-board'}
+        open={!!renameBoardTarget}
+        title="Rename board"
+        placeholder="Board name"
+        initialValue={renameBoardTarget?.name ?? ''}
+        confirmLabel="Rename"
+        reducedMotion={reducedMotion}
+        onCancel={() => setRenameBoardTarget(null)}
+        onConfirm={(name) => {
+          if (renameBoardTarget) renameBoard(renameBoardTarget.id, name)
+          setRenameBoardTarget(null)
         }}
       />
 

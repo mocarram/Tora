@@ -29,6 +29,8 @@ interface StoreState extends ViewState {
   updateStatus: UpdateStatus | null
   /** Id of the card whose save-to-board menu is open (one at a time), or null. */
   openMenuId: string | null
+  /** Id of the board whose pill context menu is open, or null. */
+  boardMenuId: string | null
   /** Bumped each time the panel is summoned, so the deck resets to the front. */
   openNonce: number
   /** Transient user-facing notice (e.g. a failed paste); cleared by the toast. */
@@ -39,6 +41,7 @@ interface StoreState extends ViewState {
   setSettingsOpen: (open: boolean) => void
   setUpdateStatus: (status: UpdateStatus) => void
   setOpenMenuId: (id: string | null) => void
+  setBoardMenuId: (id: string | null) => void
   init: () => Promise<void>
   reload: (opts?: { selectLatest?: boolean }) => Promise<void>
   /** On panel summon: refresh, select the newest (current clipboard) item, reset scroll. */
@@ -91,6 +94,7 @@ export const useStore = create<StoreState>((set, get) => ({
   settingsOpen: false,
   updateStatus: null,
   openMenuId: null,
+  boardMenuId: null,
   openNonce: 0,
   notice: null,
 
@@ -99,6 +103,7 @@ export const useStore = create<StoreState>((set, get) => ({
   setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
   setUpdateStatus: (updateStatus) => set({ updateStatus }),
   setOpenMenuId: (openMenuId) => set({ openMenuId }),
+  setBoardMenuId: (boardMenuId) => set({ boardMenuId }),
 
   init: async () => {
     const [settings, boards, stats, syncStatus, updateStatus] = await Promise.all([
