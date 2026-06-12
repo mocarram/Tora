@@ -44,16 +44,17 @@
   --signal-info: #5a8aa6;
 
   /* ---- Primitive: per-type card-header tints ----
-   * One muted jewel tone per clip type so a card is identifiable at a glance
-   * (coloured headers). Deliberately desaturated and shared across
-   * light and dark, since the header always carries light text over them. */
-  --type-text: #6f7280;
-  --type-richText: #a9743a;
-  --type-image: #c25a44;
-  --type-file: #5e8a5b;
-  --type-url: #4179a1;
-  --type-color: #8f6296;
-  --type-code: #3f827c;
+   * One bold, saturated tone per clip type so a card is identifiable at a
+   * glance (coloured headers). Vivid on purpose - the headers ARE the type
+   * signal - and shared across light and dark, since the header always
+   * carries light text over them. */
+  --type-text: #525b73;
+  --type-richText: #c0762a;
+  --type-image: #e0512f;
+  --type-file: #2f9e63;
+  --type-url: #2f6fd6;
+  --type-color: #a44fc4;
+  --type-code: #1d9e8f;
 
   /* ---- Type ---- */
   --font-display: 'Space Grotesk Variable', ui-sans-serif, system-ui, sans-serif;
