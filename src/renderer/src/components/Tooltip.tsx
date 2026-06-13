@@ -44,7 +44,12 @@ export function Tooltip({
       className={`${styles.wrap} ${className ?? ''}`}
       onMouseEnter={(e) => show(e.currentTarget)}
       onMouseLeave={() => setPos(null)}
-      onFocusCapture={(e) => show(e.currentTarget)}
+      // Only open on KEYBOARD focus (:focus-visible). Programmatic focus - e.g.
+      // the window restoring focus to this element on panel summon - must not
+      // pop the tooltip open and leave it stuck (no blur/mouseleave follows).
+      onFocusCapture={(e) => {
+        if (e.target.matches(':focus-visible')) show(e.currentTarget)
+      }}
       onBlurCapture={() => setPos(null)}
     >
       {children}
