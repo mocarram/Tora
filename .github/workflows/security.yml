@@ -14,7 +14,11 @@ permissions:
   contents: read
 
 jobs:
-  # Hard gate: fail the build on a known high/critical advisory in our deps.
+  # Hard gate: fail the build on a known high/critical advisory in a dependency
+  # that SHIPS to users (production deps). Build-time-only devDependencies
+  # (vite/esbuild/electron-vite and friends) never reach the packaged app, so a
+  # dev-server-only advisory there must not block a release - it is surfaced by
+  # the advisory step below instead. Scope the gate to what users actually run.
   audit:
     runs-on: ubuntu-latest
     steps:
@@ -24,8 +28,21 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm install -g npm@latest
-      - name: npm audit (fail on high or critical)
-        run: npm audit --audit-level=high
+      - name: npm audit production deps (fail on high or critical)
+        run: npm audit --omit=dev --audit-level=high
+      - name: npm audit full tree (advisory, includes dev tooling)
+        if: always()
+        run: |
+          {
+            echo '### npm audit - full tree (advisory)'
+            echo ''
+            echo 'Includes build-time devDependencies, which do not ship. Review'
+            echo 'but does not gate the build.'
+            echo ''
+            echo '```'
+            npm audit 2>&1 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
   # PR-only gate: block a pull request that introduces a vulnerable or
   # disallowed-license dependency. Needs the base ref, so it only runs on PRs.
