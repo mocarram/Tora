@@ -39,6 +39,7 @@ import { ClipboardWriter } from '../services/clipboardWriter'
 import { ElectronPasteboard } from '../services/pasteboard'
 import { RetentionService } from '../services/retention'
 import { Updater } from '../services/updater'
+import { checkLatestRelease } from '../services/releaseCheck'
 import { fetchLinkPreview } from '../services/linkPreview'
 import { pasteIntoFrontApp } from '../services/pasteInjector'
 import { getPermissions, requestAccessibility, biometricUnlock } from '../services/permissions'
@@ -761,6 +762,7 @@ export class Application {
       getUpdateStatus: () => this.updater.getStatus(),
       checkForUpdates: () => this.updater.check(),
       installUpdate: () => this.updater.install(),
+      checkLatestRelease: () => checkLatestRelease(app.getVersion()),
       getAppVersion: () => app.getVersion(),
     }
   }

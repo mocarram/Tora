@@ -157,6 +157,18 @@ export interface UpdateStatus {
 }
 
 /**
+ * Result of a manual "is a newer Tora out?" check (the Homebrew channel, where
+ * the app cannot self-update). `latest` is null when the version could not be
+ * determined (offline, rate-limited, or the tap repo is still private).
+ */
+export interface ReleaseCheck {
+  current: string
+  latest: string | null
+  isOutdated: boolean
+  releasesUrl: string
+}
+
+/**
  * The full bridge API. Implemented in main (handlers) and surfaced to the
  * renderer via preload's contextBridge as `window.tora`.
  */
@@ -216,6 +228,8 @@ export interface ToraApi {
   getUpdateStatus(): Promise<UpdateStatus>
   checkForUpdates(): Promise<void>
   installUpdate(): Promise<void>
+  /** Query the latest published release (Homebrew channel manual check). */
+  checkLatestRelease(): Promise<ReleaseCheck>
 
   /** The running app version (from package.json), for the About section. */
   getAppVersion(): Promise<string>
@@ -276,6 +290,7 @@ export const TORA_METHODS = [
   'getUpdateStatus',
   'checkForUpdates',
   'installUpdate',
+  'checkLatestRelease',
   'getAppVersion',
 ] as const satisfies readonly ToraMethod[]
 

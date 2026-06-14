@@ -325,3 +325,75 @@
   font-size: var(--text-sm);
   color: var(--color-text-faint);
 }
+
+/* "Check for updates" - the Homebrew channel manual check. */
+.updateBtn {
+  margin-top: var(--space-3);
+  height: 32px;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-sm);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-size: var(--text-md);
+  font-weight: var(--weight-medium);
+}
+.updateBtn:hover:not(:disabled) {
+  background: var(--color-card-hover);
+}
+.updateBtn:disabled {
+  opacity: 0.6;
+}
+
+.updateResult {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+.updateHeadline {
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+}
+.updateHint {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+.brewRow {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-3);
+}
+.brewCmd {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--color-input);
+  border: 1px solid var(--color-border);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+}
+.copyBtn {
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+.copyBtn:hover {
+  background: var(--color-card-hover);
+  color: var(--color-text);
+}
+.updateLink {
+  font-size: var(--text-sm);
+  color: var(--color-accent);
+  text-decoration: none;
+}
+.updateLink:hover {
+  text-decoration: underline;
+}

@@ -73,6 +73,26 @@ test('settings opens, exposes every section, and closes', async () => {
   await expect(dialog).toBeHidden()
 })
 
+test('the About section can check for updates', async () => {
+  await h.page.getByRole('button', { name: 'Settings' }).first().click()
+  const dialog = h.page.getByRole('dialog', { name: 'Settings' })
+  await dialog.getByRole('button', { name: 'About' }).click()
+
+  // Outcome-agnostic: the check hits the network (private repo -> degrades to
+  // the brew-command fallback, public repo -> a version verdict). Either way a
+  // status region must appear after clicking.
+  await dialog.getByRole('button', { name: 'Check for updates' }).click()
+  await expect(dialog.getByRole('status')).toBeVisible({ timeout: 10000 })
+
+  // Reopening starts clean (no stale result carried over).
+  await h.page.keyboard.press('Escape')
+  await expect(dialog).toBeHidden()
+  await h.page.getByRole('button', { name: 'Settings' }).first().click()
+  await dialog.getByRole('button', { name: 'About' }).click()
+  await expect(dialog.getByRole('status')).toHaveCount(0)
+  await h.page.keyboard.press('Escape')
+})
+
 test('toggling reduce motion persists to settings', async () => {
   const before = await getSetting(h.page, 'reduceMotion')
   await h.page.getByRole('button', { name: 'Settings' }).first().click()

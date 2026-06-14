@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import type { AccentTheme, AppSettings, PermissionStatus } from '@shared/ipc'
+import type { AccentTheme, AppSettings, PermissionStatus, ReleaseCheck } from '@shared/ipc'
 import { formatBytes } from '@core/format'
 import { Icon } from './Icon'
 import { ConfirmDialog } from './ConfirmDialog'
@@ -53,6 +53,9 @@ export function Settings({ open, reducedMotion, onClose }: SettingsProps): React
   const [section, setSection] = useState<Section>('general')
   const [perms, setPerms] = useState<PermissionStatus | null>(null)
   const [version, setVersion] = useState<string | null>(null)
+  const [release, setRelease] = useState<ReleaseCheck | null>(null)
+  const [checking, setChecking] = useState(false)
+  const [copied, setCopied] = useState(false)
   const [confirm, setConfirm] = useState<'history' | 'reset' | null>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
   // A confirm dialog renders inside this sheet and runs its own nested trap; the
@@ -78,14 +81,42 @@ export function Settings({ open, reducedMotion, onClose }: SettingsProps): React
     if (open) void window.tora.getAppVersion().then(setVersion)
   }, [open])
 
+  // Reset any stale update-check result on close, so reopening starts clean.
+  const handleClose = useCallback((): void => {
+    setRelease(null)
+    setChecking(false)
+    setCopied(false)
+    onClose()
+  }, [onClose])
+
+  const BREW_COMMAND = 'brew upgrade --cask tora'
+  const runUpdateCheck = (): void => {
+    setChecking(true)
+    void window.tora
+      .checkLatestRelease()
+      .then(setRelease)
+      .finally(() => setChecking(false))
+  }
+  const copyBrew = (): void => {
+    void navigator.clipboard
+      .writeText(BREW_COMMAND)
+      .then(() => {
+        setCopied(true)
+        setTimeout(() => setCopied(false), 1500)
+      })
+      // The command is selectable text, so a clipboard-permission failure is
+      // not fatal - the user can still select and copy it.
+      .catch(() => undefined)
+  }
+
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') handleClose()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [open, onClose])
+  }, [open, handleClose])
 
   const update = (patch: Partial<AppSettings>): void => {
     void window.tora.updateSettings(patch)
@@ -102,7 +133,7 @@ export function Settings({ open, reducedMotion, onClose }: SettingsProps): React
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: reducedMotion ? 0 : 0.15 }}
-          onClick={onClose}
+          onClick={handleClose}
         >
           <motion.div
             ref={dialogRef}
@@ -131,7 +162,7 @@ export function Settings({ open, reducedMotion, onClose }: SettingsProps): React
             </nav>
 
             <div className={styles.content}>
-              <button className={styles.close} aria-label="Close" onClick={onClose}>
+              <button className={styles.close} aria-label="Close" onClick={handleClose}>
                 <Icon name="close" size={16} />
               </button>
 
@@ -387,6 +418,79 @@ export function Settings({ open, reducedMotion, onClose }: SettingsProps): React
                       <p className={`${styles.aboutStats} mono`}>
                         {stats.itemCount} items - {formatBytes(stats.totalBytes)}
                       </p>
+                    )}
+
+                    <button
+                      className={styles.updateBtn}
+                      onClick={runUpdateCheck}
+                      disabled={checking}
+                    >
+                      {checking ? 'Checking…' : 'Check for updates'}
+                    </button>
+
+                    {release && (
+                      <div className={styles.updateResult} role="status" aria-live="polite">
+                        {release.latest && release.isOutdated ? (
+                          <>
+                            <p className={styles.updateHeadline}>
+                              Tora {release.latest.replace(/^v/, '')} is available.
+                            </p>
+                            <p className={styles.updateHint}>
+                              If you installed with Homebrew, update with:
+                            </p>
+                            <div className={styles.brewRow}>
+                              <code className={`${styles.brewCmd} selectable mono`}>
+                                {BREW_COMMAND}
+                              </code>
+                              <button
+                                className={styles.copyBtn}
+                                onClick={copyBrew}
+                                aria-label="Copy update command"
+                              >
+                                {copied ? 'Copied' : 'Copy'}
+                              </button>
+                            </div>
+                            <a
+                              className={styles.updateLink}
+                              href={release.releasesUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              Or download from Releases
+                            </a>
+                          </>
+                        ) : release.latest ? (
+                          <p className={styles.updateHeadline}>
+                            You&rsquo;re on the latest version.
+                          </p>
+                        ) : (
+                          <>
+                            <p className={styles.updateHint}>
+                              Couldn&rsquo;t reach the update server. You can update any time with:
+                            </p>
+                            <div className={styles.brewRow}>
+                              <code className={`${styles.brewCmd} selectable mono`}>
+                                {BREW_COMMAND}
+                              </code>
+                              <button
+                                className={styles.copyBtn}
+                                onClick={copyBrew}
+                                aria-label="Copy update command"
+                              >
+                                {copied ? 'Copied' : 'Copy'}
+                              </button>
+                            </div>
+                            <a
+                              className={styles.updateLink}
+                              href={release.releasesUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              Open Releases
+                            </a>
+                          </>
+                        )}
+                      </div>
                     )}
                   </div>
                 </Group>
