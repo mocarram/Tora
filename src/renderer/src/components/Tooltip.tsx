@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import styles from './Tooltip.module.css'
 
@@ -38,6 +38,21 @@ export function Tooltip({
     const x = Math.min(Math.max(r.left + r.width / 2, 80), window.innerWidth - 80)
     setPos({ x, y: side === 'top' ? r.top : r.bottom })
   }
+
+  // While open, dismiss if the window loses focus or visibility. In panel mode
+  // the window hides (it is not destroyed), so a tooltip opened by hover would
+  // otherwise survive the hide and still be showing on the next summon - the
+  // cursor never left, so no mouseleave fires to clear it.
+  useEffect(() => {
+    if (!pos) return
+    const clear = (): void => setPos(null)
+    window.addEventListener('blur', clear)
+    document.addEventListener('visibilitychange', clear)
+    return () => {
+      window.removeEventListener('blur', clear)
+      document.removeEventListener('visibilitychange', clear)
+    }
+  }, [pos])
 
   return (
     <span

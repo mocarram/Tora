@@ -12,13 +12,12 @@ const SYNC_TITLES: Record<SyncState, string> = {
   disabled: 'Sync off',
 }
 
-/* What each state actually means, shown in the badge tooltip. Deliberately
-   blunt: ONLY synced copies are encrypted (the local store is not), and the
-   tick only promises a healthy handoff - macOS owns the actual upload. */
+/* What each state means, shown in the badge tooltip. The tick only promises a
+   healthy local handoff - macOS owns the actual upload to iCloud. */
 const SYNC_DETAILS: Record<SyncState, string> = {
-  idle: 'Only synced copies are encrypted. Uploads when online.',
-  syncing: 'Sending encrypted copies to iCloud Drive.',
-  error: 'Can’t access the iCloud Drive sync folder.',
+  idle: 'Saved to iCloud Drive; uploads when you’re online.',
+  syncing: 'Syncing with your other devices.',
+  error: 'Can’t reach the iCloud Drive sync folder.',
   disabled: '',
 }
 

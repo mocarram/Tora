@@ -47,7 +47,28 @@ test('settings opens from the topbar gear', async () => {
   await expect(h.page.getByRole('dialog', { name: 'Settings' })).toBeHidden()
 })
 
+test('the sync badge tooltip dismisses when the window loses focus', async () => {
+  // Enable sync so the badge renders, hover to open its tooltip, then simulate
+  // the panel hiding (window blur): the tooltip must not survive to the next
+  // summon. Regression for a tooltip that stuck open across hide/reshow.
+  await h.page.evaluate('window.tora.updateSettings({ syncProvider: "icloud" })')
+  const badge = h.page.getByRole('status')
+  await expect(badge).toBeVisible({ timeout: 8000 })
+
+  await badge.hover()
+  await expect(h.page.getByRole('tooltip')).toBeVisible()
+
+  await h.page.evaluate('window.dispatchEvent(new Event("blur"))')
+  await expect(h.page.getByRole('tooltip')).toHaveCount(0)
+
+  // Back to local-only so later tests see no badge.
+  await h.page.evaluate('window.tora.updateSettings({ syncProvider: "local" })')
+})
+
 test('sidebar collapse persists across relaunch', async () => {
+  // Two full app launches: fast in isolation but tight against the default 30s
+  // under full-suite load (same allowance as the other double-launch tests).
+  test.setTimeout(60_000)
   const userData = mkdtempSync(join(tmpdir(), 'tora-e2e-rail-'))
   const first = await launchApp({ userData })
   await first.page.getByRole('button', { name: 'Collapse sidebar' }).click()
