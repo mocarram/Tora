@@ -86,7 +86,7 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(function S
             onMouseDown={(e) => e.preventDefault()}
             onClick={onToggleWholeWord}
           >
-            ab
+            <span className={styles.wholeWordMark}>ab</span>
           </button>
         </div>
       ) : null}

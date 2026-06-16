@@ -84,6 +84,13 @@
   background: var(--color-accent-quiet);
   color: var(--color-accent);
 }
+/* VS Code's whole-word glyph: "ab" with a short underline beneath, signalling a
+   word boundary. Follows the button's text colour (faint / hover / accent-on). */
+.wholeWordMark {
+  border-bottom: 1px solid currentColor;
+  line-height: 1;
+  padding-bottom: 1px;
+}
 
 .count {
   font-size: var(--text-xs);
