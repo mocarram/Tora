@@ -1,22 +1,21 @@
 name: Release
 
-# Build, sign, notarize, and publish the macOS app to a GitHub Release when a
-# version tag is pushed (e.g. `git tag v0.1.0 && git push origin v0.1.0`).
-# electron-updater reads the published `latest-mac.yml` + `.zip` to deliver
-# in-app updates; the `.dmg` is the first-time manual download.
+# Build and publish the macOS app to a GitHub Release when a version tag is
+# pushed (e.g. `git tag v0.1.1 && git push origin v0.1.1`). A manual
+# workflow_dispatch run is a DRY RUN: it builds the app but publishes nothing,
+# so the pipeline can be validated without cutting a release.
 #
-# Required repository secrets (Settings -> Secrets and variables -> Actions):
-#   MAC_CSC_LINK              base64 of the Developer ID Application .p12
-#   MAC_CSC_KEY_PASSWORD      password for that .p12
-#   APPLE_ID                  Apple ID email (notarization)
-#   APPLE_APP_SPECIFIC_PASSWORD  app-specific password for that Apple ID
-#   APPLE_TEAM_ID             10-character Apple Developer Team ID
-# GITHUB_TOKEN is provided automatically and is used to create the release.
+# Signing is OPTIONAL. With no signing secrets the app builds UNSIGNED (the
+# current Homebrew-distributed state - users pass `--no-quarantine`). Add the
+# secrets below to flip to a signed + notarized build with no other change:
+#   CSC_LINK, CSC_KEY_PASSWORD          Developer ID Application cert (.p12, base64)
+#   APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID   notarization
+# GITHUB_TOKEN is provided automatically and creates the release.
 
 on:
   push:
     tags: ['v*']
-  workflow_dispatch: # manual run for dry-runs (still needs the signing secrets)
+  workflow_dispatch: {}
 
 permissions:
   contents: write # create the GitHub Release and upload assets
@@ -30,27 +29,46 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      # npm >= 11.10 honours the .npmrc supply-chain cooldown and the engines floor.
-      - run: npm install -g npm@latest
+      # engines require npm >= 11; the lockfile is written by npm 11. Align it
+      # first or `npm ci` rejects the runner-bundled npm 10's resolution.
+      - name: Use npm 11 (matches engines + lockfile)
+        run: npm install -g npm@11
       - run: npm ci
 
-      - name: Build, sign, notarize, and publish
+      # Gate the release on the suite so a tag can never publish a failing build.
+      # (Runs against the Node ABI from `npm ci`; electron-builder rebuilds the
+      # native module for the Electron ABI during packaging below.)
+      - name: Typecheck, lint, unit tests
+        run: |
+          npm run typecheck
+          npm run lint
+          npm test
+
+      - name: Build renderer + main
+        run: npm run build
+
+      # Publish on a tag push; a manual dispatch run only builds (dry run).
+      #
+      # Signing is conditional on CSC_LINK. When unset, the empty CSC_* vars
+      # must be unset and identity auto-discovery disabled, or electron-builder
+      # treats the empty CSC_LINK as a cert path and fails. notarize is forced
+      # on only when signing (an unsigned build cannot be notarized).
+      - name: Package, (conditionally) sign + notarize, publish
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          # Gate the release on the unit suite so a tag can never publish a build
-          # that fails tests. (e2e runs on the PR into main/staging before the tag.)
-          npm test
-          npm run build
-          # notarize is off in electron-builder.yml for unsigned local builds; turn
-          # it on here. electron-builder creates a DRAFT release by default, so the
-          # binaries upload but nothing is public until you publish the draft.
-          npx electron-builder --mac --publish always -c.mac.notarize=true
+          PUBLISH=${{ github.event_name == 'push' && 'always' || 'never' }}
+          if [ -n "$CSC_LINK" ]; then
+            npx electron-builder --mac --publish "$PUBLISH" -c.mac.notarize=true
+          else
+            unset CSC_LINK CSC_KEY_PASSWORD
+            CSC_IDENTITY_AUTO_DISCOVERY=false npx electron-builder --mac --publish "$PUBLISH"
+          fi
 
       # If cross-building the x64 slice on the arm64 runner ever fails, split this
       # into a matrix (macos-13 for x64, macos-14 for arm64) - the GitHub publisher

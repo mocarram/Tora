@@ -1,34 +1,51 @@
 #!/usr/bin/env bash
-# Regenerate packaging/homebrew/tora.rb (version + both sha256s) from the dmgs
-# in release/. Run after `npm run dist:mac`, then copy tora.rb into the
-# homebrew-tora tap repo's Casks/ and commit.
+# Fill the sha256 checksums (and version) in packaging/homebrew/tora.rb from the
+# v<version> DMGs, then optionally copy the cask into the homebrew-tap repo.
 #
-#   ./packaging/homebrew/update-cask.sh
+# DMG source, in order of preference:
+#   1. local  release/Tora-<version>-{arm64,x64}.dmg  (after `npm run dist:mac`)
+#   2. the published GitHub release  (downloaded via `gh release download`)
 #
+# Usage:
+#   ./packaging/homebrew/update-cask.sh                 # use package.json version
+#   ./packaging/homebrew/update-cask.sh 0.1.1           # explicit version
+#   TAP_DIR=../homebrew-tap ./packaging/homebrew/update-cask.sh   # also copy + commit
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
-version="$(node -p "require('./package.json').version")"
-arm_dmg="release/Tora-${version}-arm64.dmg"
-intel_dmg="release/Tora-${version}.dmg"
+version="${1:-$(node -p "require('./package.json').version")}"
+work="$(mktemp -d)"
+trap 'rm -rf "$work"' EXIT
 
-for f in "$arm_dmg" "$intel_dmg"; do
-  [ -f "$f" ] || { echo "missing $f - run 'npm run dist:mac' first" >&2; exit 1; }
-done
+resolve_dmg() { # arch -> path to the dmg (local or downloaded)
+  local arch="$1" name="Tora-${version}-${1}.dmg"
+  if [ -f "release/${name}" ]; then
+    echo "release/${name}"
+  else
+    gh release download "v${version}" --repo mocarram/Tora \
+      --pattern "${name}" --dir "$work" >/dev/null
+    echo "${work}/${name}"
+  fi
+}
 
-arm_sha="$(shasum -a 256 "$arm_dmg" | awk '{print $1}')"
-intel_sha="$(shasum -a 256 "$intel_dmg" | awk '{print $1}')"
+arm_sha="$(shasum -a 256 "$(resolve_dmg arm64)" | awk '{print $1}')"
+intel_sha="$(shasum -a 256 "$(resolve_dmg x64)" | awk '{print $1}')"
 
 cask="packaging/homebrew/tora.rb"
 /usr/bin/sed -i '' \
   -e "s/^  version \".*\"/  version \"${version}\"/" \
+  -e "s/^  sha256 arm:   \"[^\"]*\"/  sha256 arm:   \"${arm_sha}\"/" \
+  -e "s/^         intel: \"[^\"]*\"/         intel: \"${intel_sha}\"/" \
   "$cask"
-# Replace the two sha256 lines in document order (arm first, intel second).
-awk -v arm="$arm_sha" -v intel="$intel_sha" '
-  /sha256 "/ { n++; if (n==1) sub(/sha256 "[^"]*"/, "sha256 \"" arm "\""); else if (n==2) sub(/sha256 "[^"]*"/, "sha256 \"" intel "\"") }
-  { print }
-' "$cask" > "$cask.tmp" && mv "$cask.tmp" "$cask"
 
-echo "Updated $cask -> version $version"
-echo "  arm64 $arm_sha"
-echo "  intel $intel_sha"
+echo "Updated ${cask} -> version ${version}"
+echo "  arm64 ${arm_sha}"
+echo "  x64   ${intel_sha}"
+
+# Optional: copy into the tap repo and commit, if TAP_DIR points at a clone.
+if [ -n "${TAP_DIR:-}" ]; then
+  cp "$cask" "${TAP_DIR}/Casks/tora.rb"
+  git -C "$TAP_DIR" add Casks/tora.rb
+  git -C "$TAP_DIR" commit -m "tora ${version}" >/dev/null
+  echo "Committed to ${TAP_DIR} (push it to publish: git -C ${TAP_DIR} push)"
+fi

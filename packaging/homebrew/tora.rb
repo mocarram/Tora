@@ -1,36 +1,26 @@
-# typed: strict
-# frozen_string_literal: true
-
 cask "tora" do
-  version "0.1.0"
+  arch arm: "arm64", intel: "x64"
 
-  # Universal-by-arch: each Mac downloads only its slice. sha256 values are the
-  # checksums of the released dmgs (run packaging/homebrew/update-cask.sh to regen).
-  on_arm do
-    sha256 "5fa52ab639faafdc838f7b9c554374be66cf0832ebf97972fee39d90c23ad9d8"
+  version "0.1.1"
+  # PLACEHOLDER checksums - filled by update-cask.sh once the v0.1.1 DMGs are
+  # built and published to mocarram/Tora releases. This file is the source of
+  # truth; update-cask.sh copies it into the homebrew-tap repo's Casks/.
+  sha256 arm:   "0000000000000000000000000000000000000000000000000000000000000000",
+         intel: "0000000000000000000000000000000000000000000000000000000000000000"
 
-    url "https://github.com/mocarram/homebrew-tora/releases/download/v#{version}/Tora-#{version}-arm64.dmg"
-  end
-  on_intel do
-    sha256 "0d39c1b6adf569f268ee938cd80151291d7d1effb2c97edae805af42c2ab05d3"
-
-    url "https://github.com/mocarram/homebrew-tora/releases/download/v#{version}/Tora-#{version}.dmg"
-  end
-
+  url "https://github.com/mocarram/Tora/releases/download/v#{version}/Tora-#{version}-#{arch}.dmg",
+      verified: "github.com/mocarram/Tora/"
   name "Tora"
   desc "Privacy-first clipboard manager"
   homepage "https://github.com/mocarram/Tora"
 
-  # macOS 11+ (matches the app's minimum).
-  depends_on macos: ">= :big_sur"
+  # The Homebrew build is unsigned, so the in-app updater (Squirrel.Mac) cannot
+  # apply updates - Homebrew owns them. Leaving auto_updates at its default
+  # (false) keeps `brew upgrade --cask tora` as the real update path; a future
+  # signed direct-download build would set this true and self-update instead.
+  depends_on macos: :big_sur
 
   app "Tora.app"
-
-  # NOTE: pre-release builds are signed but NOT notarized, so a normal cask
-  # install quarantines the app and Gatekeeper blocks first launch. Until the
-  # notarized release lands, install with:
-  #     brew install --cask --no-quarantine tora
-  # `--no-quarantine` is a Homebrew flag (it cannot be set from inside a cask).
 
   zap trash: [
     "~/Library/Application Support/Tora",

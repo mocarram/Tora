@@ -23,6 +23,12 @@ extraResources:
   - from: build/accent-icons
     to: icons
     filter: ['*.png']
+  # Ship the licence + third-party notices inside the .app (OFL clause 2 etc.
+  # require the font licence texts to travel with the redistributed binaries).
+  - from: THIRD-PARTY-NOTICES.txt
+    to: THIRD-PARTY-NOTICES.txt
+  - from: LICENSE
+    to: LICENSE.txt
 
 asarUnpack:
   # Native module must stay unpacked so its .node binary can be loaded.
@@ -41,6 +47,9 @@ publish:
 
 mac:
   category: public.app-category.productivity
+  # Both arches carry an explicit -arch suffix so the Homebrew cask can use one
+  # url template (Tora-<version>-arm64.dmg / -x64.dmg). Mirrors the Lekha tap.
+  artifactName: ${productName}-${version}-${arch}.${ext}
   target:
     # dmg for first-time manual download; zip is what electron-updater actually
     # applies (Squirrel.Mac) and what produces latest-mac.yml.

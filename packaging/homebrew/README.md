@@ -1,44 +1,42 @@
 # Homebrew distribution
 
-Tora is distributed through a **custom Homebrew tap** so the source repo can
-stay private while the binaries are public. The tap is a separate public repo,
-`mocarram/homebrew-tora`, that holds the Cask and hosts the dmgs as release
-assets.
+Tora is distributed through a **shared Homebrew tap**, `mocarram/homebrew-tap`
+(one tap for all of mocarram's apps). The DMGs are published as release assets
+on the public source repo `mocarram/Tora`; the tap only holds the cask.
+
+`packaging/homebrew/tora.rb` here is the **source of truth** for the cask;
+`update-cask.sh` fills its checksums and copies it into the tap.
 
 ## For users
 
 ```sh
-# Pre-release (signed, not yet notarized): --no-quarantine clears Gatekeeper.
-brew install --cask --no-quarantine mocarram/tora/tora
-
-# Once notarized, the flag is no longer needed:
-brew install --cask mocarram/tora/tora
+brew tap mocarram/tap
+# Builds are unsigned (no Apple Developer account yet): --no-quarantine clears
+# Gatekeeper on first launch.
+brew install --cask --no-quarantine tora
 ```
 
 Update with `brew upgrade --cask tora`; remove with `brew uninstall --cask tora`
-(add `--zap` to also delete local data).
-
-## Tap repo layout (`mocarram/homebrew-tora`)
-
-```
-Casks/tora.rb        # the cask in this folder, copied in
-README.md            # the user instructions above
-```
+(add `--zap` to also delete local data). Once the app is signed + notarized the
+`--no-quarantine` flag is no longer needed.
 
 ## Cutting a new version
 
-1. Build the dmgs: `npm run dist:mac` (in this repo).
-2. Refresh the cask: `./packaging/homebrew/update-cask.sh`
-   (bumps `version` and both `sha256`s from `release/`).
-3. In the tap repo: create a GitHub release tagged `v<version>` and upload
-   `Tora-<version>-arm64.dmg` and `Tora-<version>.dmg` to it.
-4. Copy `packaging/homebrew/tora.rb` → tap repo `Casks/tora.rb`, commit, push.
-5. Verify: `brew update && brew install --cask --no-quarantine mocarram/tora/tora`.
+1. Bump `version` in `package.json`, commit, and push a `v<version>` tag:
+   `git tag v0.1.1 && git push origin v0.1.1`.
+2. The **Release** workflow builds the (unsigned) DMGs + zips and publishes them
+   to `mocarram/Tora` releases. (A `workflow_dispatch` run is a dry run.)
+3. Refresh + publish the cask (downloads the DMGs from the release, fills the
+   checksums, commits to a local clone of the tap):
 
-The Cask's download URLs point at the tap repo's `v<version>` release assets, so
-the release must exist before the cask resolves.
+   ```sh
+   TAP_DIR=../homebrew-tap ./packaging/homebrew/update-cask.sh
+   git -C ../homebrew-tap push
+   ```
 
-## Validate before publishing
+4. Verify: `brew update && brew install --cask --no-quarantine tora`.
+
+## Validate the cask
 
 ```sh
 brew style packaging/homebrew/tora.rb

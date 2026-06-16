@@ -16,22 +16,30 @@ React Native iOS app later.
 
 macOS 11 or later (Apple Silicon or Intel).
 
-> **Testing Tora right now?** The current builds are pre-release and not yet
-> notarized, so macOS needs a one-time approval on first launch. Follow
-> **[TESTING.md](TESTING.md)** for the exact steps.
+**Homebrew** (recommended):
 
-The notarized public release (below) installs with no warning and updates itself:
+```sh
+brew tap mocarram/tap
+# Builds are unsigned for now, so --no-quarantine clears Gatekeeper on first
+# launch. Update any time with `brew upgrade --cask tora`.
+brew install --cask --no-quarantine tora
+```
 
-1. Download the latest `Tora-<version>.dmg` from the
-   [Releases](https://github.com/mocarram/Tora/releases) page (pick the
-   `-arm64` build on Apple Silicon, the unsuffixed build on Intel).
+**Manual download:**
+
+1. Download the latest DMG from the
+   [Releases](https://github.com/mocarram/Tora/releases) page - `Tora-<version>-arm64.dmg`
+   on Apple Silicon, `Tora-<version>-x64.dmg` on Intel.
 2. Open the dmg and drag **Tora** into Applications.
-3. On first launch, grant **Accessibility** when prompted - it lets Tora paste
-   straight back into the app you were using.
+3. Because the build is not yet notarized, right-click the app → **Open** on
+   first launch (or run `xattr -dr com.apple.quarantine /Applications/Tora.app`).
+   See **[TESTING.md](TESTING.md)** for details.
+4. Grant **Accessibility** when prompted - it lets Tora paste straight back into
+   the app you were using.
 
-Once notarized and published, Tora keeps itself up to date: it checks for new
-releases on launch and in the background, downloads them quietly, and shows a
-Restart pill when one is ready. (Auto-update is inert in unsigned/test builds.)
+Updates come through `brew upgrade` while the app is unsigned. Once it's signed
++ notarized, the in-app updater takes over (checks on launch, downloads quietly,
+shows a Restart pill); the `--no-quarantine` flag also becomes unnecessary then.
 
 ## Features
 

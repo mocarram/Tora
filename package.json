@@ -1,6 +1,6 @@
 {
   "name": "tora",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Tora - a privacy-first macOS clipboard manager (Electron now, React Native iOS later)",
   "author": "Tora",
   "license": "MIT",
