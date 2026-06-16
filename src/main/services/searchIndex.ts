@@ -1,4 +1,4 @@
-import { rankItems, type SearchCandidate } from '@core/search'
+import { rankItems, type SearchCandidate, type SearchOptions } from '@core/search'
 import type { Storage } from '../storage'
 
 /**
@@ -31,8 +31,8 @@ export class SearchIndex {
   }
 
   /** Returns item ids ranked for the query (best first). */
-  search(query: string): string[] {
+  search(query: string, options?: SearchOptions): string[] {
     if (this.stale) this.rebuild()
-    return rankItems(query, this.candidates).map((r) => r.id)
+    return rankItems(query, this.candidates, options).map((r) => r.id)
   }
 }

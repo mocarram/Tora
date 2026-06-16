@@ -57,6 +57,10 @@ export interface QueryItemsRequest {
   offset: number
   /** Include pinned-only when true. */
   pinnedOnly: boolean
+  /** Case-sensitive search (VS Code "Aa"). */
+  matchCase: boolean
+  /** Whole-word search (VS Code "ab"). */
+  wholeWord: boolean
 }
 
 export interface QueryItemsResponse {

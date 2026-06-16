@@ -9,6 +9,10 @@ interface ViewState {
   filter: QuickFilter
   boardId: string | null
   pinnedOnly: boolean
+  /** VS Code "Aa": case-sensitive search. Sticky within a session. */
+  matchCase: boolean
+  /** VS Code "ab": whole-word search. Sticky within a session. */
+  wholeWord: boolean
 }
 
 interface StoreState extends ViewState {
@@ -78,6 +82,8 @@ export const useStore = create<StoreState>((set, get) => ({
   filter: 'all',
   boardId: null,
   pinnedOnly: false,
+  matchCase: false,
+  wholeWord: false,
   items: [],
   total: 0,
   loading: false,
@@ -127,13 +133,15 @@ export const useStore = create<StoreState>((set, get) => ({
 
   reload: async (opts) => {
     const seq = ++reloadSeq
-    const { query, filter, boardId, pinnedOnly } = get()
+    const { query, filter, boardId, pinnedOnly, matchCase, wholeWord } = get()
     set({ loading: true })
     const res = await api().queryItems({
       query,
       filter,
       boardId,
       pinnedOnly,
+      matchCase,
+      wholeWord,
       limit: PAGE_SIZE,
       offset: 0,
     })
@@ -174,7 +182,8 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   loadMore: async () => {
-    const { items, total, query, filter, boardId, pinnedOnly, loading } = get()
+    const { items, total, query, filter, boardId, pinnedOnly, matchCase, wholeWord, loading } =
+      get()
     if (loading || items.length >= total) return
     // Take the ticket only after the guards: bumping earlier would invalidate
     // an in-flight reload and strand its loading flag.
@@ -185,6 +194,8 @@ export const useStore = create<StoreState>((set, get) => ({
       filter,
       boardId,
       pinnedOnly,
+      matchCase,
+      wholeWord,
       limit: PAGE_SIZE,
       offset: items.length,
     })

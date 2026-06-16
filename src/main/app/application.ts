@@ -516,7 +516,9 @@ export class Application {
     // history, and every candidate becomes a bind variable in getManyLite's
     // IN(...) (SQLite caps those at ~32k - a large history would throw). Nobody
     // pages thousands deep into fuzzy results; the count just reads "2000+".
-    const rankedIds = this.search.search(req.query).slice(0, 2000)
+    const rankedIds = this.search
+      .search(req.query, { matchCase: !!req.matchCase, wholeWord: !!req.wholeWord })
+      .slice(0, 2000)
     const boardSet = req.boardId ? this.storage.boards.itemIdsInBoard(req.boardId) : null
     // Filter + count over the lightweight projection, then load full rows only
     // for the visible page. Avoids materialising thousands of full rows on every
