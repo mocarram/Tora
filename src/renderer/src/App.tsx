@@ -250,16 +250,16 @@ export function App(): React.JSX.Element {
 
       // The deck-navigation keys below (arrows, Enter, Space, Delete) act on the
       // SELECTED CARD. They must only fire when the user is "on the deck" - focus
-      // on the body (nothing) or the deck listbox itself. If they have Tabbed
-      // onto a control - a board pill, a sidebar filter, the settings gear -
+      // on the body (nothing), the deck listbox, or a card (role=option, which a
+      // click focuses). If they have Tabbed onto a control - a board pill, a
+      // sidebar filter, the settings gear, or even a card's own action button -
       // Enter/Space must activate THAT control, not paste-and-hide the panel or
       // expand a card behind it. The search field is allowed through (the typing
       // guard above already limited it to ArrowUp/Down).
       const active = document.activeElement
+      const role = active instanceof HTMLElement ? active.getAttribute('role') : null
       const onDeckSurface =
-        active === null ||
-        active === document.body ||
-        (active instanceof HTMLElement && active.getAttribute('role') === 'listbox')
+        active === null || active === document.body || role === 'listbox' || role === 'option'
       if (!onDeckSurface && active !== searchRef.current) return
 
       switch (e.key) {
