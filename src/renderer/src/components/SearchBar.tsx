@@ -6,6 +6,10 @@ interface SearchBarProps {
   value: string
   onChange: (value: string) => void
   resultCount: number | null
+  matchCase: boolean
+  wholeWord: boolean
+  onToggleMatchCase: () => void
+  onToggleWholeWord: () => void
 }
 
 /**
@@ -13,9 +17,13 @@ interface SearchBarProps {
  * or while a query is active. The input always exists (just clipped), so
  * type-to-search and "/" can focus it from anywhere and the expansion follows
  * via state - no mount/unmount races with the keyboard handlers.
+ *
+ * Two VS Code-style toggles sit in the expanded field: Aa (match case) and ab
+ * (whole word). They preventDefault on mousedown so clicking one never blurs the
+ * input (which would collapse an empty bar).
  */
 export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(function SearchBar(
-  { value, onChange, resultCount },
+  { value, onChange, resultCount, matchCase, wholeWord, onToggleMatchCase, onToggleWholeWord },
   ref,
 ): React.JSX.Element {
   const [focused, setFocused] = useState(false)
@@ -58,6 +66,30 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(function S
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
       />
+      {open ? (
+        <div className={styles.toggles}>
+          <button
+            className={`${styles.toggle} ${matchCase ? styles.toggleOn : ''}`}
+            aria-label="Match case"
+            aria-pressed={matchCase}
+            title="Match Case"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={onToggleMatchCase}
+          >
+            Aa
+          </button>
+          <button
+            className={`${styles.toggle} ${wholeWord ? styles.toggleOn : ''}`}
+            aria-label="Match whole word"
+            aria-pressed={wholeWord}
+            title="Match Whole Word"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={onToggleWholeWord}
+          >
+            ab
+          </button>
+        </div>
+      ) : null}
       {value ? (
         <>
           <span className={`${styles.count} mono`}>{resultCount ?? 0}</span>

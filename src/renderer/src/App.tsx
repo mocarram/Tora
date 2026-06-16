@@ -321,6 +321,10 @@ export function App(): React.JSX.Element {
             value={store.query}
             onChange={(query) => store.setView({ query })}
             resultCount={store.total}
+            matchCase={store.matchCase}
+            wholeWord={store.wholeWord}
+            onToggleMatchCase={() => store.setView({ matchCase: !store.matchCase })}
+            onToggleWholeWord={() => store.setView({ wholeWord: !store.wholeWord })}
           />
           <BoardPills
             boards={store.boards}
