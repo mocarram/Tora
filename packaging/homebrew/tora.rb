@@ -1,12 +1,12 @@
 cask "tora" do
   arch arm: "arm64", intel: "x64"
 
-  version "0.1.1"
+  version "0.1.2"
   # Checksums for the published v0.1.1 DMGs. This file is the source of truth;
   # update-cask.sh refills version + sha256 from each release and copies it into
   # the homebrew-tap repo's Casks/.
-  sha256 arm:   "bae795bf4883cf12b802bdc9c2d03c182a025884bd7db99215f1c2dd175bb594",
-         intel: "8bb8462810de7a51ffc26b9cc2cd92362ca93f6cd8021b523fabd35f8a53b5b4"
+  sha256 arm:   "22c47ee2400e3c745022970acccb610c537d2421d27861c344ee82a2a78b0bcb",
+         intel: "4ab14507a8fcddf4fac91d99f3a55441ea36ae85be02ebb20d91886339ede277"
 
   url "https://github.com/mocarram/Tora/releases/download/v#{version}/Tora-#{version}-#{arch}.dmg"
   name "Tora"
