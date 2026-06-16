@@ -1,29 +1,33 @@
 import { describe, expect, it } from 'vitest'
-import { fuzzyScore, rankItems, type SearchCandidate } from './search'
+import { rankItems, termScore, type SearchCandidate } from './search'
 
-describe('fuzzyScore', () => {
-  it('matches subsequences case-insensitively', () => {
-    expect(fuzzyScore('abc', 'aXbXc')).not.toBeNull()
-    expect(fuzzyScore('ABC', 'aXbXc')).not.toBeNull()
+describe('termScore', () => {
+  // termScore takes already-case-normalised inputs and returns a number (best
+  // occurrence score) or null when the term is absent under the wholeWord rule.
+  it('returns null when the term is not a substring', () => {
+    expect(termScore('cat', 'dog house', false)).toBeNull()
   })
-  it('returns null when not a subsequence', () => {
-    expect(fuzzyScore('xyz', 'abc')).toBeNull()
-    expect(fuzzyScore('abcd', 'abc')).toBeNull()
+  it('scores a substring match (non-null) anywhere by default', () => {
+    expect(termScore('cat', 'category', false)).not.toBeNull()
+    expect(termScore('cat', 'a scatter plot', false)).not.toBeNull()
   })
-  it('empty query scores zero', () => {
-    expect(fuzzyScore('', 'anything')).toBe(0)
+  it('whole-word: matches a standalone word, rejects mid-word', () => {
+    expect(termScore('cat', 'the cat sat', true)).not.toBeNull()
+    expect(termScore('cat', 'cat.', true)).not.toBeNull()
+    expect(termScore('cat', 'category', true)).toBeNull()
+    expect(termScore('cat', 'scatter', true)).toBeNull()
   })
-  it('scores word-boundary matches higher than mid-word', () => {
-    const boundary = fuzzyScore('rt', 'release time') // r at start, t at word boundary
-    const midword = fuzzyScore('rt', 'cartwheel') // both mid-word
-    expect(boundary).not.toBeNull()
-    expect(midword).not.toBeNull()
-    expect(boundary!).toBeGreaterThan(midword!)
+  it('scores a start match above a word-boundary match above mid-word', () => {
+    const start = termScore('re', 'release', false)!
+    const boundary = termScore('re', 'the release', false)! // 're' after a space
+    const mid = termScore('re', 'wires', false)! // mid-word
+    expect(start).toBeGreaterThan(boundary)
+    expect(boundary).toBeGreaterThan(mid)
   })
-  it('scores contiguous higher than scattered', () => {
-    const contig = fuzzyScore('abc', 'abcdef')!
-    const scattered = fuzzyScore('abc', 'a_b_c_')!
-    expect(contig).toBeGreaterThan(scattered)
+  it('scores an earlier occurrence at least as high as a later one', () => {
+    const early = termScore('x', 'x________', false)!
+    const late = termScore('x', '________x', false)!
+    expect(early).toBeGreaterThan(late)
   })
 })
 
@@ -34,24 +38,58 @@ describe('rankItems', () => {
     { id: '3', text: 'warm amber accent', secondary: 'Notes', updatedAt: 300 },
   ]
 
-  it('returns all by recency for empty query', () => {
-    const r = rankItems('', items)
-    expect(r.map((x) => x.id)).toEqual(['3', '2', '1'])
+  it('returns all by recency for an empty query', () => {
+    expect(rankItems('', items).map((x) => x.id)).toEqual(['3', '2', '1'])
   })
-
-  it('ranks best textual match first', () => {
-    const r = rankItems('spring', items)
-    expect(r[0]?.id).toBe('2')
+  it('returns all by recency for a whitespace-only query', () => {
+    expect(rankItems('   ', items).map((x) => x.id)).toEqual(['3', '2', '1'])
   })
-
+  it('ranks the best textual match first', () => {
+    expect(rankItems('spring', items)[0]?.id).toBe('2')
+  })
   it('matches the secondary field (source app)', () => {
-    const r = rankItems('figma', items)
-    expect(r.map((x) => x.id)).toContain('1')
+    expect(rankItems('figma', items).map((x) => x.id)).toContain('1')
+  })
+  it('excludes non-matches', () => {
+    expect(rankItems('zzzz', items)).toHaveLength(0)
+  })
+  it('is case-insensitive by default', () => {
+    expect(rankItems('AMBER', items).map((x) => x.id)).toContain('3')
   })
 
-  it('excludes non-matches', () => {
-    const r = rankItems('zzzz', items)
-    expect(r).toHaveLength(0)
+  it('multi-term requires every term, order-independent', () => {
+    const c: SearchCandidate[] = [
+      { id: 'both', text: 'wallet for eth staking', secondary: null, updatedAt: 1 },
+      { id: 'rev', text: 'eth and a wallet', secondary: null, updatedAt: 2 },
+      { id: 'one', text: 'just a wallet', secondary: null, updatedAt: 3 },
+    ]
+    const ids = rankItems('wallet eth', c).map((x) => x.id)
+    expect(ids).toContain('both')
+    expect(ids).toContain('rev')
+    expect(ids).not.toContain('one')
+  })
+
+  it('a term may be satisfied by the secondary field', () => {
+    const c: SearchCandidate[] = [
+      { id: 'x', text: 'quarterly numbers', secondary: 'Excel', updatedAt: 1 },
+    ]
+    // "numbers" in text, "excel" in secondary - both terms satisfied.
+    expect(rankItems('numbers excel', c).map((i) => i.id)).toEqual(['x'])
+  })
+
+  it('matchCase: rejects a differently-cased match', () => {
+    const c: SearchCandidate[] = [{ id: 'x', text: 'Cat', secondary: null, updatedAt: 1 }]
+    expect(rankItems('cat', c, { matchCase: true })).toHaveLength(0)
+    expect(rankItems('Cat', c, { matchCase: true }).map((i) => i.id)).toEqual(['x'])
+  })
+
+  it('wholeWord: "cat" stops matching "category"', () => {
+    const c: SearchCandidate[] = [
+      { id: 'whole', text: 'the cat', secondary: null, updatedAt: 1 },
+      { id: 'part', text: 'category list', secondary: null, updatedAt: 2 },
+    ]
+    const ids = rankItems('cat', c, { wholeWord: true }).map((i) => i.id)
+    expect(ids).toEqual(['whole'])
   })
 
   it('breaks score ties by recency', () => {
@@ -62,7 +100,7 @@ describe('rankItems', () => {
     expect(rankItems('note', tie)[0]?.id).toBe('new')
   })
 
-  it('stays within budget on a large set', () => {
+  it('stays within budget on a large multi-term set', () => {
     const big: SearchCandidate[] = Array.from({ length: 10_000 }, (_, i) => ({
       id: String(i),
       text: `item number ${i} with some words`,
@@ -71,9 +109,6 @@ describe('rankItems', () => {
     }))
     const start = performance.now()
     rankItems('item words', big)
-    // Generous bound: ranking 10k candidates is a few ms in practice, but a hard
-    // wall-clock assertion flakes under CI/load. This still catches a real
-    // algorithmic regression (e.g. an accidental O(n^2)) without false reds.
     expect(performance.now() - start).toBeLessThan(500)
   })
 })

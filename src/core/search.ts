@@ -1,18 +1,19 @@
 /**
- * Fuzzy search ranking. Pure and platform-agnostic so the same relevance logic
- * runs on macOS and iOS. Designed to rank a few thousand short candidate
- * strings in well under the 50ms budget: a single linear scan per candidate, no
- * allocations in the hot path beyond the score.
+ * Search ranking. Pure and platform-agnostic so the same relevance logic runs
+ * on macOS and iOS. Default matching is case-insensitive, multi-term substring
+ * (every space-separated term must appear). Two refinements mirror VS Code:
+ * matchCase (case-sensitive) and wholeWord (terms bounded by non-word chars).
  *
- * Scoring favours: matches at the start of a word boundary, contiguous runs,
- * matches near the start of the string, and (as a tiebreak) more recent items.
+ * Designed to rank a few thousand short candidates well under the 50ms budget:
+ * a few indexOf scans per candidate, no allocations in the hot path beyond the
+ * collected results.
  */
 
 export interface SearchCandidate {
   id: string
-  /** Primary text searched (clip preview). */
+  /** Primary text searched (clip preview, optionally prefixed by the title). */
   text: string
-  /** Secondary text searched with a lower weight (e.g. source app). */
+  /** Secondary text searched at a lower weight (e.g. source app). */
   secondary?: string | null
   /** Recency, used only as a tiebreak. */
   updatedAt: number
@@ -23,65 +24,70 @@ export interface SearchResult {
   score: number
 }
 
+export interface SearchOptions {
+  /** Case-sensitive comparison when true. Default false. */
+  matchCase?: boolean
+  /** Each term must match as a whole word when true. Default false. */
+  wholeWord?: boolean
+}
+
+const SCORE_BASE = 1
 const SCORE_START = 12
-const SCORE_WORD_BOUNDARY = 9
-const SCORE_CONSECUTIVE = 10
-const SCORE_MATCH = 1
-const PENALTY_LEADING = -0.5
-const PENALTY_GAP = -0.5
-const MAX_LEADING_PENALTY = -6
+const SCORE_BOUNDARY = 9
+const EARLY_BONUS_MAX = 6
+const EARLY_FALLOFF = 0.5
 const SECONDARY_WEIGHT = 0.6
 
-function isBoundary(ch: string): boolean {
-  return ch === ' ' || ch === '-' || ch === '_' || ch === '/' || ch === '.' || ch === ':'
+/** A "word" character; a whole-word match must be bounded by non-word chars. */
+function isWordChar(ch: string): boolean {
+  return /[A-Za-z0-9_]/.test(ch)
 }
 
 /**
- * Score a single query against a target. Returns null when the query is not a
- * subsequence of the target. Case-insensitive.
+ * Score one (already case-normalised) term against one target. Returns the best
+ * occurrence's score, or null when the term is absent (respecting wholeWord).
  */
-export function fuzzyScore(query: string, target: string): number | null {
-  if (query.length === 0) return 0
-  if (target.length === 0) return null
-
-  const q = query.toLowerCase()
-  const t = target.toLowerCase()
-
-  let score = 0
-  let qi = 0
-  let lastMatch = -1
-  let firstMatch = -1
-
-  for (let ti = 0; ti < t.length && qi < q.length; ti++) {
-    if (t[ti] !== q[qi]) continue
-
-    if (firstMatch === -1) {
-      firstMatch = ti
-      score += Math.max(MAX_LEADING_PENALTY, ti * PENALTY_LEADING)
+export function termScore(term: string, target: string, wholeWord: boolean): number | null {
+  if (term.length === 0) return 0
+  let best: number | null = null
+  let from = 0
+  for (;;) {
+    const idx = target.indexOf(term, from)
+    if (idx === -1) break
+    const end = idx + term.length
+    if (wholeWord) {
+      const beforeOk = idx === 0 || !isWordChar(target[idx - 1] as string)
+      const afterOk = end >= target.length || !isWordChar(target[end] as string)
+      if (!beforeOk || !afterOk) {
+        from = idx + 1
+        continue
+      }
     }
-
-    if (ti === 0) score += SCORE_START
-    else if (isBoundary(t[ti - 1] as string)) score += SCORE_WORD_BOUNDARY
-
-    if (lastMatch === ti - 1 && lastMatch !== -1) score += SCORE_CONSECUTIVE
-    else if (lastMatch !== -1) score += (ti - lastMatch - 1) * PENALTY_GAP
-
-    score += SCORE_MATCH
-    lastMatch = ti
-    qi++
+    const placement =
+      idx === 0 ? SCORE_START : !isWordChar(target[idx - 1] as string) ? SCORE_BOUNDARY : 0
+    const early = Math.max(0, EARLY_BONUS_MAX - idx * EARLY_FALLOFF)
+    const s = SCORE_BASE + placement + early
+    if (best === null || s > best) best = s
+    from = idx + 1
   }
-
-  if (qi < q.length) return null
-  return score
+  return best
 }
 
 /**
- * Rank candidates against a query. An empty query returns everything ordered by
- * recency. Otherwise only matches are returned, ordered by score then recency.
+ * Rank candidates against a query. Empty/whitespace query returns everything by
+ * recency. Otherwise every space-separated term must be satisfied by the primary
+ * OR secondary text; results are ordered by summed score, then recency.
  */
-export function rankItems(query: string, candidates: readonly SearchCandidate[]): SearchResult[] {
-  const trimmed = query.trim()
-  if (trimmed.length === 0) {
+export function rankItems(
+  query: string,
+  candidates: readonly SearchCandidate[],
+  options: SearchOptions = {},
+): SearchResult[] {
+  const { matchCase = false, wholeWord = false } = options
+  const norm = (s: string): string => (matchCase ? s : s.toLowerCase())
+  const terms = query.trim().split(/\s+/).filter(Boolean).map(norm)
+
+  if (terms.length === 0) {
     return [...candidates]
       .sort((a, b) => b.updatedAt - a.updatedAt)
       .map((c) => ({ id: c.id, score: 0 }))
@@ -89,10 +95,21 @@ export function rankItems(query: string, candidates: readonly SearchCandidate[])
 
   const results: { id: string; score: number; updatedAt: number }[] = []
   for (const c of candidates) {
-    const primary = fuzzyScore(trimmed, c.text)
-    const secondary = c.secondary ? fuzzyScore(trimmed, c.secondary) : null
-    const best = bestScore(primary, secondary)
-    if (best !== null) results.push({ id: c.id, score: best, updatedAt: c.updatedAt })
+    const text = norm(c.text)
+    const sec = c.secondary ? norm(c.secondary) : null
+    let total = 0
+    let matched = true
+    for (const term of terms) {
+      const primary = termScore(term, text, wholeWord)
+      const secondary = sec ? termScore(term, sec, wholeWord) : null
+      const best = bestScore(primary, secondary)
+      if (best === null) {
+        matched = false
+        break
+      }
+      total += best
+    }
+    if (matched) results.push({ id: c.id, score: total, updatedAt: c.updatedAt })
   }
 
   results.sort((a, b) => b.score - a.score || b.updatedAt - a.updatedAt)
