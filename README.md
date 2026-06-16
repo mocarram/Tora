@@ -5,6 +5,12 @@
   </picture>
 </p>
 
+<p align="center">
+  <a href="https://mocarram.github.io/Tora/"><strong>Website</strong></a> &nbsp;·&nbsp;
+  <a href="https://github.com/mocarram/Tora/releases">Download</a> &nbsp;·&nbsp;
+  <a href="#install">Install</a>
+</p>
+
 # Tora
 
 Everything you copy lands on a deck of cards you can search, pin, organise into
