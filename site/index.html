@@ -14,7 +14,7 @@
       content="Everything you copy, on a deck of cards you can search, pin, and paste straight back. Local by default, no telemetry."
     />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="assets/screenshots/primary.webp" />
+    <meta property="og:image" content="assets/screenshots/panel.webp" />
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="styles.css" />
   </head>
@@ -43,10 +43,10 @@
         <button
           class="copy-chip"
           type="button"
-          data-copy="brew install --cask tora"
-          aria-label="Copy: brew install --cask tora"
+          data-copy="brew install --cask mocarram/tap/tora"
+          aria-label="Copy: brew install --cask mocarram/tap/tora"
         >
-          <code>brew install --cask tora</code>
+          <code>brew install --cask mocarram/tap/tora</code>
           <span class="copy-chip__icon" aria-hidden="true">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
               <rect x="9" y="9" width="11" height="11" rx="2" stroke="currentColor" stroke-width="2" />
@@ -72,10 +72,10 @@
 
     <figure class="window primary">
       <img
-        src="assets/screenshots/primary.webp"
-        width="1280"
-        height="800"
-        alt="Tora's main window: a category rail on the left, board pills across the top, and a grid of clip cards - colour swatches, syntax-highlighted code, an image thumbnail, link previews, and text."
+        src="assets/screenshots/panel.webp"
+        width="1180"
+        height="340"
+        alt="Tora's panel: a single-row strip summoned by a global hotkey, with the category rail, board pills, and a row of clip cards - a colour swatch, syntax-highlighted code, an image thumbnail, and more."
         loading="eager"
       />
     </figure>
@@ -93,9 +93,9 @@
         <figure class="window">
           <img
             src="assets/screenshots/deck.webp"
-            width="1084"
-            height="722"
-            alt="A close-up of Tora's deck showing varied card types: amber and violet colour swatches, syntax-highlighted code, an image thumbnail, a GitHub link with favicon, and plain text."
+            width="640"
+            height="500"
+            alt="A close-up of Tora's deck showing varied card types: amber and violet colour swatches, syntax-highlighted code, an image thumbnail, a GitHub link, and plain text."
             loading="lazy"
           />
         </figure>
@@ -110,12 +110,12 @@
             type filters narrow any view in a click.
           </p>
         </div>
-        <figure class="window crop-top">
+        <figure class="window">
           <img
             src="assets/screenshots/boards.webp"
-            width="1280"
-            height="800"
-            alt="Tora filtered to a Snippets board, showing just the two code clips saved to it, with the board pill highlighted."
+            width="379"
+            height="386"
+            alt="A clip card with the Save-to-board popover open, listing Favourite, Snippets, Receipts, and New board."
             loading="lazy"
           />
         </figure>
@@ -131,12 +131,12 @@
             keyboard-navigable.
           </p>
         </div>
-        <figure class="window crop-top">
+        <figure class="window">
           <img
             src="assets/screenshots/search.webp"
-            width="1280"
-            height="800"
-            alt="Tora's search bar with the query 'tora', the whole-word (ab) toggle enabled, and three matching cards."
+            width="860"
+            height="348"
+            alt="Tora's search bar with the query 'tora', the whole-word (ab) toggle enabled, and three matching cards below."
             loading="lazy"
           />
         </figure>
@@ -154,9 +154,9 @@
         <figure class="window">
           <img
             src="assets/screenshots/preview.webp"
-            width="1280"
-            height="800"
-            alt="Tora's large preview showing a syntax-highlighted code clip with Copy and Paste actions, the deck softly blurred behind it."
+            width="760"
+            height="234"
+            alt="Tora's large preview showing a syntax-highlighted code clip with Copy and Paste actions."
             loading="lazy"
           />
         </figure>
@@ -174,9 +174,9 @@
         <figure class="window">
           <img
             src="assets/screenshots/settings.webp"
-            width="1216"
-            height="896"
-            alt="Tora's Appearance settings: theme, a row of accent colour swatches with amber selected, and window mode."
+            width="760"
+            height="560"
+            alt="Tora's Appearance settings: theme set to Follow macOS, a row of accent colour swatches with amber selected, and window mode."
             loading="lazy"
           />
         </figure>
@@ -195,13 +195,6 @@
             <p>
               Your history lives in plain SQLite and files on your disk, protected by owner-only file
               permissions and FileVault. Nothing is sent anywhere.
-            </p>
-          </div>
-          <div class="privacy__item">
-            <h3>Secrets stay out</h3>
-            <p>
-              Concealed and transient content such as passwords is never stored, and password
-              managers are excluded out of the box.
             </p>
           </div>
           <div class="privacy__item">
@@ -269,23 +262,9 @@ brew install --cask tora</code></pre>
         Or <a href="https://github.com/mocarram/Tora/releases">download the .dmg</a> from the latest
         release (Apple silicon &amp; Intel). Requires macOS 12 Monterey or later.
       </p>
-      <p class="install__note">
-        Tora is currently unsigned (no Apple Developer account yet), and Homebrew no longer offers
-        <code>--no-quarantine</code>, so clear Gatekeeper once after installing - the cask prints this
-        too:
-      </p>
-      <div class="codeblock" data-copy="xattr -dr com.apple.quarantine /Applications/Tora.app">
-        <pre><code>xattr -dr com.apple.quarantine /Applications/Tora.app</code></pre>
-        <button class="codeblock__copy" type="button" aria-label="Copy quarantine command">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <rect x="9" y="9" width="11" height="11" rx="2" stroke="currentColor" stroke-width="2" />
-            <path d="M5 15V5a2 2 0 0 1 2-2h10" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-          </svg>
-        </button>
-      </div>
       <p class="install__note install__note--soft">
-        Or just right-click the app and choose Open on first launch. Once Tora is signed and
-        notarized, this step goes away.
+        Tora isn't notarized yet, so on first launch right-click the app and choose Open to get past
+        Gatekeeper. Once it's signed and notarized, that step goes away.
       </p>
     </section>
 

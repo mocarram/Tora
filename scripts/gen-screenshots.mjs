@@ -33,6 +33,11 @@ const app = await electron.launch({
 })
 const page = await app.firstWindow()
 await page.waitForLoadState('domcontentloaded')
+// Playwright emulates prefers-color-scheme: light by default. Emulate dark so the
+// renderer (which tracks the OS while the setting is "system") resolves to dark -
+// the same result a real user gets from the default Follow-macOS setting on a dark
+// Mac. The stored theme setting is left untouched, so Settings shows "Follow macOS".
+await page.emulateMedia({ colorScheme: 'dark' })
 log('launched, userData =', userData)
 
 // Dismiss first-run onboarding.
@@ -48,6 +53,14 @@ if (await start.isVisible({ timeout: 12000 }).catch(() => false)) {
 
 // Nice link cards (favicon + title) where the network allows.
 await page.evaluate('window.tora.updateSettings({ fetchLinkPreviews: true })').catch(() => {})
+
+// Render in dark mode - exactly what the default "Follow macOS" setting does on a
+// dark Mac. We drive nativeTheme.themeSource directly and leave the stored theme
+// setting untouched ('system'), so the Settings shot still shows "Follow macOS".
+await app.evaluate(({ nativeTheme }) => {
+  nativeTheme.themeSource = 'dark'
+})
+await pause(500)
 
 const itemCount = () =>
   page.evaluate(() => window.tora.getStorageStats().then((s) => s.itemCount))
@@ -78,17 +91,6 @@ async function seedImage(path) {
   await pause(150)
 }
 
-// Switch to the roomier Window mode and size it 16:10 for marketing shots.
-await page.getByRole('button', { name: 'Window', exact: true }).click().catch(() => {})
-await app.evaluate(({ BrowserWindow }) => {
-  const w = BrowserWindow.getAllWindows()[0]
-  if (w) {
-    w.setBounds({ width: 1280, height: 800 })
-    w.center()
-  }
-})
-await pause(400)
-
 // Seed diverse, innocuous demo clips (newest ends up at the front).
 const code = `export function termScore(term: string, target: string): number | null {
   const i = target.toLowerCase().indexOf(term.toLowerCase())
@@ -114,17 +116,70 @@ await seedText('#e08a3c')
 log('seeded; itemCount =', await itemCount())
 await pause(600)
 
-// 1. Primary / hero - full window, All filter.
-await page.screenshot({ path: join(OUT, '01-primary.png') })
-log('01 primary')
+// 0. Panel mode - the signature single-row strip summoned by the hotkey. The real
+// app frosts the desktop through native vibrancy, which a web-contents screenshot
+// can't reproduce, so paint a solid brand-dark backdrop for a clean flat capture.
+const bg = await page.addStyleTag({
+  content: ':root, html, body, #root { background: #0f1525 !important; }',
+})
+await app.evaluate(({ BrowserWindow }) => {
+  const w = BrowserWindow.getAllWindows()[0]
+  if (w) {
+    w.setBounds({ width: 1180, height: 340 })
+    w.center()
+  }
+})
+await pause(500)
+await page.screenshot({ path: join(OUT, '00-panel.png') })
+log('00 panel')
+await bg.evaluate((el) => el.remove())
 
-// 2. Deck close-up - the clip-history listbox only.
-await page
-  .getByRole('listbox', { name: 'Clip history' })
-  .screenshot({ path: join(OUT, '02-deck.png') })
-  .catch((e) => log('02 deck failed', e.message))
+// Window mode for the detail shots. The crops below are tight on the content that
+// matters so it stays legible when shown small on the site, rather than a whole
+// window scaled down to nothing.
+await page.getByRole('button', { name: 'Window', exact: true }).click().catch(() => {})
+await app.evaluate(({ BrowserWindow }) => {
+  const w = BrowserWindow.getAllWindows()[0]
+  if (w) {
+    w.setBounds({ width: 1080, height: 720 })
+    w.center()
+  }
+})
+await pause(500)
 
-// 3. Boards - create two boards, file the code clip, capture pills + deck.
+const deckEl = page.getByRole('listbox', { name: 'Clip history' })
+const boxOf = (loc) => loc.boundingBox()
+async function clipShot(name, region) {
+  await page.screenshot({ path: join(OUT, name), clip: region })
+  log(name)
+}
+// Bounding box that encloses two elements, plus a margin.
+function union(a, b, m = 14) {
+  const x = Math.min(a.x, b.x)
+  const y = Math.min(a.y, b.y)
+  return {
+    x: x - m,
+    y: y - m,
+    width: Math.max(a.x + a.width, b.x + b.width) - x + m * 2,
+    height: Math.max(a.y + a.height, b.y + b.height) - y + m * 2,
+  }
+}
+
+// 2. Deck variety - a tight block of cards (colour, code, image, link), legible.
+try {
+  const d = await boxOf(deckEl)
+  await clipShot('02-deck.png', {
+    x: d.x,
+    y: d.y,
+    width: Math.min(640, d.width),
+    height: 500,
+  })
+} catch (e) {
+  log('02 deck failed', e.message)
+}
+
+// 4. Boards - create two boards and open the Save-to-board popover on a card: a
+// small, legible interaction that shows the whole feature at readable scale.
 async function newBoard(name) {
   await page.getByRole('button', { name: 'New board' }).click()
   const dlg = page.getByRole('dialog', { name: 'New board' })
@@ -136,38 +191,20 @@ async function newBoard(name) {
 try {
   await newBoard('Snippets')
   await newBoard('Receipts')
-  // File the JSON + code clips into Snippets via the card's Save-to-board.
-  for (const needle of ['"version": "0.1.1"', 'export function termScore']) {
-    const card = page.getByRole('option').filter({ hasText: needle }).first()
-    await card.getByRole('button', { name: 'Save to board' }).click()
-    await page
-      .getByRole('menu')
-      .getByRole('menuitem', { name: 'Snippets', exact: true })
-      .click()
-    await pause(200)
-  }
-  await page.screenshot({ path: join(OUT, '03-boards.png') })
-  log('03 boards')
-  // Filtered to the Snippets board.
-  await page
-    .getByRole('group', { name: 'Boards' })
-    .getByRole('button', { name: 'Snippets', exact: true })
-    .click()
-  await pause(400)
-  await page.screenshot({ path: join(OUT, '04-board-filtered.png') })
-  log('04 board filtered')
-  // Back to all.
-  await page
-    .getByRole('group', { name: 'Boards' })
-    .getByRole('button', { name: 'History', exact: true })
-    .click()
-    .catch(() => {})
-  await pause(300)
+  const codeCard = page.getByRole('option').filter({ hasText: 'export function termScore' }).first()
+  await codeCard.getByRole('button', { name: 'Save to board' }).click()
+  const menu = page.getByRole('menu')
+  await menu.waitFor({ state: 'visible', timeout: 4000 })
+  await pause(350)
+  await clipShot('04-boards.png', union(await boxOf(codeCard), await boxOf(menu)))
+  await page.keyboard.press('Escape')
+  await pause(200)
 } catch (e) {
   log('boards step failed', e.message)
 }
 
-// 5. Search with Aa / ab toggles - expand, type, enable whole-word.
+// 5. Search - the bar with the Aa / ab toggles plus the matching cards, cropped to
+// the top strip (no empty deck below).
 try {
   await page.keyboard.press('/')
   await pause(250)
@@ -175,10 +212,14 @@ try {
   await search.fill('tora')
   await pause(300)
   await page.getByRole('button', { name: 'Match whole word' }).click()
-  await pause(400)
-  await page.screenshot({ path: join(OUT, '05-search.png') })
-  log('05 search')
-  // Clear search.
+  await pause(450)
+  const d = await boxOf(deckEl)
+  await clipShot('05-search.png', {
+    x: d.x,
+    y: 0,
+    width: Math.min(860, d.width),
+    height: d.y + 300,
+  })
   const clear = page.getByRole('button', { name: 'Clear search' })
   if (await clear.isVisible().catch(() => false)) await clear.click()
   await pause(250)
@@ -186,14 +227,15 @@ try {
   log('search step failed', e.message)
 }
 
-// 6. Large preview - Space on the code card.
+// 6. Large preview - the modal only (Space on the code card), legible code.
 try {
   const card = page.getByRole('option').filter({ hasText: 'export function termScore' }).first()
   await card.click()
   await page.keyboard.press(' ')
-  await page.getByRole('dialog').first().waitFor({ state: 'visible', timeout: 4000 })
+  const dlg = page.getByRole('dialog').first()
+  await dlg.waitFor({ state: 'visible', timeout: 4000 })
   await pause(400)
-  await page.screenshot({ path: join(OUT, '06-preview.png') })
+  await dlg.screenshot({ path: join(OUT, '06-preview.png') })
   log('06 preview')
   await page.keyboard.press('Escape')
   await pause(250)
@@ -201,15 +243,14 @@ try {
   log('preview step failed', e.message)
 }
 
-// 7. Settings - Appearance (accent vibes).
+// 7. Settings - the Appearance dialog only (accent vibes), legible.
 try {
   await page.getByRole('button', { name: 'Settings' }).first().click()
   const dlg = page.getByRole('dialog', { name: 'Settings' })
   await dlg.waitFor({ state: 'visible', timeout: 4000 })
   await dlg.getByRole('button', { name: 'Appearance' }).click()
   await pause(400)
-  await page.screenshot({ path: join(OUT, '07-settings.png') })
-  await dlg.screenshot({ path: join(OUT, '07-settings-dialog.png') }).catch(() => {})
+  await dlg.screenshot({ path: join(OUT, '07-settings-dialog.png') })
   log('07 settings')
   await page.keyboard.press('Escape')
   await pause(250)
