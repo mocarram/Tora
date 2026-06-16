@@ -172,13 +172,6 @@
 .row.active :global(svg) {
   color: var(--color-accent);
 }
-/* The active row's filled background already signals selection, so the global
-   keyboard focus ring on top of it is redundant and heavy (most visible when the
-   app is summoned by hotkey and the selected row takes focus). Other rows keep
-   the focus-visible ring for accessibility. */
-.row.active:focus-visible {
-  outline: none;
-}
 .rowLabel {
   white-space: nowrap;
   overflow: hidden;

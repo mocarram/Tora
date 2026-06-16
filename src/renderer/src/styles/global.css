@@ -66,10 +66,15 @@ textarea,
   cursor: text;
 }
 
+/* One consistent keyboard-focus ring for every control. INSET (negative offset)
+   so it is drawn just inside the element's box: it never gets clipped by an
+   ancestor's overflow (the sidebar scroll and the pill strip both clip), and it
+   follows each element's OWN border-radius - round for pills, soft for rows -
+   instead of forcing one shape. Components that draw their own ring (e.g. the
+   search field) opt out with `outline: none`. */
 :focus-visible {
   outline: 2px solid var(--color-focus-ring);
-  outline-offset: 2px;
-  border-radius: var(--radius-xs);
+  outline-offset: -2px;
 }
 
 /* Thin, theme-aware scrollbars; the list itself is virtualized. */

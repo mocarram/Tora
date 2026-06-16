@@ -43,11 +43,6 @@
 .pill.active svg {
   color: var(--color-accent);
 }
-/* The filled active pill already signals selection; mirror the sidebar's
-   focus-ring suppression so summoning the panel does not flash a heavy ring. */
-.pill.active:focus-visible {
-  outline: none;
-}
 
 .dot {
   width: 8px;
