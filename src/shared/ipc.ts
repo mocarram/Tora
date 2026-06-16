@@ -48,7 +48,7 @@ export interface StorageStats {
 }
 
 export interface QueryItemsRequest {
-  /** Free-text fuzzy query. Empty string returns recents. */
+  /** Free-text query (case-insensitive substring by default). Empty = recents. */
   query: string
   filter: QuickFilter
   /** Restrict to a board id; null = all items. */
