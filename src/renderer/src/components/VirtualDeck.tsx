@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { ClipItem } from '@core/model'
 import { ClipCard } from './ClipCard'
 import { Icon } from './Icon'
@@ -83,6 +83,20 @@ function VirtualDeckImpl(props: VirtualDeckProps): React.JSX.Element {
   // tall enough for more than one row, so making it bigger reflows into a grid.
   const layout: DeckLayout = props.layout === 'grid' || size.h >= GRID_MIN_HEIGHT ? 'grid' : 'deck'
 
+  // Reset the virtual scroll offset SYNCHRONOUSLY when the layout axis flips
+  // (deck <-> grid). scrollLeft and scrollTop are different axes, so carrying the
+  // previous layout's offset into the new one makes the virtualizer slice past the
+  // end of the list and render nothing. Doing it here during render - not in a
+  // post-commit effect - keeps the first paint of the new layout correct, so it
+  // never waits on a rAF / ResizeObserver / effect that the OS throttles while the
+  // window is being resized (which is what left the deck blank until a click or
+  // scroll woke the frame loop).
+  const [prevLayout, setPrevLayout] = useState(layout)
+  if (layout !== prevLayout) {
+    setPrevLayout(layout)
+    setScroll(0)
+  }
+
   // Latest-value refs so the scroll effects can read current items/selection/
   // layout WITHOUT depending on them - that keeps a new capture (items change)
   // from yanking the viewport, and the open-reset from re-firing on every nav.
@@ -111,12 +125,12 @@ function VirtualDeckImpl(props: VirtualDeckProps): React.JSX.Element {
     // leaving a gap on the right.
   }, [layout, isEmpty])
 
-  useEffect(() => {
-    // Reset scroll position when switching layouts (deferred so it is not a
-    // synchronous setState inside the effect body).
+  useLayoutEffect(() => {
+    // Complements the during-render setScroll(0) above - not redundant with it. That
+    // resets the virtualizer's slice window; this resets the reused deck/grid node's
+    // own scrollLeft/scrollTop before paint so it does not keep its old physical
+    // position for a frame. Both are needed; removing either reintroduces the blank.
     containerRef.current?.scrollTo({ top: 0, left: 0 })
-    const r = requestAnimationFrame(() => setScroll(0))
-    return () => cancelAnimationFrame(r)
   }, [layout])
 
   // Map a vertical mouse wheel to horizontal movement in the deck (panel) layout
