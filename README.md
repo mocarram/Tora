@@ -14,7 +14,7 @@ React Native iOS app later.
 
 ## Install
 
-macOS 11 or later (Apple Silicon or Intel).
+macOS 12 or later (Apple Silicon or Intel).
 
 **Homebrew** (recommended):
 
