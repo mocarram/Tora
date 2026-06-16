@@ -1,9 +1,16 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/banner/banner-dark.svg">
+    <img src="assets/banner/banner-light.svg" alt="Tora - a privacy-first clipboard manager for macOS" width="640">
+  </picture>
+</p>
+
 # Tora
 
-A privacy-first clipboard manager for macOS. Everything you copy lands on a deck
-of cards you can search, pin, organise into boards, and paste straight back into
-the app you were using. Local by default, no telemetry. Built with Electron now,
-with a pure core designed to power a React Native iOS app later.
+Everything you copy lands on a deck of cards you can search, pin, organise into
+boards, and paste straight back into the app you were using. Local by default,
+no telemetry. Built with Electron now, with a pure core designed to power a
+React Native iOS app later.
 
 ## Install
 
