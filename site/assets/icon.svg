@@ -1,0 +1,39 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Tora">
+  <defs>
+    <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#322b22"/>
+      <stop offset="0.32" stop-color="#221d16"/>
+      <stop offset="0.66" stop-color="#16120d"/>
+      <stop offset="1" stop-color="#0d0b08"/>
+    </linearGradient>
+    <radialGradient id="sheen" cx="0.38" cy="0.05" r="0.55" fx="0.38" fy="0.03">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.16"/>
+      <stop offset="0.55" stop-color="#ffffff" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="amberGlow" cx="0.42" cy="0.52" r="0.5">
+      <stop offset="0" stop-color="#ec9652" stop-opacity="0.30"/>
+      <stop offset="1" stop-color="#ec9652" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="bar" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f7ac60"/>
+      <stop offset="1" stop-color="#d46e2e"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="0.7" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.16"/>
+    </linearGradient>
+    <clipPath id="clip"><rect width="1024" height="1024" rx="229"/></clipPath>
+  </defs>
+  <rect width="1024" height="1024" rx="229" fill="url(#glass)"/>
+  <rect width="1024" height="1024" rx="229" fill="url(#amberGlow)" clip-path="url(#clip)"/>
+  <rect width="1024" height="1024" rx="229" fill="url(#sheen)" clip-path="url(#clip)"/>
+  <rect x="3.5" y="3.5" width="1017" height="1017" rx="226" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="7"/>
+  <rect x="3.5" y="3.5" width="1017" height="1017" rx="226" fill="none" stroke="url(#rim)" stroke-width="7"/>
+  <g fill="url(#bar)">
+    <rect x="300" y="312" width="430" height="96" rx="48"/>
+    <rect x="300" y="464" width="281" height="96" rx="48"/>
+    <rect x="300" y="616" width="380" height="96" rx="48"/>
+  </g>
+</svg>

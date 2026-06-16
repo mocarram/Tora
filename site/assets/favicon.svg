@@ -1,0 +1,18 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Tora">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2a241c"/>
+      <stop offset="1" stop-color="#100d09"/>
+    </linearGradient>
+    <linearGradient id="b" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f7ac60"/>
+      <stop offset="1" stop-color="#d46e2e"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="229" fill="url(#g)"/>
+  <g fill="url(#b)">
+    <rect x="286" y="300" width="452" height="116" rx="58"/>
+    <rect x="286" y="454" width="296" height="116" rx="58"/>
+    <rect x="286" y="608" width="400" height="116" rx="58"/>
+  </g>
+</svg>

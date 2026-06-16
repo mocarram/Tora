@@ -49,8 +49,9 @@ shows a Restart pill); the manual quarantine step also becomes unnecessary then.
   thumbnails, file sizes, link hosts).
 - Consecutive-duplicate dedup, retention from 1 day to unlimited (with a storage
   indicator and an unlimited-history warning).
-- Instant fuzzy search across clips, source apps, and board names; full keyboard
-  navigation; sub-50ms at 10k+ items.
+- Instant multi-term substring search across clips, source apps, and board names,
+  with Aa (match case) and ab (whole word) toggles; full keyboard navigation;
+  sub-50ms at 10k+ items.
 - Pinboards: named, reorderable, drag a card to add it, items in many boards,
   a default Favourites board, quick type filters.
 - Queue paste: select multiple clips and paste them in sequence, keep-formatting

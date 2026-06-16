@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tora - a privacy-first clipboard manager for macOS</title>
+    <meta
+      name="description"
+      content="Tora is a privacy-first clipboard manager for macOS. Everything you copy lands on a deck of cards you can search, pin, organise into boards, and paste straight back. Local by default, no telemetry."
+    />
+    <meta property="og:title" content="Tora - a privacy-first clipboard manager for macOS" />
+    <meta
+      property="og:description"
+      content="Everything you copy, on a deck of cards you can search, pin, and paste straight back. Local by default, no telemetry."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="assets/screenshots/primary.webp" />
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <img class="hero__icon" src="assets/icon.svg" width="104" height="104" alt="Tora app icon" />
+      <h1>Tora</h1>
+      <p class="hero__tagline">Privacy-first clipboard manager for macOS</p>
+      <p class="hero__sub">
+        Everything you copy lands on a deck of cards you can search, pin, organise into boards, and
+        paste straight back into the app you were using. Local by default, no telemetry.
+      </p>
+      <div class="hero__actions">
+        <a class="btn" href="https://github.com/mocarram/Tora/releases">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path
+              d="M12 3v12m0 0 4-4m-4 4-4-4M5 19h14"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          Download for macOS
+        </a>
+        <button
+          class="copy-chip"
+          type="button"
+          data-copy="brew install --cask tora"
+          aria-label="Copy: brew install --cask tora"
+        >
+          <code>brew install --cask tora</code>
+          <span class="copy-chip__icon" aria-hidden="true">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+              <rect x="9" y="9" width="11" height="11" rx="2" stroke="currentColor" stroke-width="2" />
+              <path
+                d="M5 15V5a2 2 0 0 1 2-2h10"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </span>
+        </button>
+      </div>
+      <a class="hero__github" href="https://github.com/mocarram/Tora">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path
+            d="M12 2C6.48 2 2 6.58 2 12.25c0 4.53 2.87 8.37 6.84 9.73.5.1.68-.22.68-.49 0-.24-.01-.87-.01-1.71-2.78.62-3.37-1.37-3.37-1.37-.45-1.18-1.11-1.5-1.11-1.5-.91-.64.07-.62.07-.62 1 .07 1.53 1.06 1.53 1.06.9 1.56 2.36 1.11 2.94.85.09-.66.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.27 2.75 1.05A9.4 9.4 0 0 1 12 6.84c.85 0 1.71.12 2.51.34 1.91-1.32 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.94-2.35 4.81-4.58 5.06.36.32.68.94.68 1.9 0 1.37-.01 2.48-.01 2.82 0 .27.18.6.69.49A10.26 10.26 0 0 0 22 12.25C22 6.58 17.52 2 12 2Z"
+          />
+        </svg>
+        View on GitHub
+      </a>
+    </header>
+
+    <figure class="window primary">
+      <img
+        src="assets/screenshots/primary.webp"
+        width="1280"
+        height="800"
+        alt="Tora's main window: a category rail on the left, board pills across the top, and a grid of clip cards - colour swatches, syntax-highlighted code, an image thumbnail, link previews, and text."
+        loading="eager"
+      />
+    </figure>
+
+    <main>
+      <section class="feature">
+        <div class="feature__text">
+          <h2>Everything you copy, on a deck</h2>
+          <p>
+            Tora captures text, rich text, images, files, URLs, colours, and code, then shows each as
+            a card with the right preview - syntax-highlighted snippets, colour swatches, image
+            thumbnails, file sizes, and link hosts. Every card remembers the app it came from.
+          </p>
+        </div>
+        <figure class="window">
+          <img
+            src="assets/screenshots/deck.webp"
+            width="1084"
+            height="722"
+            alt="A close-up of Tora's deck showing varied card types: amber and violet colour swatches, syntax-highlighted code, an image thumbnail, a GitHub link with favicon, and plain text."
+            loading="lazy"
+          />
+        </figure>
+      </section>
+
+      <section class="feature feature--reverse">
+        <div class="feature__text">
+          <h2>Boards keep it organised</h2>
+          <p>
+            Group clips into named, reorderable boards - drag a card in or save it from the card
+            menu. A clip can live in several boards at once, there's a default Favourites board, and
+            type filters narrow any view in a click.
+          </p>
+        </div>
+        <figure class="window crop-top">
+          <img
+            src="assets/screenshots/boards.webp"
+            width="1280"
+            height="800"
+            alt="Tora filtered to a Snippets board, showing just the two code clips saved to it, with the board pill highlighted."
+            loading="lazy"
+          />
+        </figure>
+      </section>
+
+      <section class="feature">
+        <div class="feature__text">
+          <h2>Search that gets out of the way</h2>
+          <p>
+            Start typing to filter instantly across clips, source apps, and board names - multi-term
+            substring matching, sub-50ms even at 10k+ items. Two VS Code-style toggles refine it:
+            <strong>Aa</strong> for match case and <strong>ab</strong> for whole word. It's fully
+            keyboard-navigable.
+          </p>
+        </div>
+        <figure class="window crop-top">
+          <img
+            src="assets/screenshots/search.webp"
+            width="1280"
+            height="800"
+            alt="Tora's search bar with the query 'tora', the whole-word (ab) toggle enabled, and three matching cards."
+            loading="lazy"
+          />
+        </figure>
+      </section>
+
+      <section class="feature feature--reverse">
+        <div class="feature__text">
+          <h2>Preview, then paste straight back</h2>
+          <p>
+            Open any clip in a large preview to read it in full, then Copy or Paste. Tora pastes
+            directly into the app you were just in via Accessibility - keep formatting by default, or
+            hold a modifier for plain text. Queue several clips and paste them in sequence.
+          </p>
+        </div>
+        <figure class="window">
+          <img
+            src="assets/screenshots/preview.webp"
+            width="1280"
+            height="800"
+            alt="Tora's large preview showing a syntax-highlighted code clip with Copy and Paste actions, the deck softly blurred behind it."
+            loading="lazy"
+          />
+        </figure>
+      </section>
+
+      <section class="feature">
+        <div class="feature__text">
+          <h2>Make it yours</h2>
+          <p>
+            Pick an accent vibe - amber, rose, violet, ocean, forest, or graphite - and Tora retints
+            itself top to bottom. Follow macOS appearance or pin light or dark, switch between a
+            quick panel and a full window, and dial motion down if you like.
+          </p>
+        </div>
+        <figure class="window">
+          <img
+            src="assets/screenshots/settings.webp"
+            width="1216"
+            height="896"
+            alt="Tora's Appearance settings: theme, a row of accent colour swatches with amber selected, and window mode."
+            loading="lazy"
+          />
+        </figure>
+      </section>
+    </main>
+
+    <section class="privacy">
+      <div class="privacy__inner">
+        <h2>Private by default</h2>
+        <p class="privacy__lead">
+          A clipboard sees everything you copy, so Tora is built to keep it on your Mac.
+        </p>
+        <div class="privacy__grid">
+          <div class="privacy__item">
+            <h3>Local, no telemetry</h3>
+            <p>
+              Your history lives in plain SQLite and files on your disk, protected by owner-only file
+              permissions and FileVault. Nothing is sent anywhere.
+            </p>
+          </div>
+          <div class="privacy__item">
+            <h3>Secrets stay out</h3>
+            <p>
+              Concealed and transient content such as passwords is never stored, and password
+              managers are excluded out of the box.
+            </p>
+          </div>
+          <div class="privacy__item">
+            <h3>Lock it with Touch ID</h3>
+            <p>
+              Turn on an optional app lock so your history only opens for you, with Touch ID or your
+              password.
+            </p>
+          </div>
+          <div class="privacy__item">
+            <h3>Encrypted sync, if you want it</h3>
+            <p>
+              Optional sync over iCloud Drive is end-to-end encrypted on-device before it leaves; the
+              key stays in your macOS Keychain.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="more">
+      <h2>And the rest</h2>
+      <div class="more__grid">
+        <div class="more__item">
+          <h3>Queue paste</h3>
+          <p>Select several clips and paste them in sequence, keep-formatting or force-plain.</p>
+        </div>
+        <div class="more__item">
+          <h3>Panel or window</h3>
+          <p>A frameless vibrancy panel on a global hotkey (default Cmd+Shift+V), or a resizable full window.</p>
+        </div>
+        <div class="more__item">
+          <h3>Menu bar &amp; login</h3>
+          <p>A menu-bar icon with pause/resume capture, and optional launch at login.</p>
+        </div>
+        <div class="more__item">
+          <h3>Tidy history</h3>
+          <p>Consecutive-duplicate dedup and retention from one day to unlimited, with a storage indicator.</p>
+        </div>
+        <div class="more__item">
+          <h3>All keyboard</h3>
+          <p>Arrow, Enter, Space, and Delete drive the deck; a consistent focus ring follows you.</p>
+        </div>
+        <div class="more__item">
+          <h3>Fast at scale</h3>
+          <p>Indexed storage and a pure search core keep it under 50ms at 10k+ clips.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="install" id="install">
+      <h2>Install</h2>
+      <p class="install__lead">With <a href="https://brew.sh">Homebrew</a>:</p>
+      <div class="codeblock" data-copy="brew tap mocarram/tap&#10;brew install --cask tora">
+        <pre><code>brew tap mocarram/tap
+brew install --cask tora</code></pre>
+        <button class="codeblock__copy" type="button" aria-label="Copy install commands">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <rect x="9" y="9" width="11" height="11" rx="2" stroke="currentColor" stroke-width="2" />
+            <path d="M5 15V5a2 2 0 0 1 2-2h10" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </button>
+      </div>
+      <p class="install__note">
+        Or <a href="https://github.com/mocarram/Tora/releases">download the .dmg</a> from the latest
+        release (Apple silicon &amp; Intel). Requires macOS 12 Monterey or later.
+      </p>
+      <p class="install__note">
+        Tora is currently unsigned (no Apple Developer account yet), and Homebrew no longer offers
+        <code>--no-quarantine</code>, so clear Gatekeeper once after installing - the cask prints this
+        too:
+      </p>
+      <div class="codeblock" data-copy="xattr -dr com.apple.quarantine /Applications/Tora.app">
+        <pre><code>xattr -dr com.apple.quarantine /Applications/Tora.app</code></pre>
+        <button class="codeblock__copy" type="button" aria-label="Copy quarantine command">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <rect x="9" y="9" width="11" height="11" rx="2" stroke="currentColor" stroke-width="2" />
+            <path d="M5 15V5a2 2 0 0 1 2-2h10" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </button>
+      </div>
+      <p class="install__note install__note--soft">
+        Or just right-click the app and choose Open on first launch. Once Tora is signed and
+        notarized, this step goes away.
+      </p>
+    </section>
+
+    <footer class="footer">
+      <span class="footer__brand">Tora</span>
+      <nav class="footer__links">
+        <a href="https://github.com/mocarram/Tora">GitHub</a>
+        <a href="https://github.com/mocarram/Tora/releases">Releases</a>
+        <a href="https://github.com/mocarram/Tora/issues">Issues</a>
+      </nav>
+      <span class="footer__license">Open source under the MIT license.</span>
+    </footer>
+
+    <script src="main.js"></script>
+  </body>
+</html>
