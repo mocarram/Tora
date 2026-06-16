@@ -6,8 +6,9 @@ name: Release
 # so the pipeline can be validated without cutting a release.
 #
 # Signing is OPTIONAL. With no signing secrets the app builds UNSIGNED (the
-# current Homebrew-distributed state - users pass `--no-quarantine`). Add the
-# secrets below to flip to a signed + notarized build with no other change:
+# current Homebrew-distributed state - users clear the quarantine attribute
+# after install). Add the secrets below to flip to a signed + notarized build
+# with no other change:
 #   CSC_LINK, CSC_KEY_PASSWORD          Developer ID Application cert (.p12, base64)
 #   APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID   notarization
 # GITHUB_TOKEN is provided automatically and creates the release.

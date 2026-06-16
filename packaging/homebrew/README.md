@@ -11,14 +11,15 @@ on the public source repo `mocarram/Tora`; the tap only holds the cask.
 
 ```sh
 brew tap mocarram/tap
-# Builds are unsigned (no Apple Developer account yet): --no-quarantine clears
-# Gatekeeper on first launch.
-brew install --cask --no-quarantine tora
+brew install --cask tora
+# Builds are unsigned (no Apple Developer account yet): clear Gatekeeper once
+# after installing.
+xattr -dr com.apple.quarantine /Applications/Tora.app
 ```
 
 Update with `brew upgrade --cask tora`; remove with `brew uninstall --cask tora`
 (add `--zap` to also delete local data). Once the app is signed + notarized the
-`--no-quarantine` flag is no longer needed.
+manual quarantine step is no longer needed.
 
 ## Cutting a new version
 
@@ -34,7 +35,8 @@ Update with `brew upgrade --cask tora`; remove with `brew uninstall --cask tora`
    git -C ../homebrew-tap push
    ```
 
-4. Verify: `brew update && brew install --cask --no-quarantine tora`.
+4. Verify: `brew update && brew install --cask tora`, then
+   `xattr -dr com.apple.quarantine /Applications/Tora.app`.
 
 ## Validate the cask
 

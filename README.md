@@ -20,9 +20,10 @@ macOS 12 or later (Apple Silicon or Intel).
 
 ```sh
 brew tap mocarram/tap
-# Builds are unsigned for now, so --no-quarantine clears Gatekeeper on first
-# launch. Update any time with `brew upgrade --cask tora`.
-brew install --cask --no-quarantine tora
+brew install --cask tora
+# Builds are unsigned for now, so clear Gatekeeper once after installing.
+# Update any time with `brew upgrade --cask tora`.
+xattr -dr com.apple.quarantine /Applications/Tora.app
 ```
 
 **Manual download:**
@@ -39,7 +40,7 @@ brew install --cask --no-quarantine tora
 
 Updates come through `brew upgrade` while the app is unsigned. Once it's signed
 + notarized, the in-app updater takes over (checks on launch, downloads quietly,
-shows a Restart pill); the `--no-quarantine` flag also becomes unnecessary then.
+shows a Restart pill); the manual quarantine step also becomes unnecessary then.
 
 ## Features
 

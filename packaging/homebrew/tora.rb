@@ -27,4 +27,14 @@ cask "tora" do
     "~/Library/Preferences/com.tora.clipboard.plist",
     "~/Library/Saved Application State/com.tora.clipboard.savedState",
   ]
+
+  caveats <<~EOS
+    Tora is not yet signed or notarized. Homebrew no longer offers
+    --no-quarantine, so clear Gatekeeper once after installing:
+
+      xattr -dr com.apple.quarantine "#{appdir}/Tora.app"
+
+    Then grant Accessibility when prompted so Tora can paste back into the
+    app you were using.
+  EOS
 end
