@@ -75,6 +75,32 @@ test('the context menu opens from the keyboard and Escape returns focus', async 
   await expect(pill).toBeFocused()
 })
 
+test('keyboard: Enter on a focused board pill selects it without hiding the panel', async () => {
+  // Regression: the global deck handler used to also fire on Enter while a pill
+  // had focus, pasting the selected card and hiding the panel behind the board
+  // switch. Now Enter just activates the pill.
+  await pills(h).getByRole('button', { name: 'History' }).click()
+  const receipts = pills(h).getByRole('button', { name: 'Receipts', exact: true })
+  await receipts.focus()
+  await h.page.keyboard.press('Enter')
+
+  await expect(receipts).toHaveAttribute('aria-pressed', 'true')
+  // No card preview opened, and the app is still up (deck visible, not hidden).
+  await expect(h.page.getByRole('dialog')).toHaveCount(0)
+  await expect(h.page.getByRole('listbox', { name: 'Clip history' })).toBeVisible()
+})
+
+test('keyboard: Space on a focused board pill activates it, not the deck', async () => {
+  await pills(h).getByRole('button', { name: 'History' }).click()
+  const receipts = pills(h).getByRole('button', { name: 'Receipts', exact: true })
+  await receipts.focus()
+  await h.page.keyboard.press(' ')
+
+  // Space activated the pill (board selected) instead of expanding a card.
+  await expect(receipts).toHaveAttribute('aria-pressed', 'true')
+  await expect(h.page.getByRole('dialog')).toHaveCount(0)
+})
+
 test('rename a board from its context menu', async () => {
   await pills(h).getByRole('button', { name: 'History' }).click()
   await pills(h).getByRole('button', { name: 'Receipts', exact: true }).click({ button: 'right' })

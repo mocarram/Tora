@@ -84,8 +84,10 @@ function SidebarImpl({
                 .join(' ')}
               role="status"
               aria-label={SYNC_TITLES[syncState]}
-              // Focusable so keyboard users can reach the tooltip detail.
-              tabIndex={0}
+              // Not a tab stop: it is a status indicator, not a control. The
+              // role=status live region announces it to screen readers, and the
+              // tooltip detail is supplementary (hover only). Being focusable put
+              // it in the Tab order, where landing on it popped the tooltip open.
             >
               <Icon
                 name={syncState === 'syncing' ? 'sync' : syncState === 'error' ? 'close' : 'check'}

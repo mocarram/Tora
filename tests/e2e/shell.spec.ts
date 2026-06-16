@@ -61,6 +61,10 @@ test('the sync badge tooltip dismisses when the window loses focus', async () =>
   await h.page.evaluate('window.dispatchEvent(new Event("blur"))')
   await expect(h.page.getByRole('tooltip')).toHaveCount(0)
 
+  // The badge is a status indicator, not a tab stop: landing on it while
+  // tabbing used to pop the tooltip open. It must carry no tabindex.
+  await expect(badge).not.toHaveAttribute('tabindex')
+
   // Back to local-only so later tests see no badge.
   await h.page.evaluate('window.tora.updateSettings({ syncProvider: "local" })')
 })
